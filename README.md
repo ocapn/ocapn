@@ -27,7 +27,8 @@ OCapN provides:
 
  - Not [one](https://www.poetryfoundation.org/poems/45474/o-captain-my-captain),
    but [two](https://www.merriam-webster.com/dictionary/netlayer)
-   nautical naming puns.
+   nautical naming puns (with some [formidable imagery](https://en.wikipedia.org/wiki/Net_laying_ship#/media/File:The_Royal_Navy_during_the_Second_World_War_A16583.jpg)
+   at that)!
 
 OCapN is still pre-specification, and will likely be the output of
 examining to what extent the
