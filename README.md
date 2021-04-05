@@ -83,7 +83,10 @@ finalizers.)
 
 CapTP is something which has been implemented many times.
 The first "open" version of CapTP was implemented in the
-[E programming language](http://www.erights.org/),
+[E programming language](http://www.erights.org/)
+(which itself was a continuation of the technical core of the
+ambitious [Electric Communities Habitat](https://www.youtube.com/watch?v=KNiePoNiyvE)
+distributed virtual worlds project),
 though there have been many other (but incompatible) implementations
 since, such as in [Cap'N Proto](https://capnproto.org/),
 [Agoric's](https://agoric.com/)
