@@ -25,6 +25,10 @@ OCapN provides:
 
  - A URI structure for addressing machines and specific objects on machines.
 
+ - Not [one](https://www.poetryfoundation.org/poems/45474/o-captain-my-captain),
+   but [two](https://www.merriam-webster.com/dictionary/netlayer)
+   nautical naming puns.
+
 OCapN is still pre-specification, and will likely be the output of
 examining to what extent the
 [Agoric](https://agoric.com/), [Spritely](https://spritelyproject.org/),
