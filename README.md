@@ -20,6 +20,7 @@ OCapN provides:
    ranging from [Tor Onion Services](https://2019.www.torproject.org/docs/onion-services.html.en)
    to [IBC](https://ibcprotocol.org/)
    to [I2P](https://geti2p.net/)
+   to [libp2p](https://libp2p.io/)
    to perhaps carrier pigeons with backpacks full of encrypted microsd
    cards.
 
