@@ -1,0 +1,207 @@
+# OCapN meeting, 2021-09-24
+
+ - **Chair:** 🪑 Christine Lemmer-Webber
+ - **Scribe:** ✍️ Kris Kowal
+ - **Present:** 🎁
+   - Christine Lemmer-Webber (cw)
+   - Kris Kowal (kk) (🧙‍♂️)
+   - Randy Farmer (rf)
+   - Kenton Varda (kv)
+   - Mark S. Miller (mm)
+   - Baldur Jóhannsson / Zarutian (zr)
+   - Ian Denhardt (id)
+
+## Agenda
+
+ - Presence, chair, scribe
+ - Review
+ - PROPOSAL: Commit meeting minutes/agenda to OCapN git repo
+ - meeting agenda JIT compilation
+ - Where to hold dynamic discussions?
+
+ - Bootstrap functionality: sturdyrefs, 3rd-party introductions, certs
+
+ - Review of current work?
+ - Baldur's Agoric + Goblins stuff?
+
+ - Issues?
+
+# Minutes
+
+cw: Just in time Agenda
+
+cw: We’ve done one of these meetings so far. So far it’s been Agoric and Goblins leading, then we’ll advertise the project further when we have some compatibility.
+
+cw: Need a public record of our prior meeting. Might be an Agoric private record currently.
+
+cw: We talked about acyclic GC and manual free. CapN proto uses the same mechanism for either manual or automatic GC.
+
+cw: To IDL or not to IDL. We are currently going for no IDL and then layer IDL on layer maybe.
+
+cw: Call for agenda items.
+
+id: A couple different responses. 1. There is a YouTube of the last meeting that is not listed but up. 2. Last meeting was unstructured. 3. Loose consensus on IDL. 4. Some conversations outside meeting about data modeling.
+
+id: What are some of the high priority things we need consensus on. Data model?
+
+cw: Please find the video link from the last meeting and let’s link it publicly.
+
+id: I’ll make an action item.
+
+cw: Proposal: commit meeting agenda and minutes to OCapN repository?
+
+  rf: +0
+  id: +1
+  kv: +0
+  cw: +1
+
+cw: Describes W3C voting process.
+
+mm: +0 for putting the floating point joke on the record.
+
+PROPOSAL: Commit meeting minutes/agenda to OCapN git repo
+
+RESOLVED: Commit meeting minutes/agenda to OCapN git repo
+
+cw: JIT compilation of agenda
+
+mm: One of the things I’ve been pushing into a conflict was the issue of data types. We had decided on data types that caused order issues. Since then we layered the Agoric system in a way that is consistent with everyone else’s. The protocol we need to agree upon has less semantics, but has tags.
+
+id: We had a lot of offline discussion about data types.
+
+kv: That’s what's going on in Keybase?
+
+id: Do we want to switch back-channel solution?
+
+mm: Keybase is my favorite. Kenton might be the bottleneck on chat tech.
+
+kv: The problem with Keybase is that I keep my key offline so it’s not great for chat.
+
+id: The other downside is that there is only one relevant channel to me, but notifications for any of them.
+
+cw: We should in the long term use a chat built on OCapN, but we can use something else short-term. There is an OCapN IRC channel with only id and cw.
+
+kv: I’m still on IRC.
+
+cw: How important is the back channel? Should we move it to IRC?
+
+kv: Also happy to keep a browser tab open, any other.
+
+id: I’m basically using Matrix as an IRC bridge.
+
+cw: Why not Matrix?
+
+cw: It has the emotional feeling of supporting end-to-end encryption.
+
+mm: I’ve never used Matrix but that’s why I like Keybase.
+
+cw: Keybase hasn’t been developed for a year and might go away.
+
+kv: I can create a weak Keybase account and participate that way. If you can do it in a browser, that would be great.
+
+id: IRC is adjacent for most of us.
+
+PROPOSAL: move keybase conversations to #ocapn:libre.chat (via matrix or IRC, your choice)
+
+RESOLVED MOTION PASSES no dissent.
+
+zr: Do we want hand-off to be in scope, stury ref, XXX
+
+cw: I’ll add this to the agenda. This is bootstrap related?
+
+zr: Swiss nums, sturdy refs, light refs, back to back
+
+cw: You could also imagine a more live search alternative to sturdy refs.
+
+zr: Realize active caps as light refs.
+
+cw: Let’s discuss now and get a review of current work since that will inform further conversation. Discussing the bootstrap functionality, it seems like everyone’s moving to the bootstrap object style pattern.
+
+id: Let’s step back and describe the options.
+
+zr: Either have a lower protocol level for sturdy refs and get a live ref instead of having a bootstrap that invokes a method that takes a swiss num and provides a live ref.
+
+cw: Please clarify, if I’m using A, B, C introductions on three vats. Is the question Bob is sending a message to Carol, do we inline the handoff directly or do we have a separate operation where you request … XXX is that the question?
+
+zr: This is more a question about sturdy refs.
+
+rf: This is about persistence, right?
+
+zr: It’s also about out-of-band
+
+id: There are two points, third party handoff and the other is restoring sturdy refs to live refs.
+
+zr: About delivering messages to the bootstrap object.
+
+kv: I can tell you my experience is that CapnP was supposed to have a notion of restoring sturdy refs, level 2 of the protocol, third-party handoff at level 3. I found eventually that how you want to do persistence dependes a lot on higher level aspects of the platform, like Sandstorm has a notion of Sturdy-refs but CapnP can’t have such a notion that works for everyone and so Capnp shouldn’t define anything about persistence and leave it to the application.
+
+kv: Not sure whether you refer to bootstrap the same as Capnp
+
+cw: Everyone embraced the bootstrap opt, that you bind a promise to.
+
+id: Did we arrive at that this independently?
+
+kv: The bootstrap in CapnP used to do more than it does now. There is a default cap and the app exposes RPC methods for bootstrapping.
+
+cw: I think I implemented the bootstrap object because of how CapnP. Don’t know whether that’s better than
+
+mm: The old E captp did populate 0 with a default object when it started.
+
+cw: Everything since is a bootstrap op that resolves a promise for the bootstrap object.
+
+id: In retrospect I would have just done an ID 0.
+
+zr: 
+
+cw: Does everyone think that bootstrap op is vestigial?
+
+Should there always be a bootstrap object.
+
+cw: looks like even agoric, also spritely, copied capn'proto https://github.com/Agoric/agoric-sdk/blob/master/packages/captp/src/captp.js#L342
+
+PROPOSAL: always have bootstrap object which is 0 instead of having a bootstrap op
+
+mm: in order for there to be a bootstrap object, the api of the bootstrap object needs to be standardized
+
+kv: from capn' proto's POV the things that need to be handed into the protocol are in the application/protocol, bootstrap object can't/shouldn't be standardized.  from my perspective that's a higher-level thing about persistence, application-to-application.  sandstorm is an example of an application that has enough opinions about persistence
+
+id: there's two different kinds of persistence
+
+mm: I think one thing... core question it brings up... what level of interoperability are we trying for between different adopters of what we call the protocol we're trying to agree on.  If there's no 3-party handoff and no sturdyrefs, if that's part of the agreement, then all we're agreeing on is the pairwise live-ref protocol, and we're not getting any network p2p interoperability... remember the only representation of a persistent right is the capability that defines normal network trauma.  if we're not agreeing on that we're not agreeing on persistent rights as capabilities
+
+kv: I do think 3 party handoff will be part of cap'n proto protocol, not the job of the bootstrap object
+
+id: I think this is a key difference... there's no special handling of sturdyrefs etc
+
+kv: I wouldn't say there's a particularly strong reason, we're defining the things we're sxpecting of an RPC protocol itself... and it's up to the application to define other interfaces
+
+id: I think it's a shallower thing than it appears at first.  it's the application's bootstrap object
+
+zr: my original question was should it be part of the low-level protocol or should we shunt it onto de-facto protocol documents
+
+mm: the hard problem of 3-party handoff is Vat A needs to tell Vat B enough information for Vat B to be able to connect to the Vat C that vat A meant.  Each of those transports might be different... the only universal answer is to route through A... that's not adequate for grant matching equality.  there' a hard problem at the heart of 3 party handoff
+
+cw: I suspect partially vestigial re: IDL/not-IDL; capnproto has type definitions ala protobufs, E is dynamic. Role of bootstrap object is different. (Just different perspective?). It would be disappointing if we did not do 3-party handoff. (netlayer needs to specify a bunch of details on how to actually connect to network). Important to specify things like URI formats, etc.
+
+kv: I wouldn't say that it's protocol buffers the philosophy comes from... it's more the non-ocap world. in a perfect ocap world you have establishing connection (???) and qr codes on billboards... somehow the billboard gives me an ocap to that, and that's not realistic.  the point of bootstrap was to bootstrap into a capability world from a non-capability world.  I was connecting to this server, I know what interface it has.  I don't expect to have a pre-existing application... the other thing I want to say for 3 party handoff is that I don't expect cap'n proto to have a particular answer for 3 party handoff.  it's parameterized such that capn' proto can implement part of the problem where there's a "vat network"... different vat networks can implement different ways of doing the details.  That's supposed to say, we can't assume that there's one network where we can reach everyone else thorugh the network.  in cloudflare we have 300 different locations, each of which is a colo which has different machines in it.  When they talk in one colo they don't want to necessarily talk to every machine in that colo... (specific routing optimization setup described).  Now you want to do a 3-party handoff.  We're not going to define a common protocol to get that right.  Another example is a sandbox scenario, something you can't talk to on the network, has a supervisor.  Talking to each other on unix sockets, local way of passing capabilities.  has to go to a gateway to talk to the network.  And I haven't figured out the answers to that.
+
+iv: kenton went into some of what I was going to say... I think it would make sense to define things... here's a netlayer for stuff on the open internet... but there will be different scenarios, such as some which aren't available.  eg sometrhing in a browser that has to use webrtc, etc.  I think it makes sense to try to standardize on some of these things to the extent it makes sense.  the qr code example uses that netlayer... cap'n proto is parameterized over the netlayer... 3 party handoff goes over netlayer... in sandbox case you can't talk through anyone... in other scenarios you have partial connectivity
+
+cw: if you look at Spritely Goblins' ocapn: uris, you can see a slot for the netlayer, so having multiple netlayers is expected: ocapn:m.onion.abpoiyaspodyoiapsdyiopbasyop
+
+mm: I think what this highlights for me is that there are multiple layers of abstraction of agreement, which enable different layers of cooperation.  the amount of agreement we have is a starting point but not as far as I would like to go
+
+# Links
+
+[Realtive Routing](https://www.youtube.com/watch?v=a0Wr2BvIixk&list=PLKr-mvz8uvUg70w0yKGfytaDqxiIBNo_L&index=24)
+
+# Summary
+## Resolutions
+
+RESOLVED: Commit meeting minutes/agenda to OCapN git repo
+
+RESOLVED: move keybase conversations to #ocapn:libre.chat (via matrix or IRC, your choice)
+
+## Action Items
+
+id: Find video for last meeting.
