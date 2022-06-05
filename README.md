@@ -94,7 +94,7 @@ distributed virtual worlds project),
 though there have been many other (but incompatible) implementations
 since, such as in [Cap'N Proto](https://capnproto.org/),
 [Agoric's](https://agoric.com/)
-[current implementation](https://github.com/Agoric/agoric-sdk/tree/master/packages/captp),
+[current implementation](https://github.com/endojs/endo/tree/master/packages/captp),
 and [Spritely's](https://spritelyproject.org/)
 [Goblins implementation](https://docs.racket-lang.org/goblins/index.html).
 We are hoping to unify our work in the OCapN project.
