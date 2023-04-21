@@ -379,7 +379,7 @@ This operation is used when a new connection is initiated over CapTP. Both
 parties MUST send upon a new connection. The operation looks like this:
 
 ```text
-<op:start-session [captp-version              ; Floating point value
+<op:start-session [captp-version              ; String value
                    session-pubkey             ; CapTP public key value
                    acceptable-location        ; OCapN Reference type
                    acceptable-location-sig]>  ; CapTP signature
