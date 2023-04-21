@@ -149,7 +149,7 @@ There is also a "promise resolver" object which is used to provide the promise a
 value or break on an error. The resolver object has two methods:
 
 - `fulfill`: Provide the promise with its resolved values (success case)
-- `break`: Breaks them promise (usually due to an error)
+- `break`: Breaks the promise (usually due to an error)
 
 ### `fulfill`
 
@@ -174,10 +174,10 @@ relevant sealers/unsealers can safely decode them.
 
 When an [`op:deliver`](#op-deliver) message is sent and a result is pending, it
 is often desirable to use this result. One way to do this would be to wait until
-the promise has been resolved and then sent the next message to the result.
-While this approach can be taken within OCapN, but promise pipelining is
-preferred. When a message is sent with an `answer-pos` specified, the promise on
-the remote session can then be referenced and messaged with the
+the promise has been resolved and then send the next message to the result.
+While this approach can be taken within OCapN, promise pipelining is preferred.
+When a message is sent with an `answer-pos` specified, the promise on the remote
+session can then be referenced and messaged with the
 [`desc:answer`](#desc-answer) descriptor. When the result is ready, messages
 sent to this promise will have them delivered to the result.
 
@@ -206,10 +206,10 @@ The messages delivered are as follows:
 In this way, it is not necessary to wait to dispatch messages until the promise
 has been resolved. Messages can just be sent in advance to a promise of the
 eventual object as they normally would to its eventual resolution. This also
-improves efficiency by reducing the number of round trips needed to taken to
-perform the same task. Take the above example of a car factory which produces a
-car, the car then can be driven which will produce a noise. Without promise
-pipelining this would look something like this:
+improves efficiency by reducing the number of round trips needed to perform the
+same task. Take the above example of a car factory which produces a car, the car
+then can be driven which will produce a noise. Without promise pipelining this
+would look something like this:
 
 1.  Send message to create car factory
 2.  Get back a reference to the car factory once it is made
@@ -250,7 +250,7 @@ the Ed25519 elliptic curve. The public key is formatted as follows:
 (public-key (ecc (curve Ed25519) (flags eddsa) (q ...) (s ...)))
 ```
 
-Everything exception the `...` must be verbatim. The `...` is replaced by Binary
+Everything except the `...` must be verbatim. The `...` is replaced by Binary
 Data typed values representing the public key.
 
 ## [Signature](#signature)
@@ -286,7 +286,7 @@ Third party handoffs define three roles:
 
 ## Handoffs from the Gifter's prespective
 
-When a message is sent over CapTP boundary that includes a reference to an
+When a message is sent over a CapTP boundary that includes a reference to an
 imported object from a different session, a handoff MUST occur. The handoff is
 initated by the gifter doing two things:
 
@@ -359,12 +359,12 @@ The exporter performs the following:
 1.  MUST verify the `desc:handoff-receive` (see `desc:handoff-receive` section).
     If it is incorrect, abort the handoff; otherwise, continue.
 3.  If the gift has already been deposited return the gift; otherwise return the
-    gift, when is received.
+    gift when it is received.
 
 Note: Gifts are per-session. This means that gifts deposited within the `Gifter
 <-> Exporter` session should only be available for withdrawal within the
 `Receiver <-> Exporter session`. The receiver should be the only party able to
-withdraw the gift left by the gifter. Implementers should ensure that the
+withdraw the gift left by the gifter. Implementers MUST ensure that the
 management of gifts adheres to this per-session requirement, preventing
 unauthorized access to gifts.
 
@@ -372,7 +372,7 @@ unauthorized access to gifts.
 
 ## [`op:start-session`](#op-start-session)
 
-On a new connection a key-pair for this session should be generated. This
+On a new connection, a key-pair for this session should be generated. This
 key-pair should be an EdDSA key-pair with a SHA512 hash.
 
 This operation is used when a new connection is initiated over CapTP. Both
@@ -446,7 +446,7 @@ correspond an object which exists in this session. The result will be the object
 which corresponds to this `swiss-number` or an error if the object does not
 exist or a swiss number was not provided.
 
-Here is an example of how to use this method is:
+An example of how to use this method is:
 
 ```text
 <op:deliver <desc:export 0>          ; Remote bootstrap object
@@ -535,7 +535,7 @@ resolution of the promise.
 ### Sending
 
 When sending a message which expects a result, a promise should be generated on
-the side which is sending the `op:deliver-only`. This promise should be provided
+the side which is sending the `op:deliver`. This promise should be provided
 to the object sending this message. See the [promises section](#promises) for
 more information.
 
