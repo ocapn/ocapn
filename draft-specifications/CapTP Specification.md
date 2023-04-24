@@ -26,7 +26,7 @@ CapTP offers several valuable features, including:
 - Secure third-party handoffs, even when messages are published.
 
 CapTP is built upon the foundation of the actor model, where each actor is
-referred to as an object. An actor model is system where objects pass messages
+referred to as an object. An actor model is a system where objects pass messages
 between one another. CapTP enables objects to have remote references to other
 objects on other CapTP sessions, often on different machines across the network.
 An object with a reference to another object can use it by sending a message or
@@ -85,7 +85,7 @@ This is out of scope for this specification but it's covered by the OCapN
 Netlayers specification. Once a secure channel is established, we MUST to
 perform the following in this order:
 
-1.  Create a per-session cryptography key-pair (see
+1.  Create a per-session cryptography key pair (see
     [Cryptography](#cryptography))
 2.  Send a [`op:start-session`](#op-start-session) message
 3.  Receive and verify the remote party's
@@ -342,7 +342,7 @@ should be taken:
 
 The specifics of constructing the `desc:handoff-receive` message are specified
 in the [desc:handoff-receive](#desc-handoff-receive) section. Once constructed,
-you MUST send the `desc:handoff-receive` with a `op:deliver` message. The
+you MUST send the `desc:handoff-receive` with an `op:deliver` message. The
 promise created by sending the message SHOULD resolve to the deposited gift,
 provided no error has occured during the handoff process.
 
@@ -372,8 +372,8 @@ unauthorized access to gifts.
 
 ## [`op:start-session`](#op-start-session)
 
-On a new connection, a key-pair for this session should be generated. This
-key-pair should be an EdDSA key-pair with a SHA512 hash.
+On a new connection, a key pair for this session should be generated. This
+key pair should be an EdDSA key pair with a SHA512 hash.
 
 This operation is used when a new connection is initiated over CapTP. Both
 parties MUST send upon a new connection. The operation looks like this:
@@ -573,7 +573,7 @@ promise.
 
 ### Receiving
 The message should be delivered to the object referenced by `to-desc` with the
-arguments specified in `args`. As the message is a `op:deliver`, the sender is
+arguments specified in `args`. As the message is an `op:deliver`, the sender is
 expecting a result. This result should be delivered to the object specified by
 `resolve-me-desc` when available.
 
@@ -624,7 +624,7 @@ the `selected-value-pos` is out of bounds, the promise should break.
 ## [`op:abort`](#op-abort)
 
 This is used to abort a CapTP session, when this is sent the connection should
-be severed and any per session information (e.g. session key-pair, etc.) should
+be severed and any per session information (e.g. session key pair, etc.) should
 be removed.
 
 The `op:abort` message is:
@@ -671,7 +671,7 @@ been sent. Each time a reference is sent, the count MUST be incremented (the
 first time it is sent, the reference count should be set to 1). When the
 reference count reaches 0, the object can be garbage collected.
 
-The reference count is decremented when the other side sends a `op:gc-export`
+The reference count is decremented when the other side sends an `op:gc-export`
 message. The `wire-delta` value should be subtracted from the reference count.
 Each time the remote session no longer needs the reference, it should send an
 `op:gc-export` message with a `wire-delta` that reflects the number of
@@ -689,7 +689,7 @@ The message looks like:
 When a [`op:deliver`](#op-deliver) is send with an `answer-pos` for use with
 promise pipelining. The receiver will create a promise at the answer position.
 The receiver needs to know when it's able to garbage collect this promise. This
-is done by sending a `op:gc-answer` message. The `answer-pos` in this message
+is done by sending an `op:gc-answer` message. The `answer-pos` in this message
 MUST correspond to the `answer-pos` in the [`op:deliver`](#op-deliver) message,
 that you are no longer interested in.
 
@@ -778,7 +778,7 @@ You should have an overview of handoffs before reading this section, please read
 the [Third Party Handoffs section](#third-party-handoffs) first.
 
 This certificate is provided by the gifter to the exporter, the exporter then
-create a `desc:handoff-receive` which includes this `desc:handoff-give`
+creates a `desc:handoff-receive` which includes this `desc:handoff-give`
 certificate. The point of this certificate is to provide the exporter some
 crucial information that it needs to check the `desc:handoff-receive` message.
 
