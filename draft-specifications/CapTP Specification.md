@@ -1,9 +1,11 @@
-# Status of This Document
+# Warning: This is a draft specification likely to undergo significant change
 
-This is a draft specification, created by the
-[OCapN](https://github.com/ocapn/ocapn) pre-standardization group. This draft is
-subject to change with the work of the group; if you're interested in being part
-of that work, please join!
+This draft specification has been initially written based on Spritely Goblin's
+implementation of CapTP as a base for the
+[OCapN pre-standardization group](https://ocapn.org) to work from. Over
+time this document will change, likely significantly as the group converges on
+the design of CapTP. If you're interested in being part of that work, please
+join!
 
 Authors: Jessica Tallon, Christine Lemmer-Webber, Mark Miller & The OCapN
 Pre-standardization Group.
