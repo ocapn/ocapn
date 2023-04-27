@@ -14,8 +14,8 @@ Capability Transport Protocol (CapTP) is a secure messaging protocol designed
 for communication between objects in distributed systems across networks. By
 utilizing a capability security model, CapTP ensures both security and
 functionality without compromise. In this model, an object can use a reference
-(capability) if (and only if) it possesses a reference to one. In other words,
-"if you don't have it, you can't use it."
+to another object (capability) if (and only if) it possesses a reference to it.
+In other words, "if you don't have it, you can't use it."
 
 CapTP offers several valuable features, including:
 
@@ -23,19 +23,19 @@ CapTP offers several valuable features, including:
   resolution.
 - Error propagation across the network.
 - Distributed garbage collection.
-- Secure third-party handoffs, even when messages are published.
+- Secure third-party handoffs, even when CapTP messages are not kept secret.
 
 CapTP is built upon the foundation of the actor model, where each actor is
 referred to as an object. An actor model is a system where objects pass messages
 between one another. CapTP enables objects to have remote references to other
 objects on other CapTP sessions, often on different machines across the network.
 An object with a reference to another object can use it by sending a message or
-sharing the reference in a message to other objects it has references to.
+sharing a reference to it in a message to another object.
 
 With the right tooling, many programming languages implementing CapTP can
 achieve the same semantics of asynchronous programming for invoking both local
-and remote objects, allowing programmers to focus on code flow over networking
-infrastructure.
+and remote objects, allowing programmers to focus on code flow rather than
+networking infrastructure.
 
 # Additional Documents
 
@@ -44,8 +44,8 @@ which together build up OCapN (Object Capability Network) specifications.
 
 This specification uses the following other specifications:
 
--   [Syrup](): A serialization format which all correspondences are serialized
-    to and from when crossing a CapTP boundary.
+-   [Syrup](): The serialization format used for all messages between actors
+    seperated by a CapTP boundary.
 -   [OCapN Netlayers](): Specification to open a secure communication channel
     between two sessions, often on different networks.
 -   [OCapN Locators](): Specification covers representation of object references
@@ -178,8 +178,8 @@ the promise has been resolved and then send the next message to the result.
 While this approach can be taken within OCapN, promise pipelining is preferred.
 When a message is sent with an `answer-pos` specified, the promise on the remote
 session can then be referenced and messaged with the
-[`desc:answer`](#desc-answer) descriptor. When the result is ready, messages
-sent to this promise will have them delivered to the result.
+[`desc:answer`](#desc-answer) descriptor. When a promise is fulfilled to an
+object, messages sent to the promise will be delivered to that object.
 
 If the answer contains multiple values, the [`op:pick`](#op-pick) operator
 MUST be used to choose the value to be pipelined on. This works by exporting the
@@ -262,7 +262,7 @@ signature scheme. The formatted signature s-expression follows this structure:
 (sig-val (eddsa (r ...) (s ...)))
 ```
 
-Everything exception the `...` must be verbatim. The `...` is replaced by Binary
+Everything except the `...` must be verbatim. The `...` is replaced by Binary
 Data typed values representing the signature.
 
 # [Third Party Handoffs](#third-party-handoffs)
@@ -272,7 +272,7 @@ contains a reference to an object that has been imported from a different CapTP
 session. This ability to include remote references to objects is a crucial part
 of CapTP as it enables objects to use any references they hold in any context.
 
-The third party handoffs specified here ensures this can be done in a secure
+The third party handoffs specified here ensure this can be done in a secure
 fashion, even if the messages are viewed by a malicious actor.
 
 Third party handoffs define three roles:
@@ -284,7 +284,7 @@ Third party handoffs define three roles:
 -   **Exporter**: The session exporting the `desc:import-object` or
     `desc:import-promise`
 
-## Handoffs from the Gifter's prespective
+## Handoffs from the Gifter's perspective
 
 When a message is sent over a CapTP boundary that includes a reference to an
 imported object from a different session, a handoff MUST occur. The handoff is
