@@ -103,7 +103,7 @@ objects.
 ## Sending and receiving messages
 
 When an object sends a message to another object across a CapTP boundary, it
-either expects a reply or not. If the object expects a reply a
+either expects a reply or not. If the object expects a reply, a
 [promise](#promises) is created to represent the reply. To do this, we send a
 [`op:deliver`](#op-deliver) message. If the message is delivered without
 importing an answer, this is an [`op:deliver-only`](#op-deliver-only) message.
@@ -494,8 +494,8 @@ Here is an example of how to use this method:
             [withdraw-gift            ; Argument 1: Symbol "withdraw-gift"
              <desc:handoff-receive>]  ; Argument 2: desc:handoff-receive
             1                         ; Positive integer
-            <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift. 
-``` 
+            <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift.
+```
 
 ## [`op:deliver-only`](#op-deliver-only)
 
@@ -688,12 +688,15 @@ The message looks like:
 
 ## [`op:gc-answer`](#op-gc-answer)
 
-When a [`op:deliver`](#op-deliver) is send with an `answer-pos` for use with
+When a [`op:deliver`](#op-deliver) is sent with an `answer-pos` for use with
 promise pipelining. The receiver will create a promise at the answer position.
 The receiver needs to know when it's able to garbage collect this promise. This
 is done by sending an `op:gc-answer` message. The `answer-pos` in this message
 MUST correspond to the `answer-pos` in the [`op:deliver`](#op-deliver) message,
 that you are no longer interested in.
+
+Once the `answer-pos` has been GC'd through sending the `op:gc-answer`
+operation, the `answer-pos` can be re-used.
 
 ```text
 <op:gc-answer answer-pos>  ; answer-pos: positive integer
@@ -706,7 +709,7 @@ importing and exporting objects. There had to be a choice if these actions
 should be described from the sender\'s or receiver's side, in this case we
 choose the receiver's side. This means if an object is exported from session A
 to session B, session A sends a `desc:import-object` as session A is describing
-it from B's prospective.
+it from B's perspective.
 
 ## [`desc:import-object`](#desc-import-object)
 
@@ -764,7 +767,8 @@ The process of generating this is:
 
 1.  Fully serialize to Syrup octets a CapTP object.
 2.  Sign the result of step 1 using the private key.
-3.  Create a `desc:sig-envelope` with the CapTP object and signature.
+3.  Create a `desc:sig-envelope` with the (original, unserialized) CapTP object
+    and signature.
 
 ```text
 <desc:sig-envelope signed      ; captp-object
@@ -773,6 +777,11 @@ The process of generating this is:
 
 When this is received, the signature must be valid using the corresponding
 public key. If the signature is not valid, the operation should be aborted.
+
+NOTE: The value of `signed` should be the object itself (opposed to the binary
+data produced via serialization in step 1).  Syrup itself provides
+canonicalization, which allows for serialization to always produce the same
+result.
 
 ## [`desc:handoff-give`](#desc-handoff-give)
 
@@ -846,7 +855,7 @@ This message MUST always be encapsulated in a
     exporter` session.
 2.  `receiving-side` This is the receiver's public key `receiver <-> exporter`
     session.
-3.  `handoff-count` This is a positive integer which MUST be not have been used
+3.  `handoff-count` This is a positive integer which MUST not have been used
     already in this CapTP session.
 4.  `signed-give` This is the `desc:handoff-give` that is encapsulated in the
     `desc:sig-envelope` from the gifter.
