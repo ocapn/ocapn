@@ -56,9 +56,12 @@ This specification uses the following other specifications:
 # CapTP Overview
 
 CapTP supports many features, as described in the [Introduction](#introduction)
-section. It can, however, be broken down into the life cycle of a CapTP session.
-A session is between two entities which are communicating via CapTP through a
-OCapN Netlayer's channel. A CapTP life cycle consists of the following stages:
+section. Many different things can happen within a CapTP session, with a session
+being two entities communicating over CapTP through a  a reliable, in-order
+channel called a OCapN Netlayer. These specifics of the Netlayers are specified
+in the OCapN Netlayer specification.
+
+Here's an overview of some things which may occur during a CapTP session:
 
 1. A session is established pairwise between machines.
 2. Communication occurs between objects.
