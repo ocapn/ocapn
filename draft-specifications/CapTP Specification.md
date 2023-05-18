@@ -94,7 +94,7 @@ perform the following in this order:
     [Cryptography](#cryptography))
 2.  Send a [`op:start-session`](#op-start-session) message
 3.  Receive and verify the remote party's
-    [`op:start-session`](#op-start-session) (including dialback verification)
+    [`op:start-session`](#op-start-session)
 5.  Send a [`op:bootstrap`](#op-bootstrap) to import their bootstrap object
 
 (**NOTE:** The `op:bootstrap` is likely to be deprecated soon.)
@@ -648,8 +648,18 @@ The `op:listen` message is:
 
 ```text
 <op:listen to-desc           ; desc:export | desc:answer
-           listen-desc>      ; desc:import-object
+           listen-desc       ; desc:import-object
+           wants-partial?    ; boolean
 ```
+
+The `wants-partial?` flag indicates if a "partial" update should be provided as
+the notification when the promise resolves. If `wants-partial?` is false and the
+promise resolves to another promise, a notification to the `listen-desc` is not
+sent. A notification is only ever sent to the `listen-desc` when the promise
+resolves to a non-promise value, or breaks. If `wants-partial?` is true, a
+notification on any resolution, including a promise. In the case it does notify
+on a promise the listen is considered complete, if future notifications are
+desired, further `op:listen` operations should be sent to the promises.
 
 ### Sending
 
