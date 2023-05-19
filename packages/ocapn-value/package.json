@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "cbor": "^9.0.0"
+  }
+}
