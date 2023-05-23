@@ -16,7 +16,7 @@ Capability Transport Protocol (CapTP) is a secure messaging protocol designed
 for communication between objects in distributed systems across networks. By
 utilizing a capability security model, CapTP ensures both security and
 functionality without compromise. In this model, an object can use a reference
-to another object (capability) if (and only if) it possesses a reference to it.
+to another object (capability) if and only if it possesses a reference to it.
 In other words, "if you don't have it, you can't use it."
 
 CapTP offers several valuable features, including:
@@ -31,8 +31,9 @@ CapTP is built upon the foundation of the actor model, where each actor is
 referred to as an object. An actor model is a system where objects pass messages
 between one another. CapTP enables objects to have remote references to other
 objects on other CapTP sessions, often on different machines across the network.
-An object with a reference to another object can use it by sending a message or
-sharing a reference to it in a message to another object.
+An object Alice with a reference to another object Bob can use that reference by
+sending a message to Bob or by sharing the reference to Bob in a message to
+another object.
 
 With the right tooling, many programming languages implementing CapTP can
 achieve the same semantics of asynchronous programming for invoking both local
@@ -51,15 +52,13 @@ This specification uses the following other specifications:
 -   [OCapN Netlayers](): Specification to open a secure communication channel
     between two sessions, often on different networks.
 -   [OCapN Locators](): Specification covers representation of object references
-    for both in band and out of band usage.
+    for both in-band and out-of-band usage.
 
 # CapTP Overview
 
-CapTP supports many features, as described in the [Introduction](#introduction)
-section. Many different things can happen within a CapTP session, with a session
-being two entities communicating over CapTP through a  a reliable, in-order
-channel called a OCapN Netlayer. These specifics of the Netlayers are specified
-in the OCapN Netlayer specification.
+A CapTP session consists of two entities exchanging CapTP messages over a
+reliable, in-order OCapN Netlayer channel (details of which are specified in the
+OCapN Netlayer specification).
 
 Here's an overview of some things which may occur during a CapTP session:
 
@@ -73,7 +72,7 @@ Here's an overview of some things which may occur during a CapTP session:
     -   Messages may be pipelined to promises, queueing those messages to
         eventually be delivered to their resolution.
     -   Handoffs are initiated when sending a message with a reference to an
-        object on a third CapTP session.
+        object outside of the CapTP session.
     -   Both parties cooperate to free object references which are recognized to
         no longer be needed to be imported from one side.
 5.  A session ends.
@@ -679,12 +678,13 @@ fulfilled or broken.
 
 ## [`op:gc-export`](#op-gc-export)
 
-When a reference is given out to another CapTP session, the reference must be
-kept valid until the other session is done with it. This is achieved by
-reference counting the object with respect to how many times a reference has
-been sent. Each time a reference is sent, the count MUST be incremented (the
-first time it is sent, the reference count should be set to 1). When the
-reference count reaches 0, the object can be garbage collected.
+When a reference is given out over CapTP, the reference must be kept
+valid until the other party within a session is done with it. This is
+achieved by reference counting the object with respect to how many
+times a reference has been sent. Each time a reference is sent, the
+count MUST be incremented (the first time it is sent, the reference
+count should be set to 1). When the reference count reaches 0, the
+object can be garbage collected.
 
 The reference count is decremented when the other side sends an `op:gc-export`
 message. The `wire-delta` value should be subtracted from the reference count.
@@ -719,10 +719,10 @@ operation, the `answer-pos` can be re-used.
 
 Several operations (e.g. `desc:import-object` and `desc:export`) are describing
 importing and exporting objects. There had to be a choice if these actions
-should be described from the sender\'s or receiver's side, in this case we
-choose the receiver's side. This means if an object is exported from session A
-to session B, session A sends a `desc:import-object` as session A is describing
-it from B's perspective.
+should be described from the sender's or receiver's side, in this case we
+choose the receiver's side. This means if an object is exported from
+Alice to Bob, Alice sends a `desc:import-object` as Alice is describing
+it from Bob's perspective.
 
 ## [`desc:import-object`](#desc-import-object)
 
@@ -739,7 +739,8 @@ specific object.
 
 When a promise is exported over a CapTP boundary is it described with a
 `desc:import-promise` message. This message contains a positive integer which is
-unique to this CapTP session and refers to this specific promise.
+unique to the exporting party within the CapTP session and refers to
+this specific promise.
 
 ```text
 <desc:import-promise position>  ; position: positive integer
@@ -778,7 +779,7 @@ created on the binary data of the serialized CapTP object in the `signed` field.
 
 The process of generating this is:
 
-1.  Fully serialize to Syrup octets a CapTP object.
+1.  Fully serialize to a CapTP object to Syrup octets.
 2.  Sign the result of step 1 using the private key.
 3.  Create a `desc:sig-envelope` with the (original, unserialized) CapTP object
     and signature.
