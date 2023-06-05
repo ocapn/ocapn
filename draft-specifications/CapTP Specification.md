@@ -15,9 +15,9 @@ Pre-standardization Group.
 Capability Transport Protocol (CapTP) is a secure messaging protocol designed
 for communication between objects in distributed systems across networks. By
 utilizing a capability security model, CapTP ensures both security and
-functionality without compromise. In this model, an object can use a reference
-to another object (capability) if and only if it possesses a reference to it.
-In other words, "if you don't have it, you can't use it."
+functionality without compromise. In this model, an object can use
+another object (capability) if and only if it possesses a reference to
+it. In other words, "if you don't have it, you can't use it."
 
 CapTP offers several valuable features, including:
 
@@ -74,7 +74,7 @@ Here's an overview of some things which may occur during a CapTP session:
     -   Handoffs are initiated when sending a message with a reference to an
         object outside of the CapTP session.
     -   Both parties cooperate to free object references which are recognized to
-        no longer be needed to be imported from one side.
+        no longer be needed on at least one side
 5.  A session ends.
 
 ## Establishing a connection
@@ -119,40 +119,42 @@ It is conventional, but not required, that some objects may offer different
 behavior depending on a "method". The method is conventionally a symbol whose
 value is the name of the method/behavior. This symbol is the first argument in a
 message, and the remaining arguments are the message sent to that behavior. This
-convention is followed for the CapTP bootstrap object & promises.
+convention is followed for the CapTP bootstrap object and for promises.
 
 ## Ending a session
 
-Finally, a session may end due to an error occuring that could not be continued
-from or because either side wishes to end the session. Both situations are
-covered by the [`op:abort`](#op-abort) message. When this is received the
-session should be severed and unresolved promises broken.
+Finally, a session may end due to an unrecoverable error or because
+either side wishes to end it. Both situations are covered by the
+[`op:abort`](#op-abort) message. When this is received the session
+should be severed and unresolved promises broken.
 
 # Promises
 
 Promises are a key part of CapTP. They are used to represent a value which is
-not yet known. They can be fullfilled with a value (including another promise),
+not yet known. They can be fulfilled with a value (including another promise),
 or break with an error.
 
-Promises are often created by sending an `op:deliver` message, where a promise
-is created for the value of the response. They can be chained together
-in what is called [Promise Pipelining](#promise-pipelining), whereby messages
-are sent to the promise which should be delivered if promise is fulfills to
-a value (opposed to breaking with an error).
+Promises are often created by sending an `op:deliver` message, where they
+represent the eventual value of the response. They can be chained together in
+what is called [Promise Pipelining](#promise-pipelining), whereby messages are
+sent to the promise which should be delivered to its resolution value if it is
+fulfilled with a single (as opposed to breaking with an error, or fulfilled with
+multiple values).
 
 ## [Promise and Resolver Objects](#promise-objects)
 
 Promises work like regular objects in CapTP. Promises come as a pair, there is a
 "promise" object which represents a value and may eventually resolve to either a
-value or object reference or may break, either explicitly, implicitly through
-error handling, or via network partition.
+value or object reference, or may break by either explicit instruction or by
+implicit error propagation or network partition.
 
 Messages can be sent to a promise as if it were the resolved object. These sent
 messages will be relayed to the eventual object if it is `fulfill`ed to one.
-There is also a "promise resolver" object which is used to provide the promise a
-value or break on an error. The resolver object has two methods:
+There is also a "promise resolver" object which is used to provide the promise
+one or more fulfillment values or a break reason. The resolver object has two
+methods:
 
-- `fulfill`: Provide the promise with its resolved values (success case)
+- `fulfill`: Provide the promise with its fulfillment values (success case)
 - `break`: Breaks the promise (usually due to an error)
 
 ### `fulfill`
@@ -296,10 +298,13 @@ When a message is sent over a CapTP boundary that includes a reference to an
 imported object from a different session, a handoff MUST occur. The handoff is
 initated by the gifter doing two things:
 
--   Depositing a "gift" to the exporter's bootstrap object.
--   Creating and sending a [`desc:handoff-give`](#desc-handoff-give) replacing the
-    the reference to the remote object being gifted in the message to the receiver
-    [bootstrap object](#bootstrap-object).
+-  Depositing a "gift" to the exporter's bootstrap object.
+
+and:
+1.  Creating and sending a [`desc:handoff-give`](#desc-handoff-give)
+2.  Signing the `desc:handoff-give` and wrapping it within a `desc:sig-envolope`
+3.  Replace the reference to the remote object being gifted in the message to be
+    the signed handoff give in step 2
 
 ### [Depositing the gift](#depositing-the-gift)
 
@@ -330,7 +335,7 @@ This is an example of how the message would look like:
 This MUST use the same gift ID (`gift-id`) as used in the [Depositing the
 gift](#depositing-the-gift) operation. Instead of including the
 `desc:import-object` or `desc:import-promise` of the object in the message,
-replace it with the `desc:handoff-give` created here.
+replace it with the signed `desc:handoff-give` created here.
 
 The specifics of `desc:handoff-give` creation is described in
 [`desc:handoff-give` section](#desc-handoff-give).
@@ -408,7 +413,7 @@ generated for this connection. This is serialized in accordance with
 [Cryptography](#cryptography).
 
 The `acceptable-location` is a OCapN Locator which represents the location where
-the session is accessable.
+the session is accessible.
 
 The `acceptable-location-sig` is the signature of the serialized
 `acceptable-location`. The signature is created using the private key from the
@@ -436,9 +441,9 @@ This operation requests the bootstrap object to be available at the specified
 ### The bootstrap Object
 
 The bootstrap object is responsible for providing access to local objects on the
-session. It has two different behaviors, these are selected using the
-conventional CapTP method mechanism of sending a symbol as the first argument,
-the following methods are available:
+session. It has three different behaviors, selected using the conventional CapTP
+method mechanism of sending a symbol as the first argument. The following
+methods are available:
 
 -   `fetch`
 -   `deposit-gift`
@@ -476,15 +481,15 @@ Here is an example of how to use this method:
 
 ```text
 <op:deliver-only <desc:export 0>                               ; Remote bootstrap object
-                  ['deposit-gift                               ; Argument 1: Symbol "deposit-gift"
+                 ['deposit-gift                                ; Argument 1: Symbol "deposit-gift"
                   gift-id                                      ; Argument 2: Positive integer or 0
-                  <desc:import-object | desc:import-promise>)> ; Argument 3
+                  <desc:import-object | desc:import-promise>]> ; Argument 3
 ```
 
 #### `withdraw-gift` Method
 
 This method is used to send the [`desc:handoff-receive`](#desc-handoff-receive)
-in order to receive a gift. It has one arguments:
+in order to receive a gift. It has one argument:
 
 - The `desc:handoff-receive`
 
@@ -497,7 +502,7 @@ Here is an example of how to use this method:
 <op:deliver <desc:export 0>           ; Remote bootstrap object
             [withdraw-gift            ; Argument 1: Symbol "withdraw-gift"
              <desc:handoff-receive>]  ; Argument 2: desc:handoff-receive
-            1                         ; Positive integer
+            1                         ; Answer position: Positive integer or false
             <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift.
 ```
 
@@ -586,7 +591,7 @@ expecting a result. This result should be delivered to the object specified by
 If `answer-pos` is a positive integer, then promise pipeling is used. In this
 case, a promise MUST be created and exported at the answer position specified by
 `answer-pos`. This promise MUST resolve to the result the object returns.
-Messages send to this promise MUST be delivered to the object when the promise
+Messages sent to this promise MUST be delivered to the object when the promise
 resolves (unless the promise breaks). This promise should remain available until
 the [`op:gc-answer`](#op-gc-answer) message is received. If the `answer-pos` is
 false, then promise pipelining is not used.
@@ -653,14 +658,14 @@ The `op:listen` message is:
            wants-partial?    ; boolean
 ```
 
-The `wants-partial?` flag indicates if a "partial" update should be provided as
-the notification when the promise resolves. If `wants-partial?` is false and the
-promise resolves to another promise, a notification to the `listen-desc` is not
-sent. A notification is only ever sent to the `listen-desc` when the promise
-resolves to a non-promise value, or breaks. If `wants-partial?` is true, a
-notification on any resolution, including a promise. In the case it does notify
-on a promise the listen is considered complete, if future notifications are
-desired, further `op:listen` operations should be sent to the promises.
+The `wants-partial` flag indicates if a "partial" update should be provided as
+the notification to `listen-desc` when the promise resolves to another promise.
+If `wants-partial` is false, a notification is sent only when the promise
+resolves to a non-promise value or breaks (i.e., not when it resolves to another
+promise). If `wants-partial` is true, a notification is sent for any resolution,
+including to another promise. Any notification is considered to conclude the
+`op:listen` interaction, and if future notifications are desired (e.g., after a
+partial notification) then further `op:listen` operations should be sent.
 
 ### Sending
 
@@ -829,22 +834,28 @@ This message MUST always be encapsulated in a
     <-> Receiver` session.
 2.  `exporter-location` This is the OCapN URI of the exporter.
 3.  `session` This is the session ID for the `Gifter <-> Exporter` session.
-4.  `gifter-side` This is the gifter's per-session public key in the `Gifter <->
-    Exporter` session.
+4.  `gifter-side` This is a value derived from the per session public key of one
+    side within a session. The process of calculating this is described below.
 5.  `gift-id` This is the gift ID that is generated by the Gifter that the
     `desc:export` will be deposited at. This `gift-id` MUST be unique for gifts
     deposited on the exporter by the gifter (i.e. per session).
 
+The `gifter-side` should be the ID of the side within the session which is the
+gifter, this can be created by doing the following:
+
+1. Serialize to Syrup the per session public key of the side in question
+2. SHA256 hash of the result produced in step 1.
+3. SHA256 hash of the result produced in step 2.
+
 The Session ID which is used both here and in the `desc:handoff-receive` is
 created by the following:
 
-1. SHA256 hash of the Syrup serialized session-key of both sides
-2. SHA256 hash of the hashed session-keys in step 1.
-3. Sort them based on the resulting octets
-4. Concatinating them in the order from number 3
-5. Append the string "prot0" to the beginning
-6. SHA256 hash the resulting string, this is the `session-ID`
-7. SHA256 hash of the result produced in step 6.
+1. Calculate the ID of each side using the process described above.
+2. Sort both IDs based on the resulting octets
+3. Concatinating them in the order from number 3
+4. Append the string "prot0" to the beginning
+5. SHA256 hash the resulting string, this is the `session-ID`
+6. SHA256 hash of the result produced in step 6.
 
 ## [`desc:handoff-receive`](#desc-handoff-receive)
 
