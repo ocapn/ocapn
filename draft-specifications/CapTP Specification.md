@@ -48,7 +48,7 @@ which together build up OCapN (Object Capability Network) specifications.
 This specification uses the following other specifications:
 
 -   [Syrup](): The serialization format used for all messages between actors
-    seperated by a CapTP boundary.
+    separated by a CapTP boundary.
 -   [OCapN Netlayers](): Specification to open a secure communication channel
     between two sessions, often on different networks.
 -   [OCapN Locators](): Specification covers representation of object references
