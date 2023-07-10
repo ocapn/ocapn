@@ -383,10 +383,10 @@ This operation is used when a new connection is initiated over CapTP. Both
 parties MUST send upon a new connection. The operation looks like this:
 
 ```text
-<op:start-session [captp-version              ; String value
-                   session-pubkey             ; CapTP public key value
-                   acceptable-location        ; OCapN Reference type
-                   acceptable-location-sig]>  ; CapTP signature
+<op:start-session captp-version             ; String value
+                  session-pubkey            ; CapTP public key value
+                  acceptable-location       ; OCapN Reference type
+                  acceptable-location-sig>  ; CapTP signature
 ```
 
 It's important that we only have one bidirectional connection between a CapTP
@@ -427,8 +427,8 @@ This operation requests the bootstrap object to be available at the specified
 `answer-position`. The message looks like:
 
 ```text
-<op:bootstrap [answer-position    ; positive integer or 0
-               resolve-me-desc]>  ; desc:import-object | desc:import-promise
+<op:bootstrap answer-position   ; positive integer or 0
+              resolve-me-desc>  ; desc:import-object | desc:import-promise
 ```
 
 ### The bootstrap Object
@@ -507,8 +507,8 @@ from the receiving object.
 The `op:deliver-only` message is:
 
 ```text
-<op:deliver-only [to-desc   ; desc:export
-                  args]>    ; Sequence
+<op:deliver-only to-desc  ; desc:export
+                 args>    ; Sequence
 ```
 
 `to-desc` is a `desc:export` descriptor which corresponds to the object the
@@ -526,10 +526,10 @@ value which should be installed at the location specified in `answer-pos`. The
 `op:deliver` message is:
 
 ``` text
-<op:deliver [to-desc            ; desc:export
-             args               ; sequence
-             answer-pos         ; positive integer | false
-             resolve-me-desc]>  ; desc:import-object | desc:import-promise
+<op:deliver to-desc           ; desc:export
+            args              ; sequence
+            answer-pos        ; positive integer | false
+            resolve-me-desc>  ; desc:import-object | desc:import-promise
 ```
 
 The `resolve-me-desc` is a `desc:import-object` or `desc:import-promise` which
@@ -602,9 +602,9 @@ to that single value without an `op:pick` is also perfectly valid.
 
 The message looks like this:
 ```
-<op:pick  [<promise-pos>         ; <desc:answer | desc:import-promise>
-           <selected-value-pos>  ; Positive Integer
-           <new-answer-pos>]>    ; Positive Integer
+<op:pick <promise-pos>         ; <desc:answer | desc:import-promise>
+         <selected-value-pos>  ; Positive Integer
+         <new-answer-pos>>     ; Positive Integer
 ```
 
 ### Sending
@@ -695,8 +695,8 @@ references it has been given:
 The message looks like:
 
 ```text
-<op:gc-export [export-pos    ; positive integer
-               wire-delta]>  ; positive integer
+<op:gc-export export-pos   ; positive integer
+              wire-delta>  ; positive integer
 ```
 
 ## [`op:gc-answer`](#op-gc-answer)
