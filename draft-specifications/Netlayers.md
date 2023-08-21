@@ -96,6 +96,6 @@ service.
 - **hints**: Hints are not used, so this may be set to false/omitted.
 
 The "hidden service" facility is used to create a CapTP node. The hidden service
-should be hosted on the port `9050` and using "ED25519-V3" for the key type.
+should be hosted on the port `9045` and using "ED25519-V3" for the key type.
 Upon creation of a hidden service tor provides the "Service-ID", this must be
 supplied as the "designator" in the OCapN Node Locator.
