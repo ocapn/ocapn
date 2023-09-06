@@ -131,8 +131,9 @@ should be severed and unresolved promises broken.
 # Promises
 
 Promises are a key part of CapTP. They are used to represent a value which is
-not yet known. They can be fulfilled with a value (including another promise),
-or break with an error.
+not yet known. Promises without a value are said to be unresolved, they can
+become resolved by being `fulfill`ed with a value (including another promise),
+or broken (`break`) with an error.
 
 Promises are often created by sending an `op:deliver` message, where they
 represent the eventual value of the response. They can be chained together in
@@ -143,16 +144,26 @@ multiple values).
 
 ## [Promise and Resolver Objects](#promise-objects)
 
-Promises work like regular objects in CapTP. Promises come as a pair, there is a
-"promise" object which represents a value and may eventually resolve to either a
-value or object reference, or may break by either explicit instruction or by
-implicit error propagation or network partition.
+Promises work like regular objects in CapTP. Promises come as a pair:
 
-Messages can be sent to a promise as if it were the resolved object. These sent
-messages will be relayed to the eventual object if it is `fulfill`ed to one.
-There is also a "promise resolver" object which is used to provide the promise
-one or more fulfillment values or a break reason. The resolver object has two
-methods:
+- The promise object itself which represents a value.
+- The resolver object which is used to provide the promise with its resolved
+  value, or break it in the case of an error.
+
+ The promise object may eventually resolve to either a concrete value, object
+ reference, another promise (in the case of promise pipelining), or may break.
+ When a promise breaks its resolved with an error, breakages can be caused by
+ either explicit instruction, by implicit error propagation, or network
+ partition.
+
+Promises can be listened to with the [`op:listen`](#op-listen) operation, or
+messages can be sent to them as if it were the resolved object. The messages
+will be relayed to the eventual object if it is `fulfill`ed to one. If the
+promise instead `break`s and thus has no resolved object, messages cannot be
+delivered and promises created during the sending of those messages should also
+break.
+
+The behavor of the two messages on the resolver object are as follows:
 
 - `fulfill`: Provide the promise with its fulfillment values (success case)
 - `break`: Breaks the promise (usually due to an error)
