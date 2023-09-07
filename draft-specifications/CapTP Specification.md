@@ -426,10 +426,10 @@ generated for this connection. This is serialized in accordance with
 The `acceptable-location` is a OCapN Locator which represents the location where
 the session is accessible.
 
-The `acceptable-location-sig` is the signature of the serialized
-`acceptable-location`. The signature is created using the private key from the
-per-session key pair. This is serialized in accordance with
-[Cryptography](#cryptography).
+The `acceptable-location-sig` is a cryptographic signature of
+`acceptable-location`, wrapped with Syrup record with the label `my-location`.
+The signature is created using the private key from the per-session key pair.
+This is serialized in accordance with [Cryptography](#cryptography).
 
 ### Receiving
 
@@ -437,7 +437,8 @@ The `captp-version` MUST be equal to `1.0`. If the version does not match, the
 connection MUST be aborted.
 
 The `acceptable-location-sig` MUST be valid that the `session-pubkey` provided a
-valid signature of `acceptable-location`.
+valid signature of `acceptable-location` wrapped with the Syrup record with the
+label `my-location`.
 
 ## [`op:bootstrap`](#op-bootstrap)
 
