@@ -474,7 +474,7 @@ An example of how to use this method is:
 <op:deliver <desc:export 0>          ; Remote bootstrap object
             ['fetch                  ; Argument 1: Symbol "fetch"
              swiss-number]           ; Argument 2: Binary Data
-            3                        ; Answer position
+            3                        ; Answer position: positive integer
             <desc:import-object 5>>  ; object exported by us at position 5 should provide the answer
 ```
 
@@ -582,9 +582,9 @@ incremented as an incrementing integer, however provided the answer position is
 not in use, it is a valid answer position.
 
 This answer position is then referenced with a [`desc:answer`](#desc-answer)
-descriptor. Note that when the answer position is longer needed, it's important
-to notify the other side with a [`op:gc-answer`](#op-gc-answer) message (see
-section for details).
+descriptor. Note that when the answer position is no longer needed, it's
+important to notify the other side with a [`op:gc-answer`](#op-gc-answer)
+message (see section for details).
 
 If no promise pipelining is needed, this value should be false.
 
