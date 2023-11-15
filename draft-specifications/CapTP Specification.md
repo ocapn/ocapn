@@ -94,9 +94,7 @@ perform the following in this order:
 2.  Send a [`op:start-session`](#op-start-session) message
 3.  Receive and verify the remote party's
     [`op:start-session`](#op-start-session)
-5.  Send a [`op:bootstrap`](#op-bootstrap) to import their bootstrap object
-
-(**NOTE:** The `op:bootstrap` is likely to be deprecated soon.)
+4.  Export the bootstrap object at position `0`.
 
 Once these steps are successfully completed, the connection is considered
 established and set up, and can be used to send and receive messages with remote
@@ -372,6 +370,78 @@ withdraw the gift left by the gifter. Implementers MUST ensure that the
 management of gifts adheres to this per-session requirement, preventing
 unauthorized access to gifts.
 
+# [The bootstrap Object](#bootstrap-object)
+
+The bootstrap object is responsible for providing access to local objects on the
+session. It has two different behaviors, these are selected using the
+conventional CapTP method mechanism of sending a symbol as the first argument,
+the following methods are available:
+
+-   `fetch`
+-   `deposit-gift`
+-   `withdraw-gift`
+
+The bootstrap object MUST be exported on each newly initialized CapTP session at
+export position `0`. A session is considered initialized if both sides send and
+receive both [`op:start-session`](#op-start-session) messages.
+
+## `fetch` Method
+
+This method is used to fetch an object from the bootstrap object. To use it you
+need a `swiss-number` which is a Binary Data type. This swiss number should
+correspond an object which exists in this session. The result will be the object
+which corresponds to this `swiss-number` or an error if the object does not
+exist or a swiss number was not provided.
+
+An example of how to use this method is:
+
+```text
+<op:deliver <desc:export 0>          ; Remote bootstrap object
+            ['fetch                  ; Argument 1: Symbol "fetch"
+             swiss-number]           ; Argument 2: Binary Data
+            3                        ; Answer position
+            <desc:import-object 5>>  ; object exported by us at position 5 should provide the answer
+```
+
+## `deposit-gift` Method
+
+The deposit gift method is used in conjunction with sending a [Third Party
+Handoff](#third-party-handoffs). This method is used to deposit a gift which has
+been sent to the bootstrap object. It has two arguments:
+
+1.  A gift ID that is positive integer.
+2.  A `desc:import-object` or `desc:import-promise` which has been exported
+    within the given CapTP session.
+
+Here is an example of how to use this method:
+
+```text
+<op:deliver-only <desc:export 0>                               ; Remote bootstrap object
+                  ['deposit-gift                               ; Argument 1: Symbol "deposit-gift"
+                  gift-id                                      ; Argument 2: Positive integer or 0
+                  <desc:import-object | desc:import-promise>)> ; Argument 3
+```
+
+## `withdraw-gift` Method
+
+This method is used to send the [`desc:handoff-receive`](#desc-handoff-receive)
+in order to receive a gift. It has one arguments:
+
+- The `desc:handoff-receive`
+
+This should have been sent with the `op:deliver` operation, the response the
+bootstrap object should give is the gift which was (or will be) deposited.
+
+Here is an example of how to use this method:
+
+```text
+<op:deliver <desc:export 0>           ; Remote bootstrap object
+            [withdraw-gift            ; Argument 1: Symbol "withdraw-gift"
+             <desc:handoff-receive>]  ; Argument 2: desc:handoff-receive
+            1                         ; Positive integer
+            <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift.
+```
+
 # Operations
 
 ## [`op:start-session`](#op-start-session)
@@ -420,84 +490,6 @@ connection MUST be aborted.
 
 The `acceptable-location-sig` MUST be valid that the `session-pubkey` provided a
 valid signature of `acceptable-location`.
-
-## [`op:bootstrap`](#op-bootstrap)
-
-This operation requests the bootstrap object to be available at the specified
-`answer-position`. The message looks like:
-
-```text
-<op:bootstrap answer-position   ; positive integer or 0
-              resolve-me-desc>  ; desc:import-object | desc:import-promise
-```
-
-### The bootstrap Object
-
-The bootstrap object is responsible for providing access to local objects on the
-session. It has two different behaviors, these are selected using the
-conventional CapTP method mechanism of sending a symbol as the first argument,
-the following methods are available:
-
--   `fetch`
--   `deposit-gift`
--   `withdraw-gift`
-
-#### `fetch` Method
-
-This method is used to fetch an object from the bootstrap object. To use it you
-need a `swiss-number` which is a Binary Data type. This swiss number should
-correspond an object which exists in this session. The result will be the object
-which corresponds to this `swiss-number` or an error if the object does not
-exist or a swiss number was not provided.
-
-An example of how to use this method is:
-
-```text
-<op:deliver <desc:export 0>          ; Remote bootstrap object
-            ['fetch                  ; Argument 1: Symbol "fetch"
-             swiss-number]           ; Argument 2: Binary Data
-            3                        ; Answer position
-            <desc:import-object 5>>  ; object exported by us at position 5 should provide the answer
-```
-
-#### `deposit-gift` Method
-
-The deposit gift method is used in conjunction with sending a [Third Party
-Handoff](#third-party-handoffs). This method is used to deposit a gift which has
-been sent to the bootstrap object. It has two arguments:
-
-1.  A gift ID that is positive integer.
-2.  A `desc:import-object` or `desc:import-promise` which has been exported
-    within the given CapTP session.
-
-Here is an example of how to use this method:
-
-```text
-<op:deliver-only <desc:export 0>                               ; Remote bootstrap object
-                  ['deposit-gift                               ; Argument 1: Symbol "deposit-gift"
-                  gift-id                                      ; Argument 2: Positive integer or 0
-                  <desc:import-object | desc:import-promise>)> ; Argument 3
-```
-
-#### `withdraw-gift` Method
-
-This method is used to send the [`desc:handoff-receive`](#desc-handoff-receive)
-in order to receive a gift. It has one arguments:
-
-- The `desc:handoff-receive`
-
-This should have been sent with the `op:deliver` operation, the response the
-bootstrap object should give is the gift which was (or will be) deposited.
-
-Here is an example of how to use this method:
-
-```text
-<op:deliver <desc:export 0>           ; Remote bootstrap object
-            [withdraw-gift            ; Argument 1: Symbol "withdraw-gift"
-             <desc:handoff-receive>]  ; Argument 2: desc:handoff-receive
-            1                         ; Positive integer
-            <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift.
-```
 
 ## [`op:deliver-only`](#op-deliver-only)
 
@@ -734,6 +726,7 @@ specific object.
 <desc:import-object position>  ; position: positive integer
 ```
 
+Position `0` is reserved for the [bootstrap object](#bootstrap-object).
 
 ## [`desc:import-promise`](#desc-import-promise)
 
