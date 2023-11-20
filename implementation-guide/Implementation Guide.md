@@ -53,7 +53,7 @@ Alisha decides to implement the Tor Onion Services netlayer as a first step beca
 
 Once a new connection has been established by the netlayer, the netlayer hands the rest of the work over to the CapTP implementation to complete configuring an active session.
 
-CapTP needs to ensure that only a single active session exists between two nodes addressable on the network. This prevents unnecessarily opening many duplicate connections, permits reusing the same live object references when referring to the same live objects, and permits assertions that two objects same the same live reference identity.
+CapTP needs to ensure that only a single active session exists between two nodes addressable on the network. This prevents unnecessarily opening many duplicate connections, permits reusing the same live object references when referring to the same live objects, and permits assertions that two objects that have the same object identity also have same live reference identity.
 
 The first messages exchanged over a CapTP session are to initialize the CapTP session. This is done with the `op:start-session` message. The message is a record which has the following structure:
 
@@ -153,7 +153,7 @@ CapTP describes object across the network with descriptors, these descriptors in
 <desc:export position>
 ```
 
-To give an example of this, let's say there are two nodes, Node A with two objects Alisha and Arthur and Node B with Ben. Node B is exporting the object Ben at export position 3, when Node B refers to this reference, his node would use `<desc:export 3>`. Node A is importing this reference to Ben, and would reference Ben by using `<desc:import-object 3>`. Now If we imagine Alisha a reference to Arthur (who alives lives on Node A) with Ben within a message. This is done by Node A exporting this reference to node B so Ben can have this reference e.g.
+To give an example of this, let's say there are two nodes, Node A with two objects Alisha and Arthur and Node B with Ben. Node B is exporting the object Ben at export position 3, when Node B refers to this reference, his node would use `<desc:export 3>`. Node A is importing this reference to Ben, and would reference Ben by using `<desc:import-object 3>`. Now If we imagine Alisha sends a reference to Arthur (who lives on Node A) to Ben within a message. This is done by Node A exporting this reference to node B so Ben can have this reference e.g.
 
 ```
 <op:deliver-only <desc:import-object 3>> [<desc:export 4>]>
@@ -412,9 +412,9 @@ Alisha next needs to create the `desc:handoff-give` certificate which she can gi
                    gift-id>           ; Positive Integer or zero.
 ```
 
-This includes a lot of information, some of which comes from the Gifter's session with the Receiver and some of it comes from the Gifter's session with the Exporter. It's important to keep in mind when thinking about handoffs is that it does not rely on keeping secrets, all messages sent can be public while remaining secure and handoffs are capabilities which only allow the receiver to obtain a reference to the object that the gifter deposits. The burdon for checking the information within the certificates rests with the exporter since it is the Node which has the reference to provide.
+This includes a lot of information, some of which comes from the Gifter's session with the Receiver and some of it comes from the Gifter's session with the Exporter. It's important to keep in mind when thinking about handoffs is that it does not rely on keeping secrets, all messages sent can be public while remaining secure and handoffs are capabilities which only allow the receiver to obtain a reference to the object that the gifter deposits. The burden for checking the information within the certificates rests with the exporter since it is the Node which has the reference to provide.
 
-Alisha creates this certificate using the session information from both her sessions with Carol's Node and Ben's node. Once Alisha has the `desc:handoff-give` she signs it in a `desc:sig-envolope` with her node's private key from her session with Carol's Node (Node A's private key in the Node A <-> Node C session). It might seem unusual to sign this handoff give that's being sent to Ben's node with the key Alisha uses with Carol's Node, but we must remember it's Carol's node who must verify this signature and by doing this Node C is able to verify that it was in fact Alisha's Node which created this `desc:handoff-give`.
+Alisha creates this certificate using the session information from both her sessions with Carol's Node and Ben's node. Once Alisha has the `desc:handoff-give` she signs it in a `desc:sig-envelope` with her node's private key from her session with Carol's Node (Node A's private key in the Node A <-> Node C session). It might seem unusual to sign this handoff give that's being sent to Ben's node with the key Alisha uses with Carol's Node, but we must remember it's Carol's node who must verify this signature and by doing this Node C is able to verify that it was in fact Alisha's Node which created this `desc:handoff-give`.
 
 ### creating the `desc:handoff-receive` certificate
 
@@ -426,18 +426,18 @@ The receiver doesn't just get the `desc:handoff-give` and pass it along, it gene
 <desc:handoff-receive receiving-session  ; The ID of the receiver <-> exporter session
                       receiving-side     ; The public key of the receiver in the receiver <-> exporter session
                       handoff-count      ; positive integer
-                      signed-give>       ; desc:sig-envolope containing a desc:handoff-give received from the gifter
+                      signed-give>       ; desc:sig-envelope containing a desc:handoff-give received from the gifter
 ```
 
-We can see the receiver adds some information, but most of it is provided already by the gifter and is included by including that signed certificate along with the `desc:handoff-receive` in the `signed-give` field. One piece of information that's included here is the `handoff-count`, each session has an inrecementing integer starting at zero which reflects how many handoff-receive's they've sent in the session. They also include an integer which reflects how many handoff receive's they've received (with them being the exporter) within the session. This is used to prevent replay attacks, the exporter must only provide the reference once to prevent replay attacks. The last thing to note here is this is also wrapped in a `desc:sig-envolope` with a signature, but this signature is created with the receiver's private key in the gifter <-> receiver session. Again, this might seem a bit strange for two reasons:
+We can see the receiver adds some information, but most of it is provided already by the gifter and is included by including that signed certificate along with the `desc:handoff-receive` in the `signed-give` field. One piece of information that's included here is the `handoff-count`, each session has an inrecementing integer starting at zero which reflects how many handoff-receive's they've sent in the session. They also include an integer which reflects how many handoff receive's they've received (with them being the exporter) within the session. This is used to prevent replay attacks, the exporter must only provide the reference once to prevent replay attacks. The last thing to note here is this is also wrapped in a `desc:sig-envelope` with a signature, but this signature is created with the receiver's private key in the gifter <-> receiver session. Again, this might seem a bit strange for two reasons:
 
 1. Again, we're sending the `desc:handoff-receive` to the exporter but using a key from another session, the gifter <-> receiver session.
-2. Since these keys are per-session and generated anew on each new connection, the exporter normally would have now way to verify this signature. The gifter, however, included the receiver's public key they used within the `handoff-give` (the `receiver-key` field) that they signed. The exporter is able to extract this key from the `desc:handoff-give` and use it to verify the signature on the `handoff-receive` (more on this later in the document).
+2. Since these keys are per-session and generated anew on each new connection, the exporter normally would have no way to verify this signature. The gifter, however, included the receiver's public key they used within the `handoff-give` (the `receiver-key` field) that they signed. The exporter is able to extract this key from the `desc:handoff-give` and use it to verify the signature on the `handoff-receive` (more on this later in the document).
 
 Alisha so far has added to her implementation support to initiate handoffs when she's the Gifter, but she currently hasn't implemented handoffs when she's the receiver, it's important to support all aspects of handoffs so she begins adding support for creating the `desc:handoff-receive` too. Alisha adds both counters for the `handoff-count` and then adds to her implementation of receiving both `op:deliver` and `op:deliver-only` to peform handoffs when a message arrives with a signed `handoff-give` within it. When this exists Alisha replaces the reference she gives to her local objects with a promise that her node will fulfill once it has performed her role in the handoff. Alisha then checks if her node has a session with the node specified in the `exporter-location` location on the `desc:handoff-give`, if so she just uses that when sending her `desc:handoff-receive`, otherwise she creates a connection and new session with that node. Alisha then adds code to generate the `handoff-receive`, making sure to remember to implement her `handoff-count` counter and signs it sending it to the exporter's bootstrap object:
 
 ```
-<op:deliver <desc:export 0> ['withdraw-gift <desc:sig-envolope <desc:handoff-receive ...> <signature....>> #f <desc:import-object 1>
+<op:deliver <desc:export 0> ['withdraw-gift <desc:sig-envelope <desc:handoff-receive ...> <signature....>> #f <desc:import-object 1>
 ```
 
 In this case we're using the `op:deliver` operation as if this succeeds the exporter's bootstrap object will reply with the reference left by the gifter (in Ben's case a reference to the robot gallery).
@@ -520,7 +520,7 @@ Alisha then sends a message to Ben on node B, the message is following the CapTP
 ```
 <op:deliver-only (desc:export 5)
                  ['send-robot-photos
-                  (desc:sig-envolope
+                  (desc:sig-envelope
                     (desc:handoff-give
                       <Ben's public key for his session with Alisha>
                       (ocapn-node "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)
@@ -535,11 +535,11 @@ Ben's Node then gets the `op:deliver-only` message and then looks through the ar
 ```
 <op:deliver (desc:export 0)
             ['withdraw-gift
-             (desc:sig-envolope
+             (desc:sig-envelope
               (desc:handoff-receive
                 <ID of the newely created session Ben has with Carol>
                 0
-                (desc:sig-envolope
+                (desc:sig-envelope
                   (desc:handoff-give
                     <Ben's public key for his session with Alisha>
                     (ocapn-node "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)
@@ -551,7 +551,7 @@ Ben's Node then gets the `op:deliver-only` message and then looks through the ar
            #f
            <desc:import-object 1>>
 ```
-/If en had had a connection to Carol's Node, Node C, his Node would just have used that instead of creating a new one/
+/If Ben had had a connection to Carol's Node, Node C, his Node would just have used that instead of creating a new one/
 
 Carol's Node receives this message and delivers it to the bootstrap object which performs the following steps:
 
@@ -625,7 +625,7 @@ A node may contain one or more vats, but if more than one vat is contained on a 
 ;;;    approach though so usually it is.)
 ```
 
-The OCapN specifications leaves what happens after messages are delivered to the implementations and offers no opinions on what system might exist. OCapN has its roots in systems which implement an event loop called a *vat*. The vat has objects spawned in it and messages sent to these objects are queued up in a FIFO, the messages a delivered one at a time to the objects. Vats are transactional and if an error were to occur during message delivery, the transaction would be aborted leaving the vat in the prior state.
+The OCapN specifications leaves what happens after messages are delivered to the implementations and offers no opinions on what system might exist. OCapN has its roots in systems which implement an event loop and object heap called a *vat*. The vat has objects spawned within it and messages sent to these objects are queued up in a FIFO, the messages a delivered one at a time to the objects. Vats are transactional and if an error were to occur during message delivery, the transaction would be aborted leaving the vat in the prior state.
 
 Often machines (virtual or otherwise) have multiple vats running on them, some implementations have their own message delivery between vats and has CapTP for messaging between machines, while others have CapTP boundaries between all vats, including those on the same machine.
 
