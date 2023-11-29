@@ -306,7 +306,7 @@ deposited by sending a [`op:deliver-only`](#op-deliver-only) message to the
 exporter's bootstrap object with three `args`, which are:
 
 1.  A symbol that is the value `deposit-gift`
-2.  A positive integer that is the ID of the gift, this MUST not have been used
+2.  A non-negative integer that is the ID of the gift, this MUST not have been used
     before in the `gifter <-> exporter` CapTP session (the `gift-id`)
 3.  The object reference being exported to the receiver (i.e. a
     [`desc:import-object`](#desc-import-object) or
@@ -317,7 +317,7 @@ This is an example of how the message would look like:
 ```text
 <op:deliver-only <desc:export 0>               ; Remote bootstrap object
                  ['deposit-gift                ; Symbol "deposit-gift"
-                  42                           ; gift-id, a positive integer
+                  42                           ; gift-id, a non-negative integer
                   <desc:import-object ...>]>   ; remote object being shared
 ```
 
@@ -409,7 +409,7 @@ The deposit gift method is used in conjunction with sending a [Third Party
 Handoff](#third-party-handoffs). This method is used to deposit a gift which has
 been sent to the bootstrap object. It has two arguments:
 
-1.  A gift ID that is positive integer.
+1.  A gift ID that is non-negative integer.
 2.  A `desc:import-object` or `desc:import-promise` which has been exported
     within the given CapTP session.
 
@@ -418,7 +418,7 @@ Here is an example of how to use this method:
 ```text
 <op:deliver-only <desc:export 0>                               ; Remote bootstrap object
                   ['deposit-gift                               ; Argument 1: Symbol "deposit-gift"
-                  gift-id                                      ; Argument 2: Positive integer or 0
+                  gift-id                                      ; Argument 2: Non-negative integer (>=0)
                   <desc:import-object | desc:import-promise>)> ; Argument 3
 ```
 
@@ -438,7 +438,7 @@ Here is an example of how to use this method:
 <op:deliver <desc:export 0>           ; Remote bootstrap object
             [withdraw-gift            ; Argument 1: Symbol "withdraw-gift"
              <desc:handoff-receive>]  ; Argument 2: desc:handoff-receive
-            1                         ; Positive integer
+            1                         ; Non-negative integer (>=0)
             <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift.
 ```
 
@@ -852,7 +852,7 @@ This message MUST always be encapsulated in a
 ```text
 <desc:handoff-receive receiving-session  ; Binary Data
                       receiving-side     ; Binary Data
-                      handoff-count      ; positive integer
+                      handoff-count      ; Non-negative integer (>=0)
                       signed-give>       ; desc:handoff-give
 ```
 
@@ -862,7 +862,7 @@ This message MUST always be encapsulated in a
     exporter` session.
 2.  `receiving-side` This is the receiver's public key `receiver <-> exporter`
     session.
-3.  `handoff-count` This is a positive integer which MUST not have been used
+3.  `handoff-count` This is a non-negative integer which MUST not have been used
     already in this CapTP session.
 4.  `signed-give` This is the `desc:handoff-give` that is encapsulated in the
     `desc:sig-envelope` from the gifter.
@@ -913,7 +913,7 @@ that the gifter has designated.
 
 #### Checking the `handoff-count`
 
-The `handoff-count` in the `desc:handoff-receive` MUST be a positive integer
+The `handoff-count` in the `desc:handoff-receive` MUST be a non-negative integer
 that has NOT been used before in session between the exporter and the receiver.
 If the `handoff-count` has been used before in this session, the handoff should
 be aborted. This protects against replay attacks.
