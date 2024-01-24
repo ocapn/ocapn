@@ -48,7 +48,7 @@ which together build up OCapN (Object Capability Network) specifications.
 This specification uses the following other specifications:
 
 -   [Syrup](): The serialization format used for all messages between actors
-    seperated by a CapTP boundary.
+    separated by a CapTP boundary.
 -   [OCapN Netlayers](): Specification to open a secure communication channel
     between two sessions, often on different networks.
 -   [OCapN Locators](): Specification covers representation of object references
@@ -94,6 +94,7 @@ MUST perform the following steps in order:
 2.  Send a [`op:start-session`](#op-start-session) message
 3.  Receive and verify the remote endpoints's
     [`op:start-session`](#op-start-session)
+4.  Export the bootstrap object at position `0`.
 
 Once these steps are successfully completed, the connection is considered
 established and set up, and can be used to send and receive messages with remote
@@ -390,67 +391,7 @@ withdraw the gift left by the gifter. Implementers MUST ensure that the
 management of gifts adheres to this per-session requirement, preventing
 unauthorized access to gifts.
 
-# Operations
-
-## [`op:start-session`](#op-start-session)
-
-On a new connection, a key pair for this session should be generated. This
-key pair should be an EdDSA key pair with a SHA512 hash.
-
-This operation is used when a new connection is initiated over CapTP. Both
-parties MUST send upon a new connection. The operation looks like this:
-
-```text
-<op:start-session [captp-version              ; String value
-                   session-pubkey             ; CapTP public key value
-                   acceptable-location        ; OCapN Reference type
-                   acceptable-location-sig]>  ; CapTP signature
-```
-
-It's important that we only have one bidirectional connection between a CapTP
-session. Before trying to connect to a machine, it's important to check that a
-connection is not already open before proceeding. There is a race condition
-called the "crossed hellos" problem whereby each side tries to open a new
-connection at the same time and only one of these connection attempts must
-succeed. The way to check which attempt should succeed is to sort the serialized
-`session-pubkey`, the highest of the two wins.
-
-### Constructing and sending
-
-The `captp-version` MUST be `1.0`.
-
-The `session-pubkey` is the public key part of the per-session key pair
-generated for this connection. This is serialized in accordance with
-[Cryptography](#cryptography).
-
-The `acceptable-location` is a OCapN Locator which represents the location where
-the session is accessible.
-
-The `acceptable-location-sig` is a cryptographic signature of
-`acceptable-location`, wrapped with Syrup record with the label `my-location`.
-The signature is created using the private key from the per-session key pair.
-This is serialized in accordance with [Cryptography](#cryptography).
-
-### Receiving
-
-The `captp-version` MUST be equal to `1.0`. If the version does not match, the
-connection MUST be aborted.
-
-The `acceptable-location-sig` MUST be valid that the `session-pubkey` provided a
-valid signature of `acceptable-location` wrapped with the Syrup record with the
-label `my-location`.
-
-## [`op:bootstrap`](#op-bootstrap)
-
-This operation requests the bootstrap object to be available at the specified
-`answer-position`. The message looks like:
-
-```text
-<op:bootstrap [answer-position    ; positive integer or 0
-               resolve-me-desc]>  ; desc:import-object | desc:import-promise
-```
-
-### The bootstrap Object
+# [The bootstrap Object](#bootstrap-object)
 
 The bootstrap object is responsible for providing access to local objects on the
 session. It has three different behaviors, selected using the conventional CapTP
@@ -461,7 +402,11 @@ methods are available:
 -   `deposit-gift`
 -   `withdraw-gift`
 
-#### `fetch` Method
+The bootstrap object MUST be exported on each newly initialized CapTP session at
+export position `0`. A session is considered initialized if both sides send and
+receive both [`op:start-session`](#op-start-session) messages.
+
+## `fetch` Method
 
 This method is used to fetch an object from the bootstrap object. To use it you
 need a `swiss-number` which is a Binary Data type. This swiss number should
@@ -479,7 +424,7 @@ An example of how to use this method is:
             <desc:import-object 5>>  ; object exported by us at position 5 should provide the answer
 ```
 
-#### `deposit-gift` Method
+## `deposit-gift` Method
 
 The deposit gift method is used in conjunction with sending a [Third Party
 Handoff](#third-party-handoffs). This method is used to deposit a gift which has
@@ -498,7 +443,7 @@ Here is an example of how to use this method:
                   <desc:import-object | desc:import-promise>]> ; Argument 3
 ```
 
-#### `withdraw-gift` Method
+## `withdraw-gift` Method
 
 This method is used to send the [`desc:handoff-receive`](#desc-handoff-receive)
 in order to receive a gift. It has one argument:
@@ -518,6 +463,55 @@ Here is an example of how to use this method:
             <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift.
 ```
 
+# Operations
+
+## [`op:start-session`](#op-start-session)
+
+On a new connection, a key pair for this session should be generated. This
+key pair should be an EdDSA key pair with a SHA512 hash.
+
+This operation is used when a new connection is initiated over CapTP. Both
+parties MUST send upon a new connection. The operation looks like this:
+
+```text
+<op:start-session captp-version             ; String value
+                  session-pubkey            ; CapTP public key value
+                  acceptable-location       ; OCapN Reference type
+                  acceptable-location-sig>  ; CapTP signature
+```
+
+It's important that we only have one bidirectional connection between a CapTP
+session. Before trying to connect to a machine, it's important to check that a
+connection is not already open before proceeding. There is a race condition
+called the "crossed hellos" problem whereby each side tries to open a new
+connection at the same time and only one of these connection attempts must
+succeed. The way to check which attempt should succeed is to sort the serialized
+`session-pubkey`, the highest of the two wins.
+
+### Constructing and sending
+
+The `captp-version` MUST be `1.0`.
+
+The `session-pubkey` is the public key part of the per-session key pair
+generated for this connection. This is serialized in accordance with
+[Cryptography](#cryptography)
+
+The `acceptable-location` is a OCapN Locator which represents the location where
+the session is accessable.
+
+The `acceptable-location-sig` is the signature of the serialized
+`acceptable-location`. The signature is created using the private key from the
+per-session key pair. This is serialized in accordance with
+[Cryptography](#cryptography)
+
+### Receiving
+
+The `captp-version` MUST be equal to `1.0`. If the version does not match, the
+connection MUST be aborted.
+
+The `acceptable-location-sig` MUST be valid that the `session-pubkey` provided a
+valid signature of `acceptable-location`.
+
 ## [`op:deliver-only`](#op-deliver-only)
 
 This operation delivers a message to an object and does not expect any result
@@ -526,8 +520,8 @@ from the receiving object.
 The `op:deliver-only` message is:
 
 ```text
-<op:deliver-only [to-desc   ; desc:export
-                  args]>    ; Sequence
+<op:deliver-only to-desc  ; desc:export
+                 args>    ; Sequence
 ```
 
 `to-desc` is a `desc:export` descriptor which corresponds to the object the
@@ -545,10 +539,10 @@ value which should be installed at the location specified in `answer-pos`. The
 `op:deliver` message is:
 
 ``` text
-<op:deliver [to-desc            ; desc:export
-             args               ; sequence
-             answer-pos         ; positive integer | false
-             resolve-me-desc]>  ; desc:import-object | desc:import-promise
+<op:deliver to-desc           ; desc:export
+            args              ; sequence
+            answer-pos        ; positive integer | false
+            resolve-me-desc>  ; desc:import-object | desc:import-promise
 ```
 
 The `resolve-me-desc` is a `desc:import-object` or `desc:import-promise` which
@@ -621,9 +615,9 @@ to that single value without an `op:pick` is also perfectly valid.
 
 The message looks like this:
 ```
-<op:pick  [<promise-pos>         ; <desc:answer | desc:import-promise>
-           <selected-value-pos>  ; Positive Integer
-           <new-answer-pos>]>    ; Positive Integer
+<op:pick <promise-pos>         ; <desc:answer | desc:import-promise>
+         <selected-value-pos>  ; Positive Integer
+         <new-answer-pos>>     ; Positive Integer
 ```
 
 ### Sending
@@ -714,8 +708,8 @@ references it has been given:
 The message looks like:
 
 ```text
-<op:gc-export [export-pos    ; positive integer
-               wire-delta]>  ; positive integer
+<op:gc-export export-pos   ; positive integer
+              wire-delta>  ; positive integer
 ```
 
 ## [`op:gc-answer`](#op-gc-answer)
@@ -753,6 +747,7 @@ specific object.
 <desc:import-object position>  ; position: positive integer
 ```
 
+Position `0` is reserved for the [bootstrap object](#bootstrap-object).
 
 ## [`desc:import-promise`](#desc-import-promise)
 
@@ -1026,3 +1021,10 @@ OCapN's CapTP was derived, including the certificate-based third party handoffs.
 Spritely Goblins' CapTP was implemented by Christine Lemmer-Webber and Jessica
 Tallon. Goblins also introduced the abstractions for OCapN's "netlayers"
 interface (an analogue to E's "VatTP").
+
+# Funding
+
+This document has been written with funding through the [NGI Assure Fund](https://nlnet.nl/assure), a fund established by [NLnet](https://nlnet.nl) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu) program. Learn more on the [NLnet project page]( https://nlnet.nl/project/SpritelyOCCapN#ack).
+
+[<img src="https://nlnet.nl/logo/banner.png" alt="NLnet foundation logo" width="20%" />](https://nlnet.nl)
+[<img src="https://nlnet.nl/image/logos/NGIAssure_tag.svg" alt="NGI Assure Logo" width="20%" />](https://nlnet.nl/assure)
