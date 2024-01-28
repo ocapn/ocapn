@@ -100,6 +100,22 @@ should be hosted on the port `9045` and using "ED25519-V3" for the key type.
 Upon creation of a hidden service tor provides the "Service-ID", this must be
 supplied as the "designator" in the OCapN Node Locator.
 
+# TCP Testing Netlayer
+
+This is a testing-only, simplistic netlayer, providing no security or anonymity
+whatsovever, and only intended to run tests without huge overhead of setting up
+Tor nodes.
+
+## Implementation
+
+When creating and decoding the OCapN locator, the following information is used:
+
+- **designator**: IPv4 address of a machine. Usually 127.0.0.1 for testing.
+- **transport**: The symbol `tcp`
+- **hints**: Hints are not used, so this may be set to false/omitted.
+
+Only send pure Syrup-encoded messages over the wire.
+
 # Funding
 
 This document has been written with funding through the [NGI Assure Fund](https://nlnet.nl/assure), a fund established by [NLnet](https://nlnet.nl) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu) program. Learn more on the [NLnet project page]( https://nlnet.nl/project/SpritelyOCCapN#ack).
