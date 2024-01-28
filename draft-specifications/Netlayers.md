@@ -103,7 +103,7 @@ supplied as the "designator" in the OCapN Node Locator.
 # TCP Testing Netlayer
 
 This is a testing-only, simplistic netlayer, providing no security or anonymity
-whatsovever, and only intended to run tests without huge overhead of setting up
+whatsoever, and only intended to run tests without the huge overhead of setting up
 Tor nodes.
 
 ## Implementation
