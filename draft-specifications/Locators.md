@@ -11,13 +11,13 @@ Group.
 
 # [Introduction](#introduction)
 
-OCapN Locators used to identify OCapN capable nodes or objects available on a
-specific node. They can be used in band as Syrup encoded data or out of band
+OCapN Locators used to identify OCapN capable peers or objects available on a
+specific peer. They can be used in band as Syrup encoded data or out of band
 when bootstrapping a connection as URIs.
 
-These locators are agnostic to the netlayer that the node or object is located
+These locators are agnostic to the netlayer that the peer or object is located
 on, it encodes the transport  protocol name, key and other additional data which
-would be used by any given  netlayer to reach the node.
+would be used by any given  netlayer to reach the peer.
 
 # Additional Documents
 
@@ -34,13 +34,13 @@ This specification uses the following other specifications:
     Syntax](https://www.rfc-editor.org/rfc/rfc3986): For encoding URI
     representations of locations.
 
-# [Node Locator](#ocapn-node)
+# [peer Locator](#ocapn-peer)
 
-This identifies an OCapN node, not a specific object. This includes enough
+This identifies an OCapN peer, not a specific object. This includes enough
 information to specify which netlayer and provide that netlayer with all of the
-information needed to create a  bidirectional channel to that node.
+information needed to create a  bidirectional channel to that peer.
 
-The node locator include the following pieces of information (more details
+The peer locator include the following pieces of information (more details
 below):
 
 - **Designator**: Usually representing the key, however can be any value
@@ -48,17 +48,17 @@ below):
 - **Transport**: A unique identifier to specify a netlayer
 - **Hints**: A hashmap of additional connection information.
 
-When comparing two node locators, the designator and transport are the only
-pieces of information which need to match. Two node locators can have the same
+When comparing two peer locators, the designator and transport are the only
+pieces of information which need to match. Two peer locators can have the same
 designator and transport but  different hints and be considered to be the same
-node.
+peer.
 
-## [Syrup Serialization](#node-syrup-serialization)
+## [Syrup Serialization](#peer-syrup-serialization)
 
-It's encoded as a record with the label `ocapn-node` and three arguments:
+It's encoded as a record with the label `ocapn-peer` and three arguments:
 
 ```
-<ocapn-node designator  ; string
+<ocapn-peer designator  ; string
             transport   ; symbol (cannot contain ".")
             hints>      ; hashmap | false
 ```
@@ -66,7 +66,7 @@ It's encoded as a record with the label `ocapn-node` and three arguments:
 ### Hints
 
 This is a hashmap of key and values which are designed to encode additional
-connection information that the  netlayer might need to reach the node. The keys
+connection information that the  netlayer might need to reach the peer. The keys
 should be symbols with the values as strings.
 
 There can be any number of hints, including none at all. If no hints are used
@@ -96,14 +96,14 @@ identifier.
 
 # Sturdyref Locator
 
-A sturdyref locator includes a [Node Locator](#node-locator) and
+A sturdyref locator includes a [Pode Locator](#peer-locator) and
 a `swiss-num` which represents a specific object located at that
-node. This should be considered a capability with this information
+peer. This should be considered a capability with this information
 alone being used to obtain a CapTP reference the given object.
 
 The pieces of information encoded in the sturdyref are:
 
-- [Node Locator](#node-locator)
+- [Peer Locator](#peer-locator)
 - Swiss number: string used to obtain an object
 
 ## Syrup Serialization
@@ -111,17 +111,17 @@ The pieces of information encoded in the sturdyref are:
 It's encoded as a record with the label `ocapn-sturdyref` and two arguments:
 
 ```
-<ocapn-sturdyref node swiss-num>
+<ocapn-sturdyref peer swiss-num>
 ```
 
 The arguments are:
 
-- **node**: Syrup record defined in the [Syrup serialization of the Node locator](#node-syrup-serialization)
+- **peer**: Syrup record defined in the [Syrup serialization of the peer locator](#peer-syrup-serialization)
 - **swiss-num**: String which identifies the object.
 
 ## URI Serialization
 
-The URI format follows a similar format to the node URI format, except with a
+The URI format follows a similar format to the peer URI format, except with a
 "/s/" suffix to denoate that it's a sturdyref, followed by the swiss number
 value. Any hints are placed at the end of the URI.
 

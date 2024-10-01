@@ -62,7 +62,7 @@ OCapN Netlayer specification).
 
 Here's an overview of some things which may occur during a CapTP session:
 
-1. A session is established pairwise between machines.
+1. A session is established pairwise between two peers.
 2. Communication occurs between objects.
     -   Initial connectivity to objects is established by querying the bootstrap
         object for access to known objects (via sturdyrefs or certificates).
@@ -481,7 +481,7 @@ parties MUST send upon a new connection. The operation looks like this:
 ```
 
 It's important that we only have one bidirectional connection between a CapTP
-session. Before trying to connect to a machine, it's important to check that a
+session. Before trying to connect to a peer, it's important to check that a
 connection is not already open before proceeding. There is a race condition
 called the "crossed hellos" problem whereby each side tries to open a new
 connection at the same time and only one of these connection attempts must

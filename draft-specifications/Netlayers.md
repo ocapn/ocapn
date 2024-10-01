@@ -17,7 +17,7 @@ Group.
 # Introduction
 
 OCapN Netlayers are the transport layer which ensures messages are sent and
-delivered to a node. The requirements put upon netlayers is very low and thus it
+delivered to a peer. The requirements put upon netlayers is very low and thus it
 should be flexible enough for new netlayers on a lot of different transport
 protocols. CapTP is designed in such a way that it is agnostic over which
 netlayer it is using and designed in such a way that multiple different
@@ -36,7 +36,7 @@ A netlayer should ensure the following properties are provided:
 Properties that are considered important to the operating principles of OCapN,
 but are not technical requirements for a compliant netlayer, are:
 
-- The reachability of nodes without further configuration by any peer within the
+- The reachability of peers without further configuration by any peer within the
   scope of the network they operate on.
 
 Other properties may be desirable, however not strictly nessesary to comply with
@@ -54,7 +54,7 @@ information required for new implementations to exist and communicate with other
 implementations of that same netlayer provided they operate on the same network.
 
 Other information that must be provided is the information which should be
-encoded within an OCapN node locator, this is:
+encoded within an OCapN peer locator, this is:
 
 - Designator
 - Transport
@@ -95,10 +95,10 @@ service.
 - **transport**: The symbol `onion`
 - **hints**: Hints are not used, so this may be set to false/omitted.
 
-The "hidden service" facility is used to create a CapTP node. The hidden service
+The "hidden service" facility is used to create a CapTP peer. The hidden service
 should be hosted on the port `9045` and using "ED25519-V3" for the key type.
 Upon creation of a hidden service tor provides the "Service-ID", this must be
-supplied as the "designator" in the OCapN Node Locator.
+supplied as the "designator" in the OCapN peer Locator.
 
 # Funding
 
