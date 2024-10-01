@@ -1,6 +1,6 @@
 # OCapN Implementation Guide
 
-OCapN, the **O**bject **Cap**ability **N**etwork, is a set of specifications which describe a protocol for writing distributed peer-to-peer applications. These specifications provide everything from creating a communication channel, to sending messages between objects across a network, and handing off to an object on a third node on the network. The messaging paradigm is built on the idea of the actor model which has different objects (actors) which exist on multiple computers and can send messages to actors either locally or remotely.
+OCapN, the **O**bject **Cap**ability **N**etwork, is a set of specifications which describe a protocol for writing distributed peer-to-peer applications. These specifications provide everything from creating a communication channel, to sending messages between objects across a network, and handing off to an object on a third peer on the network. The messaging paradigm is built on the idea of the actor model which has different objects (actors) which exist on multiple computers and can send messages to actors either locally or remotely.
 
 The three specifications that make up OCapN are:
 
@@ -9,17 +9,17 @@ The three specifications that make up OCapN are:
   - A powerful capability security model which is intuitive to ordinary programming interactions.
   - Distributed, cooperative garbage collection.
   - First-class promises and promise pipelining, allowing for efficient communication with to-be-created objects before they even exist and propagating information about message failure to relevant interested parties.
-  - A peer introduction mechanism known as "handoffs" which allows users to continue to program with the intuition of ordinary programming even when communicating with multiple nodes that do not yet know about each other.
+  - A peer introduction mechanism known as "handoffs" which allows users to continue to program with the intuition of ordinary programming even when communicating with multiple peers that do not yet know about each other.
 - **OCapN Netlayers**: The lower level standard for defining different network specific implementations of the communication channels, on top of which CapTP sends messages. Netlayers provide a unified abstraction upon which CapTP can operate without having to decide a particular underlying networking protocol.
-- **OCapN Locators**: In-band and out-of-band descriptors of OCapN capable nodes and objects.
+- **OCapN Locators**: In-band and out-of-band descriptors of OCapN capable peers and objects.
 
 ## Introduction
 
-The OCapN specifications provide a generalized distributed object communication system. The specifications correspond to an underlying abstract model of computation where each node on the network contains objects exported to other specific nodes on the network which import them. While many nodes on the network connect to many other nodes, the set of exported objects which may be operated upon are dependent on the interactions between the objects on those two nodes, i.e. different node pairs will have different exports... not all nodes get access to all objects. The idea is that a distributed network is like a society of inter-cooperating objects/actors with different sets of relationships and cooperation between the objects/actors contained on different nodes.
+The OCapN specifications provide a generalized distributed object communication system. The specifications correspond to an underlying abstract model of computation where each peer on the network contains objects exported to other specific peers on the network which import them. While many peers on the network connect to many other peers, the set of exported objects which may be operated upon are dependent on the interactions between the objects on those two peers, i.e. different peer pairs will have different exports... not all peers get access to all objects. The idea is that a distributed network is like a society of inter-cooperating objects/actors with different sets of relationships and cooperation between the objects/actors contained on different peers.
 
-This perspective is pervasive throughout OCapN's design and even its narrative and visual imagery, as will be seen throughout this document. In terms of server-to-server interactions, OCapN can protect against objects being exposed across a network boundary which were not consensually shared with that node. On a more fine grained level, implementations which partition their internal behavior in terms of objects will have a smooth and intuitive model for partitioning and coordinating access granting between system subcomponents resembling ordinary programming. (Here "objects" are refer to encapsulated state and behavior accessible only through a reference, not referring to any idea of "object oriented" in terms of class heirarchies, which many implementations of OCapN do not use.)
+This perspective is pervasive throughout OCapN's design and even its narrative and visual imagery, as will be seen throughout this document. In terms of server-to-server interactions, OCapN can protect against objects being exposed across a network boundary which were not consensually shared with that peer. On a more fine grained level, implementations which partition their internal behavior in terms of objects will have a smooth and intuitive model for partitioning and coordinating access granting between system subcomponents resembling ordinary programming. (Here "objects" are refer to encapsulated state and behavior accessible only through a reference, not referring to any idea of "object oriented" in terms of class heirarchies, which many implementations of OCapN do not use.)
 
-Of course, there is no way to enforce at a network level that other nodes correspond to the operational semantics described in this document in terms of their internal operations and behavioral partitioning. However, implementations of OCapN which do follow these ideas will reap great benefits: OCapN, in conjunction with an implementation which follows its abstract semantics, allows programmers to write applications which look equivalent for asynchronous programming on a single computer as well as asynchronous programming across a fully distributed network. Programmers using such a programming environment can focus on the underlying core ideas and behaviors of their programs rather than on network programming details. In other words, safety and security become intuitive outcomes of ordinary argument passing in programming following the simple object capability paradigm of "if you don't have it, you can't use it".
+Of course, there is no way to enforce at a network level that other peers correspond to the operational semantics described in this document in terms of their internal operations and behavioral partitioning. However, implementations of OCapN which do follow these ideas will reap great benefits: OCapN, in conjunction with an implementation which follows its abstract semantics, allows programmers to write applications which look equivalent for asynchronous programming on a single computer as well as asynchronous programming across a fully distributed network. Programmers using such a programming environment can focus on the underlying core ideas and behaviors of their programs rather than on network programming details. In other words, safety and security become intuitive outcomes of ordinary argument passing in programming following the simple object capability paradigm of "if you don't have it, you can't use it".
 
 ## Implementing OCapN
 
@@ -29,31 +29,31 @@ To help implementation we've broken this guide into distinct steps which can be 
 
 ### Stage 0: connect, op:start-session, op:abort + netlayers ("laying the foundation")
 
-Alisha wants to connect to her friends Ben and Carol who are already on the OCapN network and also wants to begin programming her own implementation of OCapN in the process. In order to connect to her friends' nodes on the network, she must first bootstrap her connection.
+Alisha wants to connect to her friends Ben and Carol who are already on the OCapN network and also wants to begin programming her own implementation of OCapN in the process. In order to connect to her friends' peers on the network, she must first bootstrap her connection.
 
 In this stage we'll cover:
 
  - Implementing a very basic netlayer
- - OCapN node locators
+ - OCapN peer locators
  - Starting the session with `op:start-session`
  - Terminating the session with `op:abort`
 
 #### Implementing a basic netlayer
 
-Netlayers are just a channel between two "nodes" which speak CapTP. These nodes could be on the same virtual or physical machine, same local network or on the other side of the world. Netlayers are designed to abstract away the logistics of sending and delivering messages away from CapTP and provide an agnostic concept of a channel which is a bidirectional FIFO. Thus CapTP is itself agnostic to the underlying network protocol, with individual netlayers providing different characteristics around latency, liveness, privacy, and general mechanism.
+Netlayers are just a channel between two "peers" which speak CapTP. These peers could be on the same virtual or physical machine, same local network or on the other side of the world. Netlayers are designed to abstract away the logistics of sending and delivering messages away from CapTP and provide an agnostic concept of a channel which is a bidirectional FIFO. Thus CapTP is itself agnostic to the underlying network protocol, with individual netlayers providing different characteristics around latency, liveness, privacy, and general mechanism.
 
-Every netlayer ultimately provides a bidirectional channel between two nodes on the network. Alisha both needs to be able to accept connections from the network who are connecting to her node and she needs be able to open outgoing connections to other nodes which her ocapn-using programs are requesting to connect to on the network. In both cases, the netlayer ultimately hands to CapTP a mechanism for receiving and being informed of new messages and a mechanism for sending messages. The netlayer need not be concerned with the details of the messages transmitted after it has completed setting up a connection, it only needs to be concerned with passing messages around.
+Every netlayer ultimately provides a bidirectional channel between two peers on the network. Alisha both needs to be able to accept connections from the network who are connecting to her peer and she needs be able to open outgoing connections to other peers which her ocapn-using programs are requesting to connect to on the network. In both cases, the netlayer ultimately hands to CapTP a mechanism for receiving and being informed of new messages and a mechanism for sending messages. The netlayer need not be concerned with the details of the messages transmitted after it has completed setting up a connection, it only needs to be concerned with passing messages around.
 
 Alisha decides to implement the Tor Onion Services netlayer as a first step because Tor takes care of the difficult aspects of peer-to-peer connections. To do this she implements her netlayer to talk to the Tor control socket both registering her process to be able to accept new connections for a particular network identity and adds control code for making outgoing connections also speaking through the control socket. When the netlayer is instantiated and configured, it provides two functions:
 
 - `new_outgoing_connection(ocapn_locator)`: This function speaks to the tor daemon to open a new connection to the specified [OCapN locator](https://github.com/ocapn/ocapn/blob/main/draft-specifications/Locators.md) and returns a socket she can use to read and write messages from and is called from CapTP.
-- `accept_incoming_connection()`: This function will wait for a new incoming connection to her node and return it. She knows that she'll need to hook this up to run in its own thread and waiting for connections and then initiating new sessions in her CapTP implementation.
+- `accept_incoming_connection()`: This function will wait for a new incoming connection to her peer and return it. She knows that she'll need to hook this up to run in its own thread and waiting for connections and then initiating new sessions in her CapTP implementation.
 
 #### Starting and terminating sessions
 
 Once a new connection has been established by the netlayer, the netlayer hands the rest of the work over to the CapTP implementation to complete configuring an active session.
 
-CapTP needs to ensure that only a single active session exists between two nodes addressable on the network. This prevents unnecessarily opening many duplicate connections, permits reusing the same live object references when referring to the same live objects, and permits assertions that two objects that have the same object identity also have same live reference identity.
+CapTP needs to ensure that only a single active session exists between two peers addressable on the network. This prevents unnecessarily opening many duplicate connections, permits reusing the same live object references when referring to the same live objects, and permits assertions that two objects that have the same object identity also have same live reference identity.
 
 The first messages exchanged over a CapTP session are to initialize the CapTP session. This is done with the `op:start-session` message. The message is a record which has the following structure:
 
@@ -67,12 +67,12 @@ The first messages exchanged over a CapTP session are to initialize the CapTP se
 This message includes several important pieces of information to allow each side to perform the following:
 
  - The message establishes which version of OCapN's CapTP is being used, ensuring that both sides are speaking a compatible revision of the protocol
- - The message provides a `session-pubkey` which is encoded public key cryptographic information used for signatures. This key is always part of a freshly generated keypair which is **never reused** outside of this particular session (and of which the corresponding signing key is kept private to the respective side of the connection).  (**NOTE:** if a new session is ever established between two nodes on the network, this keypair MUST NOT be reused.) This key is used for:
+ - The message provides a `session-pubkey` which is encoded public key cryptographic information used for signatures. This key is always part of a freshly generated keypair which is **never reused** outside of this particular session (and of which the corresponding signing key is kept private to the respective side of the connection).  (**NOTE:** if a new session is ever established between two peers on the network, this keypair MUST NOT be reused.) This key is used for:
    - Creating a distinct identifier for this side of the session
    - Creating a distinct identifier for identifying the session as a whole, created by sorting, combining, and hashing both sides of the connection's provided pubkeys
    - Performing signature verification for third-party handoffs (as described later in this document)
- - The `acceptable-location` is used to perform handoffs (more in the handoff section) and to identify the node in a unique way so only one connection is opened to a given node.
- - The `acceptable-location-sig` allows the node to demonstrate to us that it controls the private key part to the public key specified in `session-pubkey`
+ - The `acceptable-location` is used to perform handoffs (more in the handoff section) and to identify the peer in a unique way so only one connection is opened to a given peer.
+ - The `acceptable-location-sig` allows the peer to demonstrate to us that it controls the private key part to the public key specified in `session-pubkey`
 
 Alisha writes code to generate a key pair for the session, keeping the private key secret to her side of the session and formatting the public key for the `op:start-session` message. She uses the private key she just generated to sign her `acceptable-location` wrapped within a `my-location` record and provides this signature for the `acceptable-location-sig` field. (The purpose of wrapping within the `my-location` record is to provide sufficient context to [prevent context confusion vulnerabilities](https://sandstorm.io/news/2015-05-01-is-that-ascii-or-protobuf).)
 
@@ -81,22 +81,22 @@ With this in place she can generate her `op:start-session` message, which looks 
 ```
 <op:start-session "1.0"
                   (public-key (ecc (curve Ed25519) (flags eddsa) (q ...) (s ...)))
-                  (ocapn-node "..." 'onion #f)
+                  (ocapn-peer "..." 'onion #f)
                   (sig-val (eddsa (r ...) (s ...)))>
 ```
 
-Alisha transmits this message to the other side of the prospective session. She then reads on the channel provided by the netlayer looking for the remote node's `op:start-session` message. Alisha verifies that the `acceptable-location-sig` signs the `acceptable-location` wrapped within a `my-location` record by using the other side's provided `session-pubkey`.
+Alisha transmits this message to the other side of the prospective session. She then reads on the channel provided by the netlayer looking for the remote peer's `op:start-session` message. Alisha verifies that the `acceptable-location-sig` signs the `acceptable-location` wrapped within a `my-location` record by using the other side's provided `session-pubkey`.
 
 *In the future when location verification is implemented and agreed upon, a description of this step will be explained here.*
 
-Having tested the above against connecting to Ben's OCapN node locator, Alisha is satisfied that her implementation is able to successfully establish a connection. She needs to ensure that her implementation of CapTP only has one active session between her node and a given remote node, so she two tables to help keep track of them:
+Having tested the above against connecting to Ben's OCapN peer locator, Alisha is satisfied that her implementation is able to successfully establish a connection. She needs to ensure that her implementation of CapTP only has one active session between her peer and a given remote peer, so she two tables to help keep track of them:
 
 - Table of active sessions (remote location -> session)
 - Table of outgoing sessions (outgoing location -> key pair)
 
-The first one she uses to store a session once it's been fully initiated and set up. Anytime she needs to open a connection to a new node, she'll be able to check this table to see if a connection already exists, permitting reuse of already established sessions.
+The first one she uses to store a session once it's been fully initiated and set up. Anytime she needs to open a connection to a new peer, she'll be able to check this table to see if a connection already exists, permitting reuse of already established sessions.
 
-The second table is used to help her mitigate the crossed hellos problem (previously called [the crossed connections problem](http://erights.org/elib/distrib/vattp/DataComm_startup.html)). Alisha knows this problem occurs when her CapTP implementation begins initiating a connection at the same the other side is also opening a connection to Alisha's node. The way CapTP solves this is by keeping track of any session your side opens (outgoing) and then anytime you get an incoming connection you must check to see if you're currently in the process of setting up an outgoing session. If this is the case, we have established that it's the crossed hellos problem and both sides will need to establish which of the two sessions continue. CapTP resolves this by calculating an ID for each session, the ID is calculated based on the `session-pubkey` and a hashing step, Alisha finds the exact algorithm in the CapTP specification and implements it. Once she has the IDs for both her outgoing session and the incoming session, she sorts the serialized IDs and aborts the lower of the two sessions.
+The second table is used to help her mitigate the crossed hellos problem (previously called [the crossed connections problem](http://erights.org/elib/distrib/vattp/DataComm_startup.html)). Alisha knows this problem occurs when her CapTP implementation begins initiating a connection at the same the other side is also opening a connection to Alisha's peer. The way CapTP solves this is by keeping track of any session your side opens (outgoing) and then anytime you get an incoming connection you must check to see if you're currently in the process of setting up an outgoing session. If this is the case, we have established that it's the crossed hellos problem and both sides will need to establish which of the two sessions continue. CapTP resolves this by calculating an ID for each session, the ID is calculated based on the `session-pubkey` and a hashing step, Alisha finds the exact algorithm in the CapTP specification and implements it. Once she has the IDs for both her outgoing session and the incoming session, she sorts the serialized IDs and aborts the lower of the two sessions.
 
 In order to abort a session we must notify the other side. This is done with the `op:abort` message. The message is a record which has the following structure:
 
@@ -124,14 +124,14 @@ In stage 0, Alisha was able to have her session establish a channel and initiali
 
 #### Sturdyrefs
 
-Studyrefs are a type of OCapN locator that is used to encode an object on a specific node. They can be encoded as a record which has the following structure:
+Studyrefs are a type of OCapN locator that is used to encode an object on a specific peer. They can be encoded as a record which has the following structure:
 
 ```
-<ocapn-sturdyref node        ; ocapn-node record
+<ocapn-sturdyref peer        ; ocapn-peer record
                  swiss-num>  ; Binary data which identifies a specific object
 ```
 
-Alisha has a sturdyref locator, but said locator is encoded as a string as Ben shared it to her outside of OCapN. The mapping between the string and record encodings are defined in the [OCapN Locators](https://github.com/ocapn/ocapn/blob/main/draft-specifications/Locators.md) specification, so Alisha implements a conversion between the two encodings so she can use that to get it to the more native representation. She takes the information encoded in the OCapN Node locator to form a session using her existing CapTP implementation, but she needs to be able to reference the object specified by the `swiss-num`.
+Alisha has a sturdyref locator, but said locator is encoded as a string as Ben shared it to her outside of OCapN. The mapping between the string and record encodings are defined in the [OCapN Locators](https://github.com/ocapn/ocapn/blob/main/draft-specifications/Locators.md) specification, so Alisha implements a conversion between the two encodings so she can use that to get it to the more native representation. She takes the information encoded in the OCapN peer locator to form a session using her existing CapTP implementation, but she needs to be able to reference the object specified by the `swiss-num`.
 
 She knows the steps to getting a reference to this object so she can send messages is as follows:
 
@@ -153,19 +153,19 @@ CapTP describes object across the network with descriptors, these descriptors in
 <desc:export position>
 ```
 
-To give an example of this, let's say there are two nodes, Node A with two objects Alisha and Arthur and Node B with Ben. Node B is exporting the object Ben at export position 3, when Node B refers to this reference, his node would use `<desc:export 3>`. Node A is importing this reference to Ben, and would reference Ben by using `<desc:import-object 3>`. Now If we imagine Alisha sends a reference to Arthur (who lives on Node A) to Ben within a message. This is done by Node A exporting this reference to node B so Ben can have this reference e.g.
+To give an example of this, let's say there are two peers, Peer A with two objects Alisha and Arthur and Peer B with Ben. Peer B is exporting the object Ben at export position 3, when Peer B refers to this reference, his peer would use `<desc:export 3>`. Peer A is importing this reference to Ben, and would reference Ben by using `<desc:import-object 3>`. Now If we imagine Alisha sends a reference to Arthur (who lives on Peer A) to Ben within a message. This is done by Peer A exporting this reference to peer B so Ben can have this reference e.g.
 
 ```
 <op:deliver-only <desc:import-object 3>> [<desc:export 4>]>
 ``` 
 
-This is that `<desc:export 4>` is representing Arthur for Node A.
+This is that `<desc:export 4>` is representing Arthur for Peer A.
 
 Since there will be many objects both exported and imported on each CapTP session, Alisha decides to create two tables each time she initializes a CapTP session to keep track of these objects. The first is an "import table" which will map the position and a "remote object reference" which she'll give to her actors, the second table is the "export" table which will map the position to the local reference of the object. Any objects she exports will be placed in the export table and any objects she imports will be placed in her import table.
 
 #### Exporting the bootstrap object
 
-As we've seen above the when an object is exported it's assigned a number, but the very first object ever to be exported is always the bootstrap object. The bootstrap object does what it sounds, it helps you bootstrap the connection enabling you to get a reference to an object on node when you don't have any other references. As we have already seen in the sturdyref section, they contain a "swiss-num" part which is what is used with the bootstrap object to fetch the object. The bootstrap object has a method, methods are just normal message sends, except that the first argument of the list is a symbol which matches the method.
+As we've seen above the when an object is exported it's assigned a number, but the very first object ever to be exported is always the bootstrap object. The bootstrap object does what it sounds, it helps you bootstrap the connection enabling you to get a reference to an object on peer when you don't have any other references. As we have already seen in the sturdyref section, they contain a "swiss-num" part which is what is used with the bootstrap object to fetch the object. The bootstrap object has a method, methods are just normal message sends, except that the first argument of the list is a symbol which matches the method.
 
 #### Delivering messages
 
@@ -211,7 +211,7 @@ She uses her new version in her bootstrap code and it seems to work, so she trie
             resolve-me-desc>  ; desc:import-object | desc:import-promise
 ```
 
-The `to-desc` and `args` look familiar from before, but `op:deliver` has two new fields. The `answer-pos` is related to promise pipelining and that seems like functionality she doesn't need yet, so she just sets it to `false`. The `resolve-me-desc` is the resolver she implemented. She implements a function which like before takes a remote object reference and a list of arguments, except this time it'll return that vow she implemented. It sets up a promise pair and constructs this message using the resolver of the promise pair in the `op:deliver` message and returning the vow to the caller. She test this out with the bootstrap object on Ben's node and the message it makes looks like this:
+The `to-desc` and `args` look familiar from before, but `op:deliver` has two new fields. The `answer-pos` is related to promise pipelining and that seems like functionality she doesn't need yet, so she just sets it to `false`. The `resolve-me-desc` is the resolver she implemented. She implements a function which like before takes a remote object reference and a list of arguments, except this time it'll return that vow she implemented. It sets up a promise pair and constructs this message using the resolver of the promise pair in the `op:deliver` message and returning the vow to the caller. She test this out with the bootstrap object on Ben's peer and the message it makes looks like this:
 
 ```
 <op:deliver     <desc:export 0>
@@ -220,7 +220,7 @@ The `to-desc` and `args` look familiar from before, but `op:deliver` has two new
                 <desc:import-object 1>>
 ```
 
-Okay, that looks good and she's got her vow back from it too. She tries sending that object and after a short time passes a message comes in from Ben's node which reads:
+Okay, that looks good and she's got her vow back from it too. She tries sending that object and after a short time passes a message comes in from Ben's peer which reads:
 
 ```
 <op:deliver-only    <desc:export 1>
@@ -292,7 +292,7 @@ Alisha looks at her export table and sees the following:
 - `3 -> <beep's vow listen resolve-me-desc>`
 - `4 -> <move forward resolve-me-desc>`
 
-Alisha already has the reference to the robot, a promise for the response to the beep, and the robot has sent a resolution to the promise it sent Alisha with its reply, "Beeeep!" But these are a lot of objects still hanging around and being exported by both sides. Alisha decides it's time to implement garbage collection so that she may remove these from her table and it doesn't grow too large, ensuring also that Ben's node doesn't have to hang on to all of these objects as well.
+Alisha already has the reference to the robot, a promise for the response to the beep, and the robot has sent a resolution to the promise it sent Alisha with its reply, "Beeeep!" But these are a lot of objects still hanging around and being exported by both sides. Alisha decides it's time to implement garbage collection so that she may remove these from her table and it doesn't grow too large, ensuring also that Ben's peer doesn't have to hang on to all of these objects as well.
 
 There are two garbage collection operations in OCapN's CapTP, but one of thse operations has to do with questions and answers and Alisha isn't doing anything with those yet. Alisha decides to look at the `op:gc-export` operation which looks like this:
 
@@ -301,11 +301,11 @@ There are two garbage collection operations in OCapN's CapTP, but one of thse op
               wire-delta>  ; positive integer
 ```
 
-The `export-pos` is the same position that's used for the import position and the wire-delta outstanding references to the object that's been received. OCapN's GC implementation is a collaborative process where by both sides keep track of the number of times a given object has been referenced in CapTP messages. When the importing side no longer needs the object, it should send an `op:gc-export` message, with the `wire-delta` being the outstanding reference count. Each time a reference to an object is received the CapTP session should keep track of this and can emit the `op:gc-export` with this amount and remove it from the count. The reason for keeping track of the wire-delta is the importing node could no longer need the reference and send a GC operation while at the same time the exporting side might send another message which refers to that object, if the exporting side were then to get this GC operation, the exporting side needs to know if it's safe to actually GC it or not.
+The `export-pos` is the same position that's used for the import position and the wire-delta outstanding references to the object that's been received. OCapN's GC implementation is a collaborative process where by both sides keep track of the number of times a given object has been referenced in CapTP messages. When the importing side no longer needs the object, it should send an `op:gc-export` message, with the `wire-delta` being the outstanding reference count. Each time a reference to an object is received the CapTP session should keep track of this and can emit the `op:gc-export` with this amount and remove it from the count. The reason for keeping track of the wire-delta is the importing peer could no longer need the reference and send a GC operation while at the same time the exporting side might send another message which refers to that object, if the exporting side were then to get this GC operation, the exporting side needs to know if it's safe to actually GC it or not.
 
-Here you can see two nodes with a CapTP session Node A and Node B. On Node A lives an object called `alice`, there are many messages that have referenced the `alice` object, two of which has been received by Node B, three of which are still on the wire yet to be received. Node B in this situation has incremented their reference count of alice twice as its seen two references and decides it no longer needs this object so emits a GC export. What would happen next would be three more messages referencing `alice` arrive, if Node A got the `op:gc-export` message and then GC'd alice, this would be a problem for B.
+Here you can see two peers with a CapTP session Peer A and Peer B. On Peer A lives an object called `alice`, there are many messages that have referenced the `alice` object, two of which has been received by Peer B, three of which are still on the wire yet to be received. Peer B in this situation has incremented their reference count of alice twice as its seen two references and decides it no longer needs this object so emits a GC export. What would happen next would be three more messages referencing `alice` arrive, if Peer A got the `op:gc-export` message and then GC'd alice, this would be a problem for B.
 
-Fortunately when Node A receives the `op:gc-export` operation it can remove from its reference count the value conveyed in the `wire-delta` field which would leave Node A with the value of `3`. Since this still leaves three references unaccounted for Node A knows it cannot GC this object and must wait for Node B to emit further GC export operations.
+Fortunately when Peer A receives the `op:gc-export` operation it can remove from its reference count the value conveyed in the `wire-delta` field which would leave Peer A with the value of `3`. Since this still leaves three references unaccounted for Peer A knows it cannot GC this object and must wait for Peer B to emit further GC export operations.
 
 Alisha begins by two tables, one for keeping track of reference count for imported objects and one for exported objects. She makes it so that before transmission of any `op:deliver` or `op:deliver-only` she looks through all the arguments and everytime a reference is mentioned she increments the reference count in her export GC count table. She also implements a similar system to keep track of references in incoming messages.
 
@@ -317,9 +317,9 @@ Alisha also implements the receiving side, each time a `op:gc-export` message co
 
 Promise pipelning is when you chain several promises together by sending `op:deliver`s to the promises creating further promises which can be further chained. This can be a powerful way to work with promises, allowing for increased efficiency and often can translate to improved code style for those programming against CapTP.
 
-Using promise pipelining for this, instead of each time A waits for the response and then sends the next message, A can send all their messages to B at once, cutting down the number of round trips. Without promise pipelining a node would have to wait for each reply before following up with a message to an object that will be created or referred to in response to a previous message, this would look something like this: `A => B => A => B => A`. With promise pipelining, a node can simply refer to the promise and send or refer to that immediately, cutting down on round trips, this would look something like this: `A => B => A`.
+Using promise pipelining for this, instead of each time A waits for the response and then sends the next message, A can send all their messages to B at once, cutting down the number of round trips. Without promise pipelining a peer would have to wait for each reply before following up with a message to an object that will be created or referred to in response to a previous message, this would look something like this: `A => B => A => B => A`. With promise pipelining, a peer can simply refer to the promise and send or refer to that immediately, cutting down on round trips, this would look something like this: `A => B => A`.
 
-For example, let's say Alisha wanted to create a file within a directory she has access to hosted on Ben's node and then write some text to it. Without promise pipelining, Alisha would first send a message to create the directory (`A => B`), then set up a callback waiting for the new file's object reference (`B => A`), then Alisha can send a message with the data she would like to write (`A => B`), and finally she can set up a callback to receive a notification for whether the write succeeds (`B => A`). By contrast with OCapN's promise pipelining support Alisha can simply send the message to the directory to create the object and immediately send the instruction to the promise resulting from that operation (`A => B`) and then simply set up a callback listening to whether or not both operations are cumulatively successful (`B => A`).
+For example, let's say Alisha wanted to create a file within a directory she has access to hosted on Ben's peer and then write some text to it. Without promise pipelining, Alisha would first send a message to create the directory (`A => B`), then set up a callback waiting for the new file's object reference (`B => A`), then Alisha can send a message with the data she would like to write (`A => B`), and finally she can set up a callback to receive a notification for whether the write succeeds (`B => A`). By contrast with OCapN's promise pipelining support Alisha can simply send the message to the directory to create the object and immediately send the instruction to the promise resulting from that operation (`A => B`) and then simply set up a callback listening to whether or not both operations are cumulatively successful (`B => A`).
 
 CapTP supports promise pipelining using the `answer-pos` field in `op-deliver` and then allowing referencing of the answer using a special "answer descriptor", `desc:answer`. The `answer-pos` contains a unique (to the CapTP session) positive integer selected by the sender to describe the vow, this is then used with the answer descriptor to refer to the promise being created with the `op:deliver`. If the session wishes to promise pipeline on the answer, it can use the answer descriptor in the `op:deliver`'s (or `op:deliver-only`s) `to-desc` field. To show how the above would look in terms of messages A would be sending, it would look something like this:
 
@@ -353,7 +353,7 @@ Alisha modifies both her `op:deliver` and `op:deliver-only` message handling cod
 
 ### Stage 5: question/answer gc
 
-When it comes to questions and answers those also can build up as the exporting node can't know when they can be garbage collected. This is where the `op:gc-answer` operation comes in, this is sent by the questioner when it no longer needs the answer. Since the questioner both created the question and is the only side to use it, it's also the questioner's responsibility to notify the other side it can garbage collect it when no longer needed. Due to how questions and answers work with them only being used by the questioner, it allows the GC operation to be a lot simpler, it looks like:
+When it comes to questions and answers those also can build up as the exporting peer can't know when they can be garbage collected. This is where the `op:gc-answer` operation comes in, this is sent by the questioner when it no longer needs the answer. Since the questioner both created the question and is the only side to use it, it's also the questioner's responsibility to notify the other side it can garbage collect it when no longer needed. Due to how questions and answers work with them only being used by the questioner, it allows the GC operation to be a lot simpler, it looks like:
 
 ```
 <op:gc-answer answer-pos>  ; answer-pos: positive integer
@@ -363,23 +363,23 @@ Alisha sets up a hook to be called when her internal question representation is 
 
 ### Stage 6: 3rd Party Handoffs
 
-An important feature of OCapN is that programmers need not worry about *where* objects live: a proper implementation of OCapN can provide the illusion of local asynchronous programming being identical in experience to networked asynchronous programming. Third Party Handoffs allows this illusion to be maintained even when messaging an object on a remote node with a reference to an object on a completely different remote node. Third Party Handoffs permit the illusion of one unified distributed asynchronous computer even with many collaborating entities which may previously have been unaware of each other, while preserving the safety properties of safe object capability collaboration that OCapN provides.
+An important feature of OCapN is that programmers need not worry about *where* objects live: a proper implementation of OCapN can provide the illusion of local asynchronous programming being identical in experience to networked asynchronous programming. Third Party Handoffs allows this illusion to be maintained even when messaging an object on a remote peer with a reference to an object on a completely different remote peer. Third Party Handoffs permit the illusion of one unified distributed asynchronous computer even with many collaborating entities which may previously have been unaware of each other, while preserving the safety properties of safe object capability collaboration that OCapN provides.
 
-All this is achieved despite imports and exports being pairwise arrangements between nodes on the network. As we've seen the way objects are shared is session specific positions in session specific import and export tables which doesn't allow for sharing these objects to a node outside the session. OCapN's handoff mechanism uses certificates to bridge intentionally introductions over the network while preserving OCapN's fundamental pairwise import/export design in the general case.
+All this is achieved despite imports and exports being pairwise arrangements between peers on the network. As we've seen the way objects are shared is session specific positions in session specific import and export tables which doesn't allow for sharing these objects to a peer outside the session. OCapN's handoff mechanism uses certificates to bridge intentionally introductions over the network while preserving OCapN's fundamental pairwise import/export design in the general case.
 
-Lets imagine that Alisha (Node A) also knows Carol (Node C). Carol has a gallery of interesting robot photos and is looking to grow so has asked Alisha if she can help. Since Ben (Node B) has some amazing robots, Alisha decides to ask Ben if he's able to send some photos of his robot over to Carol. Alisha is able to do this without needing to worry if Ben knows Carol, she can simply share a reference to Carol's robot gallery on Node C and Third Party Handoffs will ensure that Ben can secrely get the reference to the gallery.
+Lets imagine that Alisha (Peer A) also knows Carol (Peer C). Carol has a gallery of interesting robot photos and is looking to grow so has asked Alisha if she can help. Since Ben (Peer B) has some amazing robots, Alisha decides to ask Ben if he's able to send some photos of his robot over to Carol. Alisha is able to do this without needing to worry if Ben knows Carol, she can simply share a reference to Carol's robot gallery on Peer C and Third Party Handoffs will ensure that Ben can secrely get the reference to the gallery.
 
 Third Party Handoffs has certain terms that are important to understand when thinking about handoffs, using the the above example, we'll look at who is who from the prospective of Alisha giving Ben a reference to Carol's gallery:
 
-- **Gifter**: This would be Alisha' Node, Node A it's the one initiating the handoff
-- **Receiver**: This would be Ben's Node, Node B as it's the one getting the reference
-- **Exporter**: This would be Carol's Node, Node C as it's the node the reference that's being shared lives on
+- **Gifter**: This would be Alisha' Peer, Peer A it's the one initiating the handoff
+- **Receiver**: This would be Ben's Peer, Peer B as it's the one getting the reference
+- **Exporter**: This would be Carol's Peer, Peer C as it's the peer the reference that's being shared lives on
 
 ![](./handoffs-3party1.webm)
 
-In a high level Alisha will deposit a "gift" which is just a reference to the gallery object on Node C's gift table the session Node A and Node C have together. Alisha will then create a sort of certificate called a `desc:handoff-give` which includes important information from both node A and node C's session and node A and node B's session, as well as the ID of the gift she left at C. Node B can create a connection to node C if it doesn't already have one and create a certificate called `desc:handoff-receive` which includes the `desc:handoff-give` certificate A give B, this certificate it delivers to C and will get in return the gift if all went successfully.
+In a high level Alisha will deposit a "gift" which is just a reference to the gallery object on Peer C's gift table the session Peer A and Peer C have together. Alisha will then create a sort of certificate called a `desc:handoff-give` which includes important information from both peer A and peer C's session and peer A and peer B's session, as well as the ID of the gift she left at C. Peer B can create a connection to peer C if it doesn't already have one and create a certificate called `desc:handoff-receive` which includes the `desc:handoff-give` certificate A give B, this certificate it delivers to C and will get in return the gift if all went successfully.
 
-That's a lot to take in so we can look at each step one by one and see what's actually happening. The first thing to do before that is to look at the message Alice sends to Ben, the `desc:handoff-give` is used in place of gallery object on Node C the message conceptually would look like this:
+That's a lot to take in so we can look at each step one by one and see what's actually happening. The first thing to do before that is to look at the message Alice sends to Ben, the `desc:handoff-give` is used in place of gallery object on Peer C the message conceptually would look like this:
 
 ```
 <op:deliver-only <reference to Ben (desc:import-object)>  [<desc:handoff-give representing the reference to the gallery>]>
@@ -389,12 +389,12 @@ That's a lot to take in so we can look at each step one by one and see what's ac
 
 ![](./handoffs-3party2.webm)
 
-This is done by the gifter, in our example Alisha's node, Node A. Each node needs a per-session gifting table which stores a gift ID to some reference to an object or promise. The gift ID is just a positive integer (usually incrementing integer) which is unique to the session which represents the reference being shared. When a handoff is initiated it's to a specific object on a node, not just the Node, the gifting mechanism is providing a secure way to share a specific reference to the receiver. The way a node deposits a gift is on the bootstrap object (on the exporter) which has a specific `deposit-gift` method.
+This is done by the gifter, in our example Alisha's peer, Peer A. Each peer needs a per-session gifting table which stores a gift ID to some reference to an object or promise. The gift ID is just a positive integer (usually incrementing integer) which is unique to the session which represents the reference being shared. When a handoff is initiated it's to a specific object on a peer, not just the peer, the gifting mechanism is providing a secure way to share a specific reference to the receiver. The way a peer deposits a gift is on the bootstrap object (on the exporter) which has a specific `deposit-gift` method.
 
-Alisha starts implementing this by creating a gift table for each session and an auto incrementing counter to track the gift IDs she's sending. Alisha also implements the `deposit-gift` method on her bootstrap object which takes two arguments a gift ID and a reference and she puts these things into her gift table she's just made. Alisha then starts by adding code to her `op:deliver` and `op:deliver-only` to look through all the arguments being sent and when it encounters a reference to an remote object on a node from a different session, she initilizes a handoff and replaces that reference with a `desc:handoff-give`. When a handoff is initialized in Alisha's system, it gets the current next gift ID and sends a message to the deposit gift method on the exporter's bootstrap object, this looks like this:
+Alisha starts implementing this by creating a gift table for each session and an auto incrementing counter to track the gift IDs she's sending. Alisha also implements the `deposit-gift` method on her bootstrap object which takes two arguments a gift ID and a reference and she puts these things into her gift table she's just made. Alisha then starts by adding code to her `op:deliver` and `op:deliver-only` to look through all the arguments being sent and when it encounters a reference to an remote object on a peer from a different session, she initilizes a handoff and replaces that reference with a `desc:handoff-give`. When a handoff is initialized in Alisha's system, it gets the current next gift ID and sends a message to the deposit gift method on the exporter's bootstrap object, this looks like this:
 
 ```
-;; Deposit the object Node C is exporting at position `1` at gift ID `5`
+;; Deposit the object Peer C is exporting at position `1` at gift ID `5`
 <op:deliver-only <desc:export 0> ['deposit-gift 5 <desc:export 1>]
 ```
  
@@ -402,7 +402,7 @@ Alisha starts implementing this by creating a gift table for each session and an
 
 ![](./handoffs-3party3.webm)
 
-Alisha next needs to create the `desc:handoff-give` certificate which she can give to Ben on Node B which will enable him to retrieve the reference Alisha left as a gift on Node C. The certificate has the following structure:
+Alisha next needs to create the `desc:handoff-give` certificate which she can give to Ben on Peer B which will enable him to retrieve the reference Alisha left as a gift on Peer C. The certificate has the following structure:
 
 ```
 <desc:handoff-give receiver-key       ; the public key of the receiver in the gifter <-> receiver session
@@ -412,9 +412,9 @@ Alisha next needs to create the `desc:handoff-give` certificate which she can gi
                    gift-id>           ; Positive Integer or zero.
 ```
 
-This includes a lot of information, some of which comes from the Gifter's session with the Receiver and some of it comes from the Gifter's session with the Exporter. It's important to keep in mind when thinking about handoffs is that it does not rely on keeping secrets, all messages sent can be public while remaining secure and handoffs are capabilities which only allow the receiver to obtain a reference to the object that the gifter deposits. The burden for checking the information within the certificates rests with the exporter since it is the Node which has the reference to provide.
+This includes a lot of information, some of which comes from the Gifter's session with the Receiver and some of it comes from the Gifter's session with the Exporter. It's important to keep in mind when thinking about handoffs is that it does not rely on keeping secrets, all messages sent can be public while remaining secure and handoffs are capabilities which only allow the receiver to obtain a reference to the object that the gifter deposits. The burden for checking the information within the certificates rests with the exporter since it is the Peer which has the reference to provide.
 
-Alisha creates this certificate using the session information from both her sessions with Carol's Node and Ben's node. Once Alisha has the `desc:handoff-give` she signs it in a `desc:sig-envelope` with her node's private key from her session with Carol's Node (Node A's private key in the Node A <-> Node C session). It might seem unusual to sign this handoff give that's being sent to Ben's node with the key Alisha uses with Carol's Node, but we must remember it's Carol's node who must verify this signature and by doing this Node C is able to verify that it was in fact Alisha's Node which created this `desc:handoff-give`.
+Alisha creates this certificate using the session information from both her sessions with Carol's Peer and Ben's peer. Once Alisha has the `desc:handoff-give` she signs it in a `desc:sig-envelope` with her peer's private key from her session with Carol's Peer (Peer A's private key in the Peer A <-> Peer C session). It might seem unusual to sign this handoff give that's being sent to Ben's peer with the key Alisha uses with Carol's Peer, but we must remember it's Carol's peer who must verify this signature and by doing this Peer C is able to verify that it was in fact Alisha's Peer which created this `desc:handoff-give`.
 
 ### creating the `desc:handoff-receive` certificate
 
@@ -434,7 +434,7 @@ We can see the receiver adds some information, but most of it is provided alread
 1. Again, we're sending the `desc:handoff-receive` to the exporter but using a key from another session, the gifter <-> receiver session.
 2. Since these keys are per-session and generated anew on each new connection, the exporter normally would have no way to verify this signature. The gifter, however, included the receiver's public key they used within the `handoff-give` (the `receiver-key` field) that they signed. The exporter is able to extract this key from the `desc:handoff-give` and use it to verify the signature on the `handoff-receive` (more on this later in the document).
 
-Alisha so far has added to her implementation support to initiate handoffs when she's the Gifter, but she currently hasn't implemented handoffs when she's the receiver, it's important to support all aspects of handoffs so she begins adding support for creating the `desc:handoff-receive` too. Alisha adds both counters for the `handoff-count` and then adds to her implementation of receiving both `op:deliver` and `op:deliver-only` to peform handoffs when a message arrives with a signed `handoff-give` within it. When this exists Alisha replaces the reference she gives to her local objects with a promise that her node will fulfill once it has performed her role in the handoff. Alisha then checks if her node has a session with the node specified in the `exporter-location` location on the `desc:handoff-give`, if so she just uses that when sending her `desc:handoff-receive`, otherwise she creates a connection and new session with that node. Alisha then adds code to generate the `handoff-receive`, making sure to remember to implement her `handoff-count` counter and signs it sending it to the exporter's bootstrap object:
+Alisha so far has added to her implementation support to initiate handoffs when she's the Gifter, but she currently hasn't implemented handoffs when she's the receiver, it's important to support all aspects of handoffs so she begins adding support for creating the `desc:handoff-receive` too. Alisha adds both counters for the `handoff-count` and then adds to her implementation of receiving both `op:deliver` and `op:deliver-only` to peform handoffs when a message arrives with a signed `handoff-give` within it. When this exists Alisha replaces the reference she gives to her local objects with a promise that her peer will fulfill once it has performed her role in the handoff. Alisha then checks if her peer has a session with the peer specified in the `exporter-location` location on the `desc:handoff-give`, if so she just uses that when sending her `desc:handoff-receive`, otherwise she creates a connection and new session with that peer. Alisha then adds code to generate the `handoff-receive`, making sure to remember to implement her `handoff-count` counter and signs it sending it to the exporter's bootstrap object:
 
 ```
 <op:deliver <desc:export 0> ['withdraw-gift <desc:sig-envelope <desc:handoff-receive ...> <signature....>> #f <desc:import-object 1>
@@ -469,20 +469,20 @@ Alisha adds support for this to her bootstrap object so that she can fulfill the
 
 #### Do we have an open session with the gifter?
 
-Handoffs work by having a reference deposited on a per-session gift table and then collected by another node. Handoffs only work when both the session between the gifter and exporter and receiver and exporter are still in existance. If the gifter has aborted the session with the exporter after initiating the handoff, the handoff cannot succeed as the exporter should not have the gift table, nor the relevent handoff keys to be able to verify and perform the handoff successfully.
+Handoffs work by having a reference deposited on a per-session gift table and then collected by another peer. Handoffs only work when both the session between the gifter and exporter and receiver and exporter are still in existance. If the gifter has aborted the session with the exporter after initiating the handoff, the handoff cannot succeed as the exporter should not have the gift table, nor the relevent handoff keys to be able to verify and perform the handoff successfully.
 
 Since each session has a session ID which is both sides names sorted and hashed (exact algorithm in the CapTP specification), we can use the `session` on the `desc:handoff-give` to check if we have a session and fetch the gift table and handoff keys needed to verify the certificate and upon successful verification extract the gift for the receiver.
 
 #### Did the gifter actually make the `desc:handoff-give`
 
-The `desc:handoff-give` using the private key that the gifter is using within the exporter <-> gifter session. This allows the exporter to verify that the other node within the session it looked up in the above step actually did create and sign this `desc:handoff-give` certificate. No other node has access to that key so only the gifter (the other node in the above session) could have produced this certificate. With this verified the data in it can be trusted to be made by the gifter allowing us to trust:
+The `desc:handoff-give` using the private key that the gifter is using within the exporter <-> gifter session. This allows the exporter to verify that the other peer within the session it looked up in the above step actually did create and sign this `desc:handoff-give` certificate. No other peer has access to that key so only the gifter (the other peer in the above session) could have produced this certificate. With this verified the data in it can be trusted to be made by the gifter allowing us to trust:
 
 - The public key specified in `recipient-key` is the one used within the gifter's session with the receiver.
 - That the gift ID is the one the gifter deposited a gift at.
 
 ### Is the receiver who the one who made the `desc:handoff-receive`
 
-For handoffs to remain secure it's important that only the receiver that the gifter intended is able to use the handoff capability. Since handoffs must remain secure if the messages sent are published, the `desc:handoff-give` certificate must only be usable by the receiver the gifter intended. CapTP accomplishes this by having the gifter provide the key in the `desc:handoff-give` that the receiver uses in the gifter <-> receiver session. After the above step, the exporter has verified that the gifter has created the `desc:handoff-give` and thus this key can be trusted as it can't have been modified or created by a different node.
+For handoffs to remain secure it's important that only the receiver that the gifter intended is able to use the handoff capability. Since handoffs must remain secure if the messages sent are published, the `desc:handoff-give` certificate must only be usable by the receiver the gifter intended. CapTP accomplishes this by having the gifter provide the key in the `desc:handoff-give` that the receiver uses in the gifter <-> receiver session. After the above step, the exporter has verified that the gifter has created the `desc:handoff-give` and thus this key can be trusted as it can't have been modified or created by a different peer.
 
 The key is then extracted and the signature which wraps the `desc:handoff-receive` can be verified that it was made by the private key which corresponds with the public key provided.
 
@@ -508,14 +508,14 @@ Alisha implements the role of the exporter in her handoff implementation which a
 
 ### Alisha's handoff of Carol's gallery to Ben
 
-Going back to the initial story of Alisha who's wanting to give a reference to Carol's gallery to Ben, each on their own node, let's look at how this handoff works in practice. Alisha's node initially creates a gift ID and sends a messsage to Carol's bootstrap object to deposit the gift:
+Going back to the initial story of Alisha who's wanting to give a reference to Carol's gallery to Ben, each on their own peer, let's look at how this handoff works in practice. Alisha's peer initially creates a gift ID and sends a messsage to Carol's bootstrap object to deposit the gift:
 
 ```
 ;; Assuming the robot gallery object is exported by Carol at position 4.
 <op:deliver-only (desc:export 0) ['deposit-gift 5 (desc:export 4)]
 ```
 
-Alisha then sends a message to Ben on node B, the message is following the CapTP convention of message invocation so it's a list with the first item being a symbol to describe the method and then the rest being the arguments, in this case this would be the method "send-robot-photos" and the argument being the reference to carol's robot gallery. Of course, this reference is on Node C (Carol's node) so instead of the normal import/export reference, it's the signed `(desc:handoff-give`):
+Alisha then sends a message to Ben on peer B, the message is following the CapTP convention of message invocation so it's a list with the first item being a symbol to describe the method and then the rest being the arguments, in this case this would be the method "send-robot-photos" and the argument being the reference to carol's robot gallery. Of course, this reference is on Peer C (Carol's peer) so instead of the normal import/export reference, it's the signed `(desc:handoff-give`):
 
 ```
 <op:deliver-only (desc:export 5)
@@ -523,14 +523,14 @@ Alisha then sends a message to Ben on node B, the message is following the CapTP
                   (desc:sig-envelope
                     (desc:handoff-give
                       <Ben's public key for his session with Alisha>
-                      (ocapn-node "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)
-                      <ID of the session Alisha and Carol's node have>
+                      (ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)
+                      <ID of the session Alisha and Carol's peer have>
                       <Alisha's public key in her session with Carol>
                       5)
-                    <signature Alisha made with her private key in the session with Carol's Node>)]>
+                    <signature Alisha made with her private key in the session with Carol's Peer>)]>
 ```
 
-Ben's Node then gets the `op:deliver-only` message and then looks through the arguments and sees a signed `desc:handoff-give` and so must perform a handoff and create a certificate. Ben's implementation replaces this handoff reference with a promise and delivers it to the object and then begins the handoff. Ben's node checks and sees he doesn't have any open session to the node specified so opens a new connection to `(ocapn-node "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)`. Once his instance has initiated the connection by performing the steps outlined in step 0, bootstrapping a connection, he's able to use this session to send his handoff certificate. Ben's node creates the `desc:handoff-receive` and signs it using the key from his session with Alisha's node. Ben's node then sends this signed certificate to the bootstrap object on Carol's node in the session he's just made:
+Ben's Peer then gets the `op:deliver-only` message and then looks through the arguments and sees a signed `desc:handoff-give` and so must perform a handoff and create a certificate. Ben's implementation replaces this handoff reference with a promise and delivers it to the object and then begins the handoff. Ben's peer checks and sees he doesn't have any open session to the peer specified so opens a new connection to `(ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)`. Once his instance has initiated the connection by performing the steps outlined in step 0, bootstrapping a connection, he's able to use this session to send his handoff certificate. Ben's peer creates the `desc:handoff-receive` and signs it using the key from his session with Alisha's peer. Ben's peer then sends this signed certificate to the bootstrap object on Carol's peer in the session he's just made:
 
 ```
 <op:deliver (desc:export 0)
@@ -542,18 +542,18 @@ Ben's Node then gets the `op:deliver-only` message and then looks through the ar
                 (desc:sig-envelope
                   (desc:handoff-give
                     <Ben's public key for his session with Alisha>
-                    (ocapn-node "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)
-                    <ID of the session Alisha and Carol's node have>
+                    (ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)
+                    <ID of the session Alisha and Carol's peer have>
                     <Alisha's public key in her session with Carol>
                     5)
-                  <signature Alisha made with her private key in the session with Carol's Node>)))
+                  <signature Alisha made with her private key in the session with Carol's Peer>)))
             ]
            #f
            <desc:import-object 1>>
 ```
-/If Ben had had a connection to Carol's Node, Node C, his Node would just have used that instead of creating a new one/
+/If Ben had had a connection to Carol's Peer, Peer C, his Peer would just have used that instead of creating a new one/
 
-Carol's Node receives this message and delivers it to the bootstrap object which performs the following steps:
+Carol's Peer receives this message and delivers it to the bootstrap object which performs the following steps:
 
 1. Looks up the session specified on the `desc:handoff-give`, it's Carol's session with Alisha, so Alisha is the gifter here.
 2. Using the Alisha's public key in the session Carol and Alisha have, Carol is able to check the signature on the `desc:handoff-give`.
@@ -577,11 +577,11 @@ Finally Carol is able to remove the reference from the gift table as the handoff
 
 This resembles the pattern of "communicating event loops" which contain objects, and in object capability security terminology, such event loops are generally called "vats".
 
-A node may contain one or more vats, but if more than one vat is contained on a node, this detail is not exposed to the OCapN network, it is an internal detail of that node.
+A peer may contain one or more vats, but if more than one vat is contained on a peer, this detail is not exposed to the OCapN network, it is an internal detail of that peer.
 
 ```
 ;;;   .----------------------------------.         .-------------------.
-;;;   |              Node 1              |         |       Node 2      |
+;;;   |              Peer 1              |         |       Peer 2      |
 ;;;   |              ======              |         |       ======      |
 ;;;   |                                  |         |                   |
 ;;;   | .--------------.  .---------.   .-.       .-.                  |
@@ -611,16 +611,16 @@ A node may contain one or more vats, but if more than one vat is contained on a 
 ;;;    Alfred are both objects in Vat A, Bob is an object in Vat B, and
 ;;;    Carol and Carlos are objects in Vat C.
 ;;;
-;;;  - Zooming out the farthest is the "node/network level".
-;;;    There are two nodes (Node 1 and Node 2) connected over a
+;;;  - Zooming out the farthest is the "peer/network level".
+;;;    There are two peers (Peer 1 and Peer 2) connected over a
 ;;;    Goblins CapTP network.  The stubby shapes on the borders between the
-;;;    nodes represent the directions of references Node 1 has to
-;;;    objects in Node 2 (at the top) and references Node 2 has to
-;;;    Node 1.  Both nodes in this diagram are cooperating to preserve
+;;;    peers represent the directions of references Peer 1 has to
+;;;    objects in Peer 2 (at the top) and references Peer 2 has to
+;;;    Peer 1.  Both peers in this diagram are cooperating to preserve
 ;;;    that Bob has access to Carol but that Carol does not have access to
 ;;;    Bob, and that Carlos has access to Bob but Bob does not have access
 ;;;    to Carlos.  (However there is no strict guarantee from either
-;;;    node's perspective that this is the case... generally it's in
+;;;    peer's perspective that this is the case... generally it's in
 ;;;    everyone's best interests to take a "principle of least authority"
 ;;;    approach though so usually it is.)
 ```
