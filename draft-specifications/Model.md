@@ -308,7 +308,7 @@ Promises do not support pass-invariant identity comparison.
 
 A value capturing the reason for rejecting a delivery.
 
-> - **Guile**: to be proposed
+> - **Guile**: an exception
 > - **JavaScript**: a JavaScript Error object
 > - **Python**: to be proposed
 >
