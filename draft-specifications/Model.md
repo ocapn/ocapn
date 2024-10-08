@@ -274,9 +274,6 @@ comparing the identities of any pair of remotable values will produce the same
 result on one peer if passed over OCapN to another peer and compared there,
 regardless of whether either value is a presence on either peer.
 
-Although Remotables and Promises are both Capabilities for delivering messages,
-Promises do not support pass-invariant identity comparison.
-
 > - **Guile**: a function
 > - **JavaScript**: A *far object* or a *remote presence* of that far object.
 >   ```js
@@ -299,6 +296,9 @@ A promise represents the eventual return value (fulfillment) or thrown error
 
 Messages delivered to a promise are forwarded to their eventual fulfillment
 value or rejected with the promises's eventual rejection reason.
+
+Although Remotables and Promises are both Capabilities for delivering messages,
+Promises do not support pass-invariant identity comparison.
 
 > - **Guile**: to be proposed
 > - **JavaScript**: a JavaScript promise
