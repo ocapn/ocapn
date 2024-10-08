@@ -90,7 +90,7 @@ OCapN provides no support for other floating point precisions.
 > may validly round trip even if it results in a different concrete representation.
 > However, we encourage concrete representations to use a canonical NaN representation.
 >
-> Concretely, the canonical NaN is `0x7ff8\_0000\_0000\_0000`, though this is not
+> Concretely, the canonical NaN is `0x7ff8_0000_0000_0000`, though this is not
 > a concern of the abstract syntax and data model.
 >
 > All real and finite double precision floating point numbers participate in the
@@ -184,7 +184,7 @@ Selectors cannot contain lone/unpaired surrogates.
 > OCapN uses the name selector to avoid the implication that they will
 > correspond to a language's symbol type in all languages that have a symbol
 > type.
-> Selectors may correspond to symbols in languages where a symbol is elligible
+> Selectors may correspond to symbols in languages where a symbol is eligible
 > for garbage collection when there are no extant references.
 > At this time, JavaScript cannot safely use registered symbols like
 > `Symbol.for('name')` for OCapN selectors, because registered symbols are
@@ -226,12 +226,11 @@ A struct with unique, unordered string keys and values of heterogeneous type.
 > However, we encourage concrete representations to use some canonical key
 > order, though this is not a concern of the abstract syntax and data model.
 >
-> A JavaScript object that owns any non-string keys (numbers or symbols) or
-> with a prototype other than `Object.prototype cannot be passed as an OCapN
-> struct as all such objects are reserved for concrete representations of OCapN
-> types.
+> A JavaScript object that owns any symbol-keyed properties or with a prototype
+> other than `Object.prototype` cannot be passed as an OCapN struct, as all such
+> objects are reserved for concrete representations of OCapN types.
 > The key `Symbol.for('passStyle')` is special and indicates the kind of OCapN
-> value the object represents.
+> value represented by an object.
 
 ## Tagged
 
@@ -264,10 +263,9 @@ A value with a string tag.
 
 A value that can receive messages.
 
-Remotable values can be either a local value or a remote value that forwards
-messages to a local value.
-The latter is a presence: a remotable that forwards messages to the peer where the
-message can be delivered to its corresponding local remotable.
+A remotable value is either locally implemented or forwards messages to the peer
+where such a local implementation exists for delivery to it.
+The latter is referred to as a presence.
 
 Comparing the identities of remotable values is pass-invariant, meaning that
 comparing the identities of any pair of remotable values will produce the same
