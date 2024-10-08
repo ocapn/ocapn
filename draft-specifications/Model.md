@@ -298,7 +298,7 @@ value or rejected with the promises's eventual rejection reason.
 Although Remotables and Promises are both Capabilities for delivering messages,
 Promises do not support pass-invariant identity comparison.
 
-> - **Guile**: to be proposed
+> - **Guile**: a Goblins promise
 > - **JavaScript**: a JavaScript promise
 > - **Python**: to be proposed
 >
