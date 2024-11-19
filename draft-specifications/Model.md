@@ -10,7 +10,8 @@ Commentary in block quotes is not normative.
 
 # Value
 
-A value is any [Atom](#atom), [Container](#container), or [Reference](#reference).
+A value is any [Atom](#atom), [Container](#container), [Reference](#reference),
+or [Error](#error).
 
 Atoms:
 
@@ -28,7 +29,6 @@ Containers:
 - [List](#list)
 - [Struct](#struct)
 - [Tagged](#tagged)
-- [Error](#error)
 
 References:
 
@@ -36,6 +36,8 @@ References:
 - [Promise](#promise)
 
 # Atom
+
+Atoms are values that do not contain or refer to other values.
 
 ## Undefined
 
@@ -45,38 +47,54 @@ A value representing the absence of a value.
 > - **JavaScript**: `undefined`
 > - **Python**: `None`
 
-## Null (JSON)
+If a JavaScript implementation of OCapN receives a [Struct](#struct) with an
+Undefined value for some key, the struct must be represented as an object
+that owns a property with the value `undefined` for that key.
 
-A value representing `null` as distinct from `undefined` in JSON.
+> Consequently, `JSON.stringify` for the same OCapN struct will omit the
+> property from the generated JSON object.
+
+For purposes of [Pass Invariant Equality](#pass-invariant-equality),
+there is only one Undefined value and it is equal to itself.
+
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+any [Atom](#atom).
+
+## Null ([JSON](#json-invariants))
+
+A value representing `null` as distinct from `undefined` for the purpose
+of maintaining [JSON Invariants](#json-invariants).
 
 > - **Guile**: tentatively `json-null` (*imported*)
 > - **JavaScript** and **JSON**: `null`
 > - **Python**: `Null` (*imported*)
->
-> OCapN distinguishes Null from Undefined to hold the invariant that:
-> 1. any JSON document that a JavaScript peer can produce using
->   `JSON.stringify`, excluding those that contain any Unicode surrogates,
-> 2. can then be read back with `JSON.parse`,
-> 3. sent to any other OCapN peer,
-> 4. returned from any OCapN peer,
-> 5. then saved back to an identical JSON document with `JSON.stringify`.
->
-> If OCapN collapsed `null` and `undefined`, passing a JSON document through an
-> OCapN connection would have to either choose to omit fields of
-> [Struct](#struct)s where the value was `null` or include fields of structs
-> where the value was `undefined`.
-> Neither choice would produce an identical JSON document under all
-> circumstances.
->
-> Regarding the preservation of JSON null: https://github.com/ocapn/ocapn/issues/5#issuecomment-826029525
 
-## Boolean (JSON)
+If a JavaScript implementation of OCapN receives a [Struct](#struct) with
+a Null value for some key, the struct must be represented as an object
+that owns a property with the value `null` for that key.
+
+> Consequently, `JSON.stringify` for the same OCapN struct will have
+> a property with the value `null` in the generated JSON object.
+
+For purposes of [Pass Invariant Equality](#pass-invariant-equality),
+there is only one Null value and it is equal to itself.
+
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+any [Atom](#atom).
+
+## Boolean ([JSON](#json-invariants))
 
 A value that is either true or false.
 
 > - **Guile**: `#f`, `#t`
 > - **JavaScript** and **JSON**: `false`, `true`
 > - **Python**: `False`, `True`
+
+For purposes of [Pass Invariant Equality](#pass-invariant-equality),
+the values True and False are equal only to their respective selves.
+
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+any [Atom](#atom).
 
 ## Integer
 
@@ -89,7 +107,16 @@ An arbitrary precision signed integer.
 > Note: We achieved consensus on the name `Integer` at the [November 14, 2023
 > meeting](https://github.com/ocapn/ocapn/issues/94).
 
-## Float64 (JSON)
+For purposes of [Pass Invariant Equality](#pass-invariant-equality), every
+Integer value is only equal to other Integers with the same magnitude.
+
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+any [Atom](#atom).
+
+> Notably, Python does not have a reliable identity for every integer, so OCapN
+> is not in a position to impose an identity invariant.
+
+## Float64 ([JSON](#json-invariants))
 
 An IEEE 754 64-bit floating point number.
 
@@ -142,7 +169,20 @@ OCapN provides no support for other floating point precisions.
 > - On May 23, @zenhack proposed preserving -0 https://github.com/ocapn/ocapn/issues/5#issuecomment-1560116857
 > - We converged out of band and Agoric has committed to preserving -0 https://github.com/endojs/endo/issues/1602
 
-## String (JSON\*)
+For purposes of [Pass Invariant Equality](#pass-invariant-equality):
+- Every finite Float64 is equal to any other Float64 with the same bitwise
+  representation.
+- Every infinite Float64 is equal to any other infinite Float64 of the same
+  sign.
+- There is only one NaN value and it is equal to itself.
+
+> JavaScript's `Object.is` is consistent with Pass Invariant Equality, whereas
+> `==` and `===` are not.
+
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+any [Atom](#atom).
+
+## String ([JSON](#json-invariants)†)
 
 A string of Unicode code points excluding surrogates (U+D800-U+DFFF).
 Strings are distinguished from [Selector](#selector) s by type, not content.
@@ -151,16 +191,14 @@ Strings are distinguished from [Selector](#selector) s by type, not content.
 > - **JavaScript**: `''`
 > - **Python**: `''`
 >
+> †Strings participate in the [JSON subset](#json-invariants) of OCapN except
+> any strings that contain unpaired/lone surrogates.
+>
 > A string's content must be expressible in UTF-8.
-> Strings in UTF-16 can express unpaired/lone surrogates that cannot be
-> expressed in any UTF and so cannot be carried by OCapN.
+> Some two-byte Unicode encodings, as in JavaScript strings, can contain
+> unpaired/lone surrogates that have no valid expression in any UTF and so
+> cannot be carried by OCapN.
 >
-> \*Strings participate in the JSON subset of OCapN except any strings that
-> contain unpaired/lone surrogates.
->
-> OCapN cannot send or receive strings that come from a UTF-16 language
-> representation (such as a JavaScript string) that contains lone/unpaired
-> surrogates.
 > Notes: [January 2024 meeting
 > notes](https://github.com/ocapn/ocapn/blob/main/meeting-minutes/2024-01-09.md)
 > record that we agreed that strings can only be well-formed Unicode, i.e.,
@@ -168,19 +206,13 @@ Strings are distinguished from [Selector](#selector) s by type, not content.
 > For JavaScript, if a string does not pass [the `isWellFormed`
 > predicate](https://github.com/tc39/proposal-is-usv-string), then it is not a
 > Passable string.
->
-> Agoric has agreed to tentatively omit lone surrogates, pending vetting of the
-> performance of the implementation in their CapTP.
-> https://github.com/ocapn/ocapn/issues/47
->
-> Agoric previously held the position that all valid strings that JavaScript
-> can parse with `JSON.parse` should round-trip.
-> https://github.com/ocapn/ocapn/issues/5#issuecomment-1550370096,
-> https://github.com/ocapn/ocapn/issues/5#issuecomment-1550481111
->
-> Spritely has consistently preferred a representation that can be captured
-> with UTF-8, which cannot transit lone/unpaired surrogates.
-> (October 10, 2023)
+
+For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
+Strings are equal if they have the same quantity of Unicode code points and
+have the same respective Unicode code points in order.
+
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+any [Atom](#atom).
 
 ## ByteArray
 
@@ -202,6 +234,22 @@ An array of bytes.
 > record that we agreed on ByteArray because it was the winner of the poll, and
 > we had already agreed to resolve this specific issue by poll among these
 > three choices.
+>
+> The JavaScript representation of a ByteArray is an `ArrayBuffer` which may
+> be made immutable with the proposed JavaScript [Immutable
+> ArrayBuffer](https://github.com/tc39/proposal-immutable-arraybuffer) feature.
+
+For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
+ByteArrays are equal if they have the same quantity of bytes and have the same
+respective bytes in order.
+
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+any [Atom](#atom).
+
+> Notably, imposing identity invariants for JavaScript ArrayBuffer would put
+> an undue performance burden for OCapN sessions, as they would need to intern
+> all reachable ByteArrays for the duration of the session and search for
+> an equivalent ArrayBuffer for every received ByteArray.
 
 ## Selector
 
@@ -209,7 +257,7 @@ A string of Unicode code points excluding surrogates (U+D800-U+DFFF).
 Selectors are distinguished from [String](#string)s by type, not content.
 
 > - **Guile**: symbols `'name`
-> - **JavaScript**:
+> - **JavaScript**: 
 >   ```js
 >   {
 >     [Symbol.for('passStyle'): 'selector',
@@ -224,7 +272,7 @@ Selectors are distinguished from [String](#string)s by type, not content.
 >
 > Tracking: https://github.com/ocapn/ocapn/issues/46
 >
-> OCapN uses the name selector to avoid the implication that they will
+> OCapN uses the name Selector to avoid the implication that they will
 > correspond to a language's symbol type in all languages that have a symbol
 > type.
 > Selectors may correspond to symbols in languages where a symbol is elligible
@@ -242,11 +290,18 @@ Selectors are distinguished from [String](#string)s by type, not content.
 > values appear, including any argument position, inside a container, or as a
 > promise fulfillment value or rejection reason.
 
+For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
+Selectors are equal if they have the same quantity of Unicode code points and
+have the same respective Unicode code points in order.
+
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+any [Atom](#atom).
+
 # Container
 
 A container is a value that contains other values.
 
-## List (JSON)
+## List ([JSON](#json-invariants))
 
 A list of any quantity of values.
 
@@ -260,7 +315,14 @@ A list of any quantity of values.
 >
 > We achieved consensus to name the type "List" at the [November 14, 2023](https://github.com/ocapn/ocapn/issues/94) meeting.
 
-## Struct (JSON)
+A pair of lists are equal or equivalent for purposes of [Pass Invariant
+Equality](#pass-invariant-equality) if the are the same length and every
+respective value is equal, transitively.
+
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+lists.
+
+## Struct ([JSON](#json-invariants))
 
 A struct with unique, unordered string keys and values of heterogeneous type.
 
@@ -281,6 +343,19 @@ A struct with unique, unordered string keys and values of heterogeneous type.
 > types.
 > The key `Symbol.for('passStyle')` is special and indicates the kind of OCapN
 > value the object represents.
+
+A pair of structs are equal or equivalent for purposes of [Pass Invariant
+Equality](#pass-invariant-equality) if they mutually posess a value for every
+key in the other struct and every respective value is equal to their own,
+transitively.
+
+> A pair of structs may be equivalent regardless of the order of appearance of
+> fields.
+> OCapN implementations will likely sort keys of structs according to code
+> points in order in the concrete representation of a struct.
+
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+any [Container](#container).
 
 ## Tagged
 
@@ -311,28 +386,21 @@ The tag is a string of Unicode code points excluding surrogates (U+D800-U+DFFF).
 >
 > What are tagged values for? https://github.com/ocapn/ocapn/issues/52
 
-## Error
+Tagged values are equal or equivalent for the purposes of [Pass Invariant
+Equality](#pass-invariant-equality) if the tag and value are equivalent,
+transitively.
 
-A value capturing the reason for rejecting a delivery.
+OCapN does not impose [Pass Invariant Identity](#pass-invariant-identity) on
+any [Container](#container).
 
-> - **Guile**: to be proposed
-> - **JavaScript**: a JavaScript Error object
-> - **Python**: to be proposed
->
-> We have not yet converged on any particular details about the modeling of
-> errors. The purpose of errors is typically to indicate that some requested
-> operation failed. The purpose of the contents of errors is to preserve and
-> convey diagnostic information, mostly to help debug problems, such as the
-> root cause of a surprising failure. This is a best-efforts obligation, for
-> which we have not yet decided either what contents are required, nor what is
-> allowed, nor what must be preserved as errors are passed from one site to
-> another. Until these details are decided, the only hard requirement is that
-> an error round trip to an error. We avoid any interpretation for now as to
-> whether it is the "same" error.
-
-# Reference
+# Reference (Capability)
 
 A value that can receive messages, either a Target or Promise.
+
+> References are the Capabilities in the name OCapN ("Object Capability
+> Network") that distinguish a Capability Transfer Protocol from mere RPC
+> ("Remote Procedure Calls") as they are the basis of
+> [Promise Pipelining](https://en.wikipedia.org/wiki/Futures_and_promises#Promise_pipelining).
 
 ## Target
 
@@ -344,39 +412,36 @@ A local target handles deliveries and produces either a return value
 A remote target (a presence) forwards messages to its corresponding local target.
 
 > - **Guile**: a procedure
-> - **JavaScript**: Tentatively, *far object* (can handle message deliveries
->   locally) or a *presence* (a token object that forwards messages to a
->   corresponding far object).
+> - **JavaScript**: Tentatively and aspirationally, an object with a `function`
+>   named `'deliver'`, a property for the the registered `symbol` for
+>   `'passStyle'` and the value `'target'`, and a property with for the
+>   well-known `symbol` for `toStringTag` and a `string` value with the alleged
+>   interface name for the target for
+>   diagnostics.
 >   ```js
->   {
->     __proto__: {
->       [Symbol.for('passStyle')]: 'remotable',
->       [Symbol.toStringTag]: allegedInterfaceName,
->     },
->     ...methods
->   }
+>   ({
+>     [Symbol.for('passStyle')]: 'target',
+>     [Symbol.toStringTag]: allegedInterfaceName,
+>     deliver(...args) {},
+>   })
 >   ```
 > - **Python**: to be proposed
 >
 > Tracking: https://github.com/ocapn/ocapn/issues/49
 
-Targets have [Pass Invariant Equality](#pass-invariant-equality).
+Targets have [Pass Invariant Identity](#pass-invariant-identity).
 A target might be sent from a local peer to a remote peer, then the remote peer
 may send that target back to the local peer.
-The sent target will be equal to the received target.
+The sent target will be identical to the received target and no other value.
 
-> The operator for establishing equality is specific to the implementation
-> language.
-> For JavaScript, the Pass-Invariant Equal operator is `Object.is`.
-
-Although Targets and Promises are both References for delivering messages,
-OCapn does not maintain pass invariance for promises.
+OCapN does not impose [Pass Invariant Equality](#pass-invariant-equality) on
+any [Reference](#reference).
 
 ## Promise
 
 A promise represents the eventual return value (fulfillment) or thrown error
 (rejection reason) for a message delivery.
-
+A promise is pending until settled with either a fulfillment or rejection reson.
 Messages delivered to a promise are forwarded to their eventual fulfillment
 value or rejected with the promises's eventual rejection reason.
 
@@ -386,26 +451,147 @@ value or rejected with the promises's eventual rejection reason.
 >
 > Tracking https://github.com/ocapn/ocapn/issues/55
 
-OCapN does not maintain [Pass Invariant Equality](#pass-invariant-equality) for
-promises.
+OCapN does not maintain [Pass Invariant Identity](#pass-invariant-identity) nor
+[Pass Invariant Equality](#pass-invariant-equality) for promises.
+
+As with all other types, OCapN does maintain [Pass Invariant
+Type](#pass-invariant-type) such that a local promise sent to a a remote peer
+arrives as a promise, regardless of whether it is pending or settled locally.
+
+OCapN maintains that, if a local promise is sent to a remote peer and then
+retuned, either the fulfillment value or the rejection reason of the sent and
+received promises will satisfy the pass invariants applicable to their type.
+
+> For example, if the sent promise settles with a fulfillment value that is a
+> Target, the sent and received targets will be identical, because Targets
+> maintain [Pass Invariant Identity](#pass-invariant-identity).
+>
+> For another example, if the sent promise settles with a fulfillment value
+> that is a Struct, the sent and received structs will be equal, because
+> all [Containers](#container) maintain [Pass Invariant
+> Equality](#pass-invariant-equality), but the structs may not be identical.
+> OCapN doesn't explicitly forbid identity for passed structs, but interning
+> structs for the duration of an OCapN session in order to preserve identity
+> for all equivalent structs is prohibitively expensive in most languages.
+
+# Error
+
+A value capturing the reason for rejecting a delivery.
+
+> - **Guile**: to be proposed
+> - **JavaScript**: a JavaScript Error object
+> - **Python**: to be proposed
+>
+> We have not yet converged on consensus for any particular details about the
+> modeling of errors. The purpose of errors is typically to indicate that some
+> requested operation failed. The purpose of the contents of errors is to
+> preserve and convey diagnostic information, mostly to help debug problems,
+> such as the root cause of a surprising failure. This is a best-efforts
+> obligation, for which we have not yet decided either what contents are
+> required, nor what is allowed, nor what must be preserved as errors are
+> passed from one site to another. Until these details are decided, the only
+> hard requirement is that an error round trip to an error. We avoid any
+> interpretation for now as to whether it is the "same" error.
+>
+> https://github.com/ocapn/ocapn/issues/142
 
 # Pass Invariant
 
-> Any property that holds both locally and remotely between a pair of OCapN peers
-> during a session is a Pass Invariant.
-> For example, for some value types, OCapN maintains invariant that any pair of
-> values of that type, if and only if those values are Equal locally, they will
-> be equal remotely.
-> Furthermore, if the remote peer sends one value back, it will remain equal to
-> the value retained locally.
+> Any property that holds for corresponding values both locally and remotely
+> between a pair of OCapN peers during a session is a Pass Invariant.
+
+## Pass Type Invariant
+
+All values passable between OCapN peers have a single, invariant type.
+A value sent from one peer and received in another will have the same OCapN
+type in both peers.
+For any value sent from a local peer to a remote peer then returned to the
+local peer, the sent and received values will have the same type.
 
 ## Pass Invariant Equality
 
-A type holds Equality invariant over passage between OCapN peers if values of that
+A type holds equality invariant over passage between OCapN peers if values of that
 type can be passed from a local peer to a remote peer, then returned to the local peer,
-and the value that was sent is Equal to the value received.
+and the value that was sent is equal to the value received.
 
-> The operators necessary for checking Equality may vary for each language and even
-> for types in one language.
-> For example, `Object.is`
+> Equality does not guarantee a unique identity for all equivalent values.
 
+Any pair of values of different types are not equal or equivalent regardless of
+their values.
+
+> Only values of the same type can be equivalent, per the equivalence relation
+> specified for their common type.
+
+OCapN holds equality invariant for all [Atoms](#atom) and
+[Containers](#container) passed between peers.
+
+> In JavaScript, none of `==`, `===`, or `Object.is` are sufficient to compare
+> equality of values, but a composite operator that takes the OCapN type for
+> every value into account.
+> For example, Float64 can be compared by `Object.is`, which preserves the
+> distinction between 0 and -0 and non-equivalence of any NaN to any other NaN,
+
+## Pass Invariant Identity
+
+Values of a type have an identity if a value of that type is identical to
+itself and no other value.
+A type holds identity invariant over passage between OCapN peers if values of that
+type can be passed from a local peer to a remote peer, then returned to the local peer,
+and the value that was sent is identical the the value received _and identical
+to no other value_.
+
+> The operators necessary for checking identify may vary for each language and
+> even for types in one language.
+> Pass Invariant Identity obliges OCapN to track a value's identity until the value
+> becomes unreachable.
+
+OCapN holds identity invariant only for values of type [Target](#target).
+
+OCapN does not hold identity invariant for values of type [Promise](#promise).
+
+OCapN does not guarantee identity is invariant for any values of [Atom](#atom)
+or [Container](#container) types.
+
+> Notably, in JavaScript, all Atomc types have trivial Pass Invariant Identity
+> except the JavaScript `ArrayBuffer` for an OCapN [ByteArray](#bytearray) and
+> the JavaScript object representation of an OCapN [Selector](#selector).
+> OCapN does not obligate a JavaScript implementation to intern a single identity
+> for all equivalent ByteArrays or Selectors.
+
+# JSON Invariants
+
+OCapN holds invariant that:
+
+- Any JSON document that a JavaScript peer can produce using
+  `JSON.stringify`,
+- excluding those that contain any Unicode surrogates,
+- can then be read back with `JSON.parse`,
+- sent to any other OCapN peer,
+- returned from any OCapN peer,
+- then saved back to an identical JSON document with `JSON.stringify`.
+
+> For this reason, OCapN supports distinct a distinct [Undefined](#undefined)
+> and [Null](#null).
+> If OCapN coerced `null` to `undefined`, a JSON document like `{"key": null}`
+> would become `{"key": undefined}` passing through an OCapN network, and
+> consequently reduce to `{}` when returned to JSON format with
+> `JSON.stringify`.
+> If OCapn coerced `undefined` to `null`, an idiomatic JavaScript options
+> object like `{"key": undefined}` would return through the OCapN network as
+> `{"key": null}` and would `key` would no longer pass `key === undefined`
+> checks.
+> If OcapN refused to pass documents with either `null` or `undefined`, OCapN
+> would have too great an impedence mismatch with either idiomatic JSON
+> documents or idiomatic use of JavaScript objects.
+>
+> OCapN maintains that -0 and 0 are distinct [Pass Invariant](#pass-invariant)
+> values, whereas JavaScript's `JSON.stringify` renders -0 as `0`.
+> This is consistent with OCapN's JSON Invariants because all pass-invariant
+> JSON documents are in the range of `JSON.parse(JSON.stringify(x))`, which
+> cannot express -0.
+> This holds without regard for -0 being in the range of `JSON.parse`,
+> including `JSON.parse('-0')`, because of the narrowing behavior of
+> `JSON.stringify`.
+>
+> OCapN does not hold invariant the preservation of arbitrary JSON documents
+> through arbitrary JSON implementations in arbitrary langugaes.
