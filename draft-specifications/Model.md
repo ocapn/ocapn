@@ -257,12 +257,15 @@ A string of Unicode code points excluding surrogates (U+D800-U+DFFF).
 Selectors are distinguished from [String](#string)s by type, not content.
 
 > - **Guile**: symbols `'name`
-> - **JavaScript**: 
+> - **JavaScript**: an object with two own properties:
+>   for the registered symbol key `passStyle`, the value is the string
+>   `selector`; and
+>   for the well-known symbol `toStringTag`, the value is the selector.
 >   ```js
->   {
+>   ({
 >     [Symbol.for('passStyle'): 'selector',
 >     [Symbol.toStringTag]: 'name',
->   }
+>   })
 >   ```
 > - **Python**: `Selector('name')` where `Selector` is imported from `ocapn`.
 >
@@ -370,14 +373,16 @@ The tag is a string of Unicode code points excluding surrogates (U+D800-U+DFFF).
 > list, sorted list, or a set of unique values.
 >
 > - **Guile**: currently a Guile record labeled `'(make-tagged 'tagName 10)` (**imported**)
-> - **JavaScript**: an object with the key `Symbol.for('passStyle')` and value
->   `tagged`, with a string tagName and a single `"payload"` field carrying the tagged value.
+> - **JavaScript**: an object with three own properties:
+>   for the registered symbol key `passStyle`, the value is the string `tagged`;
+>   for the well-known symbol key `toStringTag`, the value is the tag;
+>   for the string key `payload`, the value is the tagged value.
 >   ```js
->   {
+>   ({
 >     [Symbol.for('passStyle')]: 'tagged',
 >     [Symbol.toStringTag]: 'tagName',
 >     payload
->   }
+>   })
 >   ```
 > - **Python**: `Tagged('tagName', value)` where `tag` is a `string` and `Tagged` is
 >   imported from `ocapn`.
@@ -412,12 +417,14 @@ A local target handles deliveries and produces either a return value
 A remote target (a presence) forwards messages to its corresponding local target.
 
 > - **Guile**: a procedure
-> - **JavaScript**: Tentatively and aspirationally, an object with a `function`
->   named `'deliver'`, a property for the the registered `symbol` for
->   `'passStyle'` and the value `'target'`, and a property with for the
->   well-known `symbol` for `toStringTag` and a `string` value with the alleged
->   interface name for the target for
->   diagnostics.
+> - **JavaScript**: tentatively and aspirationally, an object with three own
+>   properties:
+>   for the registered symbol `passStyle`, the value is the string `target`,
+>   for the well-known symbol `toStringTag`, the value is the alleged name of the
+>   target's interface for diagnostics; and
+>   for the string name `deliver`, the value is a function that receives the
+>   delivery arguments and returns or throws the resolution of the delivery's
+>   promise.
 >   ```js
 >   ({
 >     [Symbol.for('passStyle')]: 'target',
@@ -426,6 +433,15 @@ A remote target (a presence) forwards messages to its corresponding local target
 >   })
 >   ```
 > - **Python**: to be proposed
+>
+> The Endo JavaScript implementation of OCapN will likely continue to also accept
+> targets that are only suitable for method invocation in the form of an object
+> that, for the registered symbol `passStyle` own key, has the string value
+> `remotable`; for the well-known symbol `toStringTag` has a string value
+> indicating a diagnostic name for the target's alleged interface; and
+> all remaining string keys correspond to methods that should be invoked
+> for any delivery where the first argument is the equivalent Selector to the
+> method name, passing all remaining arguments to the method.
 >
 > Tracking: https://github.com/ocapn/ocapn/issues/49
 
