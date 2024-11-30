@@ -60,7 +60,7 @@ You get:
    to their particular program.
 
  - Distributed (acyclic) garbage collection.
-   Nodes can cooperate to inform each other when they no longer need
+   Peers can cooperate to inform each other when they no longer need
    references across the network.
 
  - Network layers supporting live connections (tcp-like), store and
