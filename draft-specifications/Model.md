@@ -103,7 +103,8 @@ An arbitrary precision signed integer.
 > meeting](https://github.com/ocapn/ocapn/issues/94).
 
 For purposes of [Pass Invariant Equality](#pass-invariant-equality), every
-Integer value is only equal to other Integers with the same magnitude.
+Integer value is only equal to Integer values that represent the same
+arithmetic integer.
 
 ## Float64
 
@@ -138,7 +139,7 @@ OCapN provides no support for other floating point precisions.
 > Tracking: https://github.com/ocapn/ocapn/issues/58
 >
 > OCapN round-trips all double precision floating point numbers as expressible with
-> IEEE 754, except that OCapN considers all IEEE 754 NaNs as equivalent, i.e., as
+> IEEE 754, except that OCapN considers all IEEE 754 NaNs as Equal, i.e., as
 > jointly representing a single abstract NaN value. Thus, any concrete NaN representation
 > may validly round trip even if it results in a different concrete representation.
 > However, we encourage concrete representations to use a canonical NaN representation.
@@ -174,7 +175,8 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality):
 
 ([JSON](#json-invariants)†)
 
-A string of Unicode code points excluding surrogates (U+D800-U+DFFF).
+A string of Unicode code points excluding lone (or unpaired) surrogates
+(U+D800-U+DFFF).
 Strings are distinguished from [Selector](#selector) s by type, not content.
 
 > - **Guile**: `""`
@@ -232,7 +234,8 @@ respective bytes in order.
 
 ## Selector
 
-A string of Unicode code points excluding surrogates (U+D800-U+DFFF).
+A string of Unicode code points excluding lone (or unpaired) surrogates
+(U+D800-U+DFFF).
 Selectors are distinguished from [String](#string)s by type, not content.
 
 > - **Guile**: symbols `'name`
@@ -296,8 +299,8 @@ A list of any quantity of values.
 >
 > We achieved consensus to name the type "List" at the [November 14, 2023](https://github.com/ocapn/ocapn/issues/94) meeting.
 
-A pair of lists are equal or equivalent for purposes of [Pass Invariant
-Equality](#pass-invariant-equality) if the are the same length and every
+A pair of lists are equal or Equal for purposes of [Pass Invariant
+Equality](#pass-invariant-equality) if they are the same length and every
 respective value is equal, transitively.
 
 ## Struct
@@ -323,15 +326,13 @@ A struct with unique, unordered string keys and values of heterogeneous type.
 > The key `Symbol.for('passStyle')` is special and indicates the kind of OCapN
 > value the object represents.
 
-A pair of structs are equal or equivalent for purposes of [Pass Invariant
-Equality](#pass-invariant-equality) if they mutually posess a value for every
+A pair of structs are Equal for purposes of [Pass Invariant
+Equality](#pass-invariant-equality) if they mutually posses a value for every
 key in the other struct and every respective value is equal to their own,
 transitively.
 
-> A pair of structs may be equivalent regardless of the order of appearance of
+> A pair of structs may be Equal regardless of the order of appearance of
 > fields.
-> OCapN implementations will likely sort keys of structs according to code
-> points in order in the concrete representation of a struct.
 
 ## Tagged
 
@@ -364,8 +365,8 @@ The tag is a string of Unicode code points excluding surrogates (U+D800-U+DFFF).
 >
 > What are tagged values for? https://github.com/ocapn/ocapn/issues/52
 
-Tagged values are equal or equivalent for the purposes of [Pass Invariant
-Equality](#pass-invariant-equality) if the tag and value are equivalent,
+Tagged values are equal or Equal for the purposes of [Pass Invariant
+Equality](#pass-invariant-equality) if the tag and value are Equal,
 transitively.
 
 # Reference (Capability)
@@ -402,7 +403,7 @@ The sent target will be equal to the received target and no other value.
 A promise represents the eventual return value (fulfillment) or thrown error
 (rejection reason) for a message delivery.
 A promise is pending until settled with either a fulfillment or rejection
-reson.
+reason.
 OCapN queues messages delivered to a promise.
 If the eventual resolution of a promise is another promise, OCapN forwards
 the queued messages to the next Promise.
@@ -477,21 +478,22 @@ Two values may be Equal under Equality.
 Values of different OCapN types are not Equal.
 Values of the same OCapN type may be Equal under conditions specific to their
 shared type.
-All OCapN types maintain pass invariant Equality except Promise.
+All OCapN types maintain pass invariant Equality except Promise and
+(tentatively) Error.
 
 All OCapN implementations, regardless of language, must model all OCapN types
 such that Equality for the in-language representation of values is consistent
 with the Equality and Pass Invariance of Equality for their corresponding OCapN
 model type.
 
-A type holds Equality invariant over passage between OCapN peers because any
-pair of local values that are Equal can be passed to another and the remote
-values will also be Equal.
+A type holds Equality invariant over passage between OCapN peers.
+Any pair of local values that are Equal can be passed to another peer and the
+respective remote values will also be Equal.
 
 It follows that, for any local value that is sent to a remote peer and then returned,
 the sent and received values will be Equal.
 
-> OCapN Equal values may be locally distinguishable by oother operators
+> OCapN Equal values may be locally distinguishable by other operators
 > depending on the language implementation and type.
 
 > In JavaScript, none of `==`, `===`, or `Object.is` are sufficient to compare
@@ -504,7 +506,8 @@ the sent and received values will be Equal.
 > implementation holds invariant a single object identity for every Target.
 > The JavaScript ArrayBuffer representation of an OCapN ByteArray must be
 > compared byte-for-byte.
-
+> Also, Object.is doesn't work on Container because container equality is based
+> on recursive equality of the contents.
 
 # JSON Invariants
 
@@ -517,7 +520,7 @@ OCapN holds invariant that:
 - can then be read back with `JSON.parse`,
 - sent to any other OCapN peer,
 - returned from any OCapN peer,
-- then saved back to an identical JSON text with `JSON.stringify`.
+- then saved back to an equivalent JSON text with `JSON.stringify`.
 
 > For this reason, OCapN supports distinct a distinct [Undefined](#undefined)
 > and [Null](#null).
