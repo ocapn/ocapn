@@ -144,7 +144,7 @@ OCapN provides no support for other floating point precisions.
 > may validly round trip even if it results in a different concrete representation.
 > However, we encourage concrete representations to use a canonical NaN representation.
 >
-> Concretely, the canonical NaN is `0x7ff8\_0000\_0000\_0000`, though this is not
+> Concretely, the canonical NaN is `0x7ff8_0000_0000_0000`, though this is not
 > a concern of the abstract syntax and data model.
 >
 > All real and finite double precision floating point numbers participate in the
@@ -260,7 +260,7 @@ Selectors are distinguished from [String](#string)s by type, not content.
 > OCapN uses the name Selector to avoid the implication that they will
 > correspond to a language's symbol type in all languages that have a symbol
 > type.
-> Selectors may correspond to symbols in languages where a symbol is elligible
+> Selectors may correspond to symbols in languages where a symbol is eligible
 > for garbage collection when there are no extant references.
 > At this time, JavaScript cannot safely use registered symbols like
 > `Symbol.for('name')` for OCapN selectors, because registered symbols are
@@ -306,6 +306,9 @@ respective value is equal, transitively.
 ## Struct
 
 ([JSON](#json-invariants)†)
+
+> The name "struct" is tentative.
+> https://github.com/ocapn/ocapn/pull/125
 
 A struct with unique, unordered string keys and values of heterogeneous type.
 
@@ -375,7 +378,8 @@ A value that can receive messages, either a Target or Promise.
 
 > References are the Capabilities in the name OCapN ("Object Capability
 > Network") that distinguish a Capability Transfer Protocol from mere RPC
-> ("Remote Procedure Calls") as they are the basis of
+> ("Remote Procedure Calls").
+> References forward messages and support
 > [Promise Pipelining](https://en.wikipedia.org/wiki/Futures_and_promises#Promise_pipelining).
 
 ## Target
@@ -400,14 +404,14 @@ The sent target will be equal to the received target and no other value.
 
 ## Promise
 
-A promise represents the eventual return value (fulfillment) or thrown error
+A Promise represents the eventual return value (fulfillment) or thrown error
 (rejection reason) for a message delivery.
-A promise is pending until settled with either a fulfillment or rejection
+A Promise is pending until settled with either a fulfillment or rejection
 reason.
-OCapN queues messages delivered to a promise.
-If the eventual resolution of a promise is another promise, OCapN forwards
+OCapN queues messages delivered to a Promise.
+If the eventual resolution of a Promise is another Promise, OCapN forwards
 the queued messages to the next Promise.
-If the eventual fulfillment value of the promise is a Target, OCapN forwards
+If the eventual fulfillment value of the Promise is a Target, OCapN forwards
 the queued messages to the Target.
 OCapN does not forward messages to non-references (non-capabilities).
 
@@ -522,7 +526,7 @@ OCapN holds invariant that:
 - returned from any OCapN peer,
 - then saved back to an equivalent JSON text with `JSON.stringify`.
 
-> For this reason, OCapN supports distinct a distinct [Undefined](#undefined)
+> For this reason, OCapN supports a distinct [Undefined](#undefined)
 > and [Null](#null).
 > If OCapN coerced `null` to `undefined`, a JSON text like `{"key": null}`
 > would become `{"key": undefined}` passing through an OCapN network, and
