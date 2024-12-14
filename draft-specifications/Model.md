@@ -37,7 +37,7 @@ References:
 
 # Atom
 
-Atoms are values that do not contain or refer to other values.
+Atoms are values that cannot contain or refer to other values.
 
 ## Undefined
 
@@ -59,7 +59,7 @@ there is only one Undefined value and it is equal to itself.
 
 ## Null
 
-([JSON](#json-invariants)†)
+([JSON](#json-invariants))
 
 A value representing `null` as distinct from `undefined` for the purpose
 of maintaining [JSON Invariants](#json-invariants).
@@ -80,7 +80,7 @@ there is only one Null value and it is equal to itself.
 
 ## Boolean
 
-([JSON](#json-invariants)†)
+([JSON](#json-invariants))
 
 A value that is either true or false.
 
@@ -108,7 +108,7 @@ arithmetic integer.
 
 ## Float64
 
-([JSON](#json-invariants)†)
+([JSON](#json-invariants))
 
 An IEEE 754 64-bit floating point number.
 
@@ -128,21 +128,22 @@ OCapN preserves positive and negative infinity.
 | **JavaScript** | `-Infinity`     | `Infinity`     |
 | **Python**     | `float('-inf')` | `float('inf')` |
 
-OCapN collapses all versions of NaN to a single abstract NaN.
+OCapN collapses the complete set of NaN values to a single abstract NaN.
 
 OCapN provides no support for other floating point precisions.
 
-> - **JavaScript**: `NaN`
 > - **Guile**: `+nan.0`
+> - **JavaScript**: `NaN`
 > - **Python**: `float('nan')`
 >
 > Tracking: https://github.com/ocapn/ocapn/issues/58
 >
-> OCapN round-trips all double precision floating point numbers as expressible with
-> IEEE 754, except that OCapN considers all IEEE 754 NaNs as Equal, i.e., as
-> jointly representing a single abstract NaN value. Thus, any concrete NaN representation
-> may validly round trip even if it results in a different concrete representation.
-> However, we encourage concrete representations to use a canonical NaN representation.
+> OCapN round-trips all floating point numbers representable within IEEE 754
+> binary64, except that OCapN considers all NaNs as equivalent, that is, as jointly
+> representing a single abstract NaN value.
+> So, any concrete NaN representation may validly round trip even if it results
+> in a different concrete representation.
+> However, we encourage use of a canonical representation for NaN.
 >
 > Concretely, the canonical NaN is `0x7ff8_0000_0000_0000`, though this is not
 > a concern of the abstract syntax and data model.
@@ -175,8 +176,7 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality):
 
 ([JSON](#json-invariants)†)
 
-A string of Unicode code points excluding lone (or unpaired) surrogates
-(U+D800-U+DFFF).
+A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
 Strings are distinguished from [Selector](#selector) s by type, not content.
 
 > - **Guile**: `""`
@@ -184,17 +184,20 @@ Strings are distinguished from [Selector](#selector) s by type, not content.
 > - **Python**: `''`
 >
 > †Strings participate in the [JSON subset](#json-invariants) of OCapN except
-> any strings that contain unpaired/lone surrogates.
+> any strings that contain surrogate code points.
 >
 > A string's content must be expressible in UTF-8.
 > Some two-byte Unicode encodings, as in JavaScript strings, can contain
-> unpaired/lone surrogates that have no valid expression in any UTF and so
-> cannot be carried by OCapN.
+> 16-bit surrogate code _units_ in the range from 0xD800-0xDFFF.
+> Pairs of surrogate code units correspond to a single Unicode code _point_
+> greater than or equal to U-10000 and can be expressed in UTF-8.
+> However unpaired or lone surrogates have no valid expression in any UTF
+> and so cannot be carried by OCapN.
 >
 > Notes: [January 2024 meeting
 > notes](https://github.com/ocapn/ocapn/blob/main/meeting-minutes/2024-01-09.md)
-> record that we agreed that strings can only be well-formed Unicode, i.e.,
-> cannot contain unpaired surrogates.
+> record that we agreed that strings can only be well-formed Unicode, that is,
+> cannot contain unpaired surrogate code points.
 > For JavaScript, if a string does not pass [the `isWellFormed`
 > predicate](https://github.com/tc39/proposal-is-usv-string), then it is not a
 > Passable string.
@@ -203,9 +206,60 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
 Strings are equal if they have the same quantity of Unicode code points and
 have the same respective Unicode code points in order.
 
+## Selector
+
+A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
+Selectors are distinguished from [String](#string)s by type, not content.
+
+> - **Guile**: symbols `'name`
+> - **JavaScript**: an object with two own properties:
+>   for the registered symbol key `passStyle`, the value is the string
+>   `selector`; and
+>   for the well-known symbol `toStringTag`, the value is a string consisting
+>   of the code points of the selector.
+>   ```js
+>   ({
+>     [Symbol.for('passStyle')]: 'selector',
+>     [Symbol.toStringTag]: 'name',
+>   })
+>   ```
+> - **Python**: `Selector('name')` where `Selector` is imported from `ocapn`.
+>
+> A selector's content must be expressible in UTF-8.
+> Some two-byte Unicode encodings, as in JavaScript strings, can contain
+> 16-bit surrogate code _units_ in the range from 0xD800-0xDFFF.
+> Pairs of surrogate code units correspond to a single Unicode code _point_
+> greater than or equal to U-10000 and can be expressed in UTF-8.
+> However unpaired or lone surrogates have no valid expression in any UTF
+> and so cannot be carried by OCapN.
+>
+> Tracking: https://github.com/ocapn/ocapn/issues/46
+>
+> OCapN uses the name Selector to avoid the implication that they will
+> correspond to a language's symbol type in all languages that have a symbol
+> type.
+> Selectors may correspond to symbols in languages where a symbol is eligible
+> for garbage collection when there are no extant references.
+> At this time, JavaScript cannot safely use registered symbols like
+> `Symbol.for('name')` for OCapN selectors, because some implementations intern
+> registered symbols without possibility of eventual garbage collection.
+>
+> OCapN supports one operator for delivering both function application and
+> method invocation.
+> By convention, method invocation is equivalent to function application, where
+> the first argument is a selector followed by the remaining arguments.
+>
+> However, like symbols in Guile, selectors are values and can appear anywhere
+> values appear, including any argument position, inside a container, or as a
+> promise fulfillment value or rejection reason.
+
+For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
+Selectors are equal if they have the same quantity of Unicode code points and
+have the same respective Unicode code points in order.
+
 ## ByteArray
 
-An array of bytes.
+An array of 8-bit bytes.
 
 > - **Guile**: `#vu8()`
 > - **JavaScript**: `new ArrayBuffer()`
@@ -232,60 +286,13 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
 ByteArrays are equal if they have the same quantity of bytes and have the same
 respective bytes in order.
 
-## Selector
-
-A string of Unicode code points excluding lone (or unpaired) surrogates
-(U+D800-U+DFFF).
-Selectors are distinguished from [String](#string)s by type, not content.
-
-> - **Guile**: symbols `'name`
-> - **JavaScript**: an object with two own properties:
->   for the registered symbol key `passStyle`, the value is the string
->   `selector`; and
->   for the well-known symbol `toStringTag`, the value is the selector.
->   ```js
->   ({
->     [Symbol.for('passStyle'): 'selector',
->     [Symbol.toStringTag]: 'name',
->   })
->   ```
-> - **Python**: `Selector('name')` where `Selector` is imported from `ocapn`.
->
-> A selector's content must be expressible in UTF-8.
-> Strings in UTF-16 can express unpaired/lone surrogates that cannot be
-> expressed in any UTF and so cannot be carried by OCapN.
->
-> Tracking: https://github.com/ocapn/ocapn/issues/46
->
-> OCapN uses the name Selector to avoid the implication that they will
-> correspond to a language's symbol type in all languages that have a symbol
-> type.
-> Selectors may correspond to symbols in languages where a symbol is eligible
-> for garbage collection when there are no extant references.
-> At this time, JavaScript cannot safely use registered symbols like
-> `Symbol.for('name')` for OCapN selectors, because registered symbols are
-> interned without possibility of eventual garbage collection.
->
-> OCapN supports one operator for delivering both function application and
-> method invocation.
-> By convention, method invocation is equivalent to function application, where
-> the first argument is a selector followed by the remaining arguments.
->
-> However, like symbols in Guile, selectors are values and can appear anywhere
-> values appear, including any argument position, inside a container, or as a
-> promise fulfillment value or rejection reason.
-
-For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
-Selectors are equal if they have the same quantity of Unicode code points and
-have the same respective Unicode code points in order.
-
 # Container
 
 A container is a value that contains other values.
 
 ## List
 
-([JSON](#json-invariants)†)
+([JSON](#json-invariants))
 
 A list of any quantity of values.
 
@@ -305,12 +312,15 @@ respective value is equal, transitively.
 
 ## Struct
 
-([JSON](#json-invariants)†)
+([JSON](#json-invariants))
 
 > The name "struct" is tentative.
 > https://github.com/ocapn/ocapn/pull/125
 
-A struct with unique, unordered string keys and values of heterogeneous type.
+A collection of unordered (key, value) pairs.
+Each key must be a [String](#string), and must be
+non-[Equal](#pass-invariant-equality) to any other key within a Struct.
+{Values](#value) within a Struct may be of heterogeneous type.
 
 > - **Guile**: `make-tbd-hash` a hash of undecided type
 > - **JavaScript**: `{}`
@@ -339,9 +349,8 @@ transitively.
 
 ## Tagged
 
-A [Value](#value) with a tag.
-The value may be any value.
-The tag is a string of Unicode code points excluding surrogates (U+D800-U+DFFF).
+A pair consisting of a tag and a [Value](#value).
+The tag must be a [String](#string).
 
 > OCapN provides a small number of container types with minimal semantics.
 > Tags allow protocols to emerge from values annotated to indicate a richer
@@ -494,7 +503,8 @@ A type holds Equality invariant over passage between OCapN peers.
 Any pair of local values that are Equal can be passed to another peer and the
 respective remote values will also be Equal.
 
-It follows that, for any local value that is sent to a remote peer and then returned,
+It follows that, for any local value that is sent over OCapN, if that value
+returns to the local peer through any path through the network of remote peers,
 the sent and received values will be Equal.
 
 > OCapN Equal values may be locally distinguishable by other operators
@@ -510,8 +520,8 @@ the sent and received values will be Equal.
 > implementation holds invariant a single object identity for every Target.
 > The JavaScript ArrayBuffer representation of an OCapN ByteArray must be
 > compared byte-for-byte.
-> Also, Object.is doesn't work on Container because container equality is based
-> on recursive equality of the contents.
+> Also, `Object.is` is not sufficient for Container because container
+> equality is based on recursive equality of the contents.
 
 # JSON Invariants
 
@@ -520,7 +530,7 @@ OCapN holds invariant that:
 - Any JSON text that a JavaScript peer can produce using
   `JSON.stringify`,
 - excluding those in which the Unicode representation of any object member name
-  or string includes a surrogate,
+  or string includes a surrogate code point,
 - can then be read back with `JSON.parse`,
 - sent to any other OCapN peer,
 - returned from any OCapN peer,
