@@ -167,6 +167,9 @@ A collection of unordered (key, value) pairs.
 - _abstract-field_: _abstract-key_ `:` _abstract-value_
 - _abstract-key_: _abstract-field-name_ / _abstract-value_
 - _abstract-field-name_: _name_ :: Corresponding to a string.
+- _concrete-struct_: `{` _concrete-field_* `}`
+- _concrete-field_: _concrete-key_ _concrete-value_
+- _concrete-key_: _concrete-value_ :: The concrete representation lacks an analog for the abstraction notation’s string key shorthand.
 
 > The [Model](Model.md) limits field names in structs to strings, but for
 > purposes of [CapTP](CapTP%20Specification.md) surrounding data, the notation
