@@ -172,7 +172,7 @@ A collection of unordered (key, value) pairs.
 > purposes of [CapTP](CapTP%20Specification.md) surrounding data, the notation
 > and representation allow any value.
 
-The notation allows a shorthand where a field name may be an alphanumeric ASCII
+The abstract notation allows a shorthand where a field name may be an alphanumeric ASCII
 name without a prefix `"`, in which case the field name is a [String](#string).
 
 ## List
