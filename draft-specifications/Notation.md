@@ -38,9 +38,9 @@ this document uses the following notation:
 - _referent_ : _definition_
 - :: semantics
 
-Both grammars allow for the interpolation of arbitrary [ASCII]
-(https://datatracker.ietf.org/doc/html/rfc20) space (SP), tab (HT), carriage
-return (CR), and line feed (LF) characters between tokens.
+Both grammars ignore arbitrary [ASCII](https://datatracker.ietf.org/doc/html/rfc20)
+space (SP), tab (HT), carriage return (CR), and line feed (LF) characters between
+tokens.
 
 Commentary in block quotes is not normative.
 
@@ -52,11 +52,11 @@ A representation of any expressible value in an OCapN message.
 
 - _abstract-value_: _abstract-boolean_ / _abstract-integer_ /
   _abstract-float64_ / _abstract-selector_ / _abstract-string_ /
-  _abstract-byte-array_ / _abstract-byte-array_ / _abstract-struct_ /
+  _abstract-byte-array_ / _abstract-struct_ /
   _abstract-list_ / _abstract-record_
 - _concrete-value_: _concrete-boolean_ / _concrete-integer_ /
   _concrete-float64_ / _concrete-selector_ / _concrete-string_ /
-  _concrete-byte-array_ / _concrete-byte-array_ / _concrete-struct_ /
+  _concrete-byte-array_ / _concrete-struct_ /
   _concrete-list_ / _concrete-record_
 
 ## Boolean
@@ -79,9 +79,10 @@ An arbitrary precision signed integer.
 > - `-1` corresponds to `1-`.
 > - `0` corresponds to `0+`.
 
-- _abstract-integer_: _sign_? _digit_+
+- _abstract-integer_: _sign_? _integer-digits_
 - _sign_: `+` / `-`
-- _concrete-integer_: _digit_+ _sign_ :: No preceding zeroes.
+- _integer-digits_: ( `0` / ( `1` - `9` ) _digit_* )
+- _concrete-integer_: _integer-digits_ _sign_
 
 ## Float64
 
@@ -91,11 +92,12 @@ An IEEE 754 64-bit floating point number.
 > - `nan` corresponds to the bytes 44 (`"D"`), 7f, f8, 00, 00, 00, 00, 00, 00
 >   in hexadecimal.
 
-- _abstract-float64_: _abstract-float64-number_ / _sign_? `inf` / `nan`
-- _abstract-float64-number_: _sign_? _digit_* `.` _digit_* :: Corresponding to the nearest
-  expressible concrete IEEE 754 64-bit floating point number.
-- _concrete-float64_: `D` followed by the corresponding bytes of an IEEE 754 64-bit
-  floating point number.
+- _abstract-float64_: _abstract-float64-number_ / ( _sign_? `inf` ) / `nan`
+- _abstract-float64-number_: _abstract-integer_ `.` _digit_* /
+  _sign_? `.` _digit_+ :: Corresponding to the nearest expressible concrete IEEE
+  754 64-bit floating point number, rounding ties to even.
+- _concrete-float64_: `D` followed by the corresponding 8 bytes of an IEEE 754
+  64-bit floating point number.
 
 ## String
 
@@ -103,12 +105,12 @@ A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
 
 > Example: `"twine"` corresponds to `5"twine`.
 
-- _abstract-string_: `"` _character_ * `"`
-- _character_:: ` ` / _alpha_ / _digit_ / (_ASCII graphic characters except_
-  `"` / `\`).
+- _abstract-string_: `"` _abstract-character_ * `"`
+- _abstract-character_:: _any printable ASCII character except `"` or `\`_ ::
+  note that spaces are printable
 - _concrete-string_: _length_ `"` _bytes_
-- _length_: _digit_* :: The number of bytes in _bytes_ in
-  ASCII decimal digits.
+- _length_: _integer-digits_ :: The number of bytes in _bytes_ as ASCII decimal
+  digits.
 - _bytes_: _byte_* :: The bytes of the string in UTF-8 encoding.
 
 We do not attempt to capture strings with embedded quotes or non-ASCII Unicode
@@ -123,7 +125,7 @@ A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
 
 - _abstract-selector_: `'` _name_
 - _name_: _alpha_ ( _alpha_ / _digit_ / `-` )*
-- _alpha_: `a` - `z` / `A` - `Z`
+- _alpha_: ( `a` - `z` ) / ( `A` - `Z` )
 - _digit_: `0` - `9`
 - _concrete-selector_: _length_ `'` _bytes_
 - _bytes_: _byte_* :: The bytes of the selector in UTF-8 encoding.
@@ -141,8 +143,7 @@ An array of 8-bit bytes.
 
 - _abstract-byte-array_: `:` _hex_
 - _hex_: ( _hex-digit_ _hex-digit_ )*
-- _hex-digit_: `0` / `1` / `2` / `3` / `4` / `5` / `6` / `7` / `8` / `9` /
-  `a` / `b` / `c` / `d` / `e` / `f` :: Corresponding to a _byte_ of _bytes_.
+- _hex-digit_: _digit_ / ( `a` - `f` ) :: Corresponding to a _byte_ of _bytes_.
 - _concrete-byte-array_: _length_ `:` _bytes_ :: The number of bytes in _bytes_
   and the _bytes_.
 
@@ -168,7 +169,7 @@ A collection of unordered (key, value) pairs.
 - _abstract-field-name_: _name_ :: Corresponding to a string.
 
 > The [Model](Model.md) limits field names in structs to strings, but for
-> purposes of [CapTP](CapTP Specification.md) surrounding data, the notation
+> purposes of [CapTP](CapTP%20Specification.md) surrounding data, the notation
 > and representation allow any value.
 
 The notation allows a shorthand where a field name may be an alphanumeric ASCII
@@ -181,7 +182,7 @@ A list of any quantity of values.
 > Example: `[ 1 2 3 ]` corresponds to `[ 1+ 2+ 3+ ]`.
 
 - _abstract-list_: `[` ( _abstract-value_ ( `,` _abstract-value_ )* )? `]`
-- _concrete-list_: `[` _concrete-value * `]` :: The respective concrete
+- _concrete-list_: `[` _concrete-value_ * `]` :: The respective concrete
   representations of the abstract values.
 
 ## Record
@@ -206,9 +207,9 @@ alphanumeric name without a prefix `'`, in which case he value is a
 [Selector](#selector).
 
 > Records do not correspond to a paricular type in the [Model](Model.md), but
-> are instrumenal in represnting messages in the [protocol](CapTP
-> Specification.md) and envelope many types in the concrete represenation of
-> the passable data model.
+> are instrumental in representing messages in the
+> [protocol](CapTP%20Specification.md) and envelope many types in the concrete
+> representation of the passable data model.
 >
 > The name "record" does not indicate a relationship to TypeScript records.
 > They are more analogous to Python tuples.
