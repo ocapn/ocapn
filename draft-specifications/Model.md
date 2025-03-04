@@ -101,10 +101,6 @@ A value that is either true or false.
 The concrete representation of a Boolean is a bare
 [Boolean](Notation.md#boolean), simply `f` or `t`.
 
-```
-<'null>
-```
-
 > - **Guile**: `#f`, `#t`
 > - **JavaScript** and **JSON**: `false`, `true`
 > - **Python**: `False`, `True`
