@@ -198,7 +198,7 @@ A tuple of any quantity of values.
 > - `<'foo 1 2 3>` corresponds to `<3'foo 1+ 2+ 3+>`
 > - `<"foo 1 2 3>` corresponds to `<3"foo 1+ 2+ 3+>`
 
-- _abstract-record_: `<` ( _abstract-value_ ( `,` _abstract-value_ )* )? `>`
+- _abstract-record_: `<` _abstract-value_ * `>`
 - _concrete-record_: `<` _concrete-field_ * `>`
 - _concrete-field_: _concrete-field-name_ / _concrete-value_
 - _concrete-field-name_: _name_ :: Corresponding to a selector.
