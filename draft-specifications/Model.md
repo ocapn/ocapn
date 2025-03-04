@@ -43,6 +43,13 @@ Atoms are values that cannot contain or refer to other values.
 
 A value representing the absence of a value.
 
+The concrete representation of Undefined is a [Record](Notation.md#record)
+with a single [Selector](Notation.md#selector) spelled "void".
+
+```
+<'void>
+```
+
 > - **Guile**: `*unspecified*`
 > - **JavaScript**: `undefined`
 > - **Python**: `None`
@@ -64,6 +71,13 @@ there is only one Undefined value and it is equal to itself.
 A value representing `null` as distinct from `undefined` for the purpose
 of maintaining [JSON Invariants](#json-invariants).
 
+The concrete representation of Null is a [Record](Notation.md#record)
+with a single [Selector](Notation.md#selector) spelled "null".
+
+```
+<'null>
+```
+
 > - **Guile**: tentatively `json-null` (*imported*)
 > - **JavaScript** and **JSON**: `null`
 > - **Python**: `Null` (*imported*)
@@ -84,6 +98,13 @@ there is only one Null value and it is equal to itself.
 
 A value that is either true or false.
 
+The concrete representation of a Boolean is a bare
+[Boolean](Notation.md#boolean), simply `f` or `t`.
+
+```
+<'null>
+```
+
 > - **Guile**: `#f`, `#t`
 > - **JavaScript** and **JSON**: `false`, `true`
 > - **Python**: `False`, `True`
@@ -94,6 +115,9 @@ the values True and False are equal only to their respective selves.
 ## Integer
 
 An arbitrary precision signed integer.
+
+Integer is represented by [Integer](Notation.md#integer) in the underlying
+abstract notation and concrete representation.
 
 > - **Guile**: `-1`, `0`, `1`
 > - **JavaScript**: `-1n`, `0n`, `1n`
@@ -112,6 +136,9 @@ arithmetic integer.
 ([JSON](#json-invariants))
 
 An IEEE 754 64-bit floating point number.
+
+Float64 is represented by [Float64](Notation.md#float64) in the underlying
+abstract notation and concrete representation.
 
 OCapN preserves the distinction between +0 and -0.
 
@@ -180,6 +207,9 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality):
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
 Strings are distinguished from [Selectors](#selector) by type, not content.
 
+String is represented by [String](Notation.md#string) in the underlying
+abstract notation and concrete representation.
+
 > - **Guile**: `""`
 > - **JavaScript**: `''`
 > - **Python**: `''`
@@ -211,6 +241,9 @@ have the same respective Unicode code points in order.
 
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
 Selectors are distinguished from [String](#string)s by type, not content.
+
+Selector is represented by [Selector](Notation.md#string) in the underlying
+abstract notation and concrete representation.
 
 > - **Guile**: symbols `'name`
 > - **JavaScript**: an object with two own properties:
@@ -262,6 +295,9 @@ have the same respective Unicode code points in order.
 
 An array of 8-bit bytes.
 
+ByteArray is represented by [ByteArray](Notation.md#bytearray) in the underlying
+abstract notation and concrete representation.
+
 > - **Guile**: `#vu8()`
 > - **JavaScript**: `new ArrayBuffer()`
 > - **Python**: `b''`
@@ -298,6 +334,23 @@ A container is a value that contains other values.
 
 A list of any quantity of values.
 
+The abstract notation for a List is a List of the abstract notations of the
+respective contained values.
+For example, the abstract notation for a list containing the Integer 1, the
+String "a" is:
+
+```
+[ 1 "a" ]
+```
+
+Likewise, the concrete representation of a List is a [List](Notation.md) of the
+representations of the respective contained values.
+The concrete representation of the same list is:
+
+```
+[ 1+ 1"a ]
+```
+
 > - **Guile**: `'()`
 > - **JavaScript** and **JSON**: `[]`
 > - **Python**: `()` (We have not discussed whether to use tuple or list. Tuple
@@ -326,6 +379,23 @@ Each key must be a [String](#string), and must be
 non-[Equal](#pass-invariant-equality) to any other key within a Struct.
 [Values](#value) within a Struct may be of heterogeneous type.
 
+The abstract notation for a Struct is a [Struct](Notation.md#struct) with the
+abstract notations of the respective keys and values.
+For example, the abstract notation for a Struct with a field named `"a"` and an
+Integer value of `1` is:
+
+```
+{ a: 1 }
+```
+
+Likewise, the concrete representation is a [Struct](Notation.md#struct) with
+the concrete representations of the respective keys and values.
+For example, the concrete representation of the same struct is:
+
+```
+{ 1"a 1+ }
+```
+
 > - **Guile**: `make-tbd-hash` a hash of undecided type
 > - **JavaScript**: `{}`
 > - **Python**: `{}`
@@ -353,7 +423,24 @@ transitively.
 ## Tagged
 
 A pair consisting of a tag and a [Value](#value).
-The tag must be a [String](#string).
+
+The abstraction notation for a Tagged value is a [Record](Notation.md#record)
+with three values.
+The first value is a [Selector](Notation.md#selector) spelled "desc:tagged".
+The second value is a [Selector](Notation.md#selector) containing the tag.
+The third value is the abstract notation of the tagged value itself.
+For example, the abstract notation for an Integer value of 42 tagged "meaning"
+is:
+
+```
+<'tagged 'meaning 42>
+```
+
+The concrete representation of the same tagged value is:
+
+```
+<6'tagged 7'meaning 42+>
+```
 
 > OCapN provides a small number of container types with minimal semantics.
 > Tags allow protocols to emerge from values annotated to indicate a richer
@@ -407,6 +494,22 @@ A local target handles deliveries and produces either a return value
 (fulfillment) or thrown error (rejection reason) for a message delivery.
 A remote target (a presence) forwards messages to its corresponding local target.
 
+The abstract notation for a target is a [Record](Notation.md#record) with two
+values.
+The first value is a [Selector](Notation.md#selector) indicating whether the
+value corresponds to a local or remote target.
+The second value is a positive [Integer](Notation.md#integer) specifying a
+target as tracked by the sender or receiver.
+
+If the Selector is spelled `desc:import-object`, the target is local to the
+sender and remote to the receiver of the value.
+If the Selector is spelled `desc:export`, the target is remote to the
+sender and local to the receiver of the value.
+
+For example, when handling a received message delivery, the abstract notation
+`<desc:import-object 0>` represents the sender's first shared target.  The
+corresponding concrete representation is `<18'desc:import-object 0+>`.
+
 > - **Guile**: a procedure
 > - **JavaScript**: to be proposed
 > - **Python**: to be proposed
@@ -430,6 +533,22 @@ the queued messages to the next Promise.
 If the eventual fulfillment value of the Promise is a Target, OCapN forwards
 the queued messages to the Target.
 OCapN does not forward messages to non-references (non-capabilities).
+
+The abstract notation for a promise is a [Record](Notation.md#record) with two
+values.
+The first value is a [Selector](Notation.md#selector) that indicates whether
+the sender or receiver tracks and settles the promise.
+The second value is a positive [Integer](Notation.md#integer) identifying the
+local or remote promise.
+
+For example, the abstract notation for the first promise sent by the remote is
+`<'desc:import-promise 0>`.
+The corresponding concrete representation is `<19'desc:import-promise 0+>`.
+
+If the Selector is spelled `import-promise`, the remote sender tracks and
+settles the promise.
+If the Selector is spelled `desc:answer`, the local receiver tracks and settles
+the promise.
 
 > - **Guile**: to be proposed
 > - **JavaScript**: a JavaScript promise
@@ -460,6 +579,15 @@ received promises will satisfy the pass invariants applicable to their type.
 # Error
 
 A value capturing the reason for rejecting a delivery.
+
+The _tentative_ abstract notation for an Error is a
+[Record](Notation.md#record) with two values.
+The first value is a [Selector](Notation.md#selector) spelled `desc:error`.
+The second value is a [String](Notation.md#string) with a description of the
+error.
+
+> The description should not capture a stack trace and should redact sensitive
+> data including personally identifying information.
 
 > - **Guile**: to be proposed
 > - **JavaScript**: a JavaScript Error object
