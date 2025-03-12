@@ -106,7 +106,7 @@ We are hoping to unify our work in the OCapN project.
 CapTP usually comes with some other pieces.
 The original implementation of CapTP was part of a suite called
 "Pluribus" (with E and Pluribus being two parts of the joke "E
-Pluribus Unum"); "OCapN" is thus the equivalent of "Pluribius".
+Pluribus Unum"); "OCapN" is thus the equivalent of "Pluribus".
 If you are familiar with the original CapTP work, you can think of the
 "netlayer" abstraction as being what used to be called
 ["VatTP"](http://erights.org/elib/distrib/vattp/index.html),
