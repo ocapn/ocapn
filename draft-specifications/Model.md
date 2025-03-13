@@ -1,8 +1,8 @@
 
 This document captures a summary of consensus and remaining contention for the
-OCapN data model and abstract syntax, excluding the concern of concrete
-representation of these on the wire, but including non-normative
-representations in a selection of implementation languages.
+OCapN passable data model, abstract syntax, corresponding format in the
+bytewise serialization of messages, and non-normative representations in a
+selection of implementation languages.
 
 Commentary in block quotes is not normative.
 
@@ -43,8 +43,8 @@ Atoms are values that cannot contain or refer to other values.
 
 A value representing the absence of a value.
 
-The concrete representation of Undefined is a [Record](Notation.md#record)
-with a single [Selector](Notation.md#selector) spelled "void".
+The format of Undefined is a [Record](Formats.md#record)
+with a single [Selector](Formats.md#selector) spelled "void".
 
 ```
 <'void>
@@ -71,8 +71,8 @@ there is only one Undefined value and it is equal to itself.
 A value representing `null` as distinct from `undefined` for the purpose
 of maintaining [JSON Invariants](#json-invariants).
 
-The concrete representation of Null is a [Record](Notation.md#record)
-with a single [Selector](Notation.md#selector) spelled "null".
+The format of Null is a [Record](Formats.md#record) with a single
+[Selector](Formats.md#selector) spelled "null".
 
 ```
 <'null>
@@ -98,8 +98,8 @@ there is only one Null value and it is equal to itself.
 
 A value that is either true or false.
 
-The concrete representation of a Boolean is a bare
-[Boolean](Notation.md#boolean), simply `f` or `t`.
+The format of a Boolean is a bare [Boolean](Formats.md#boolean), simply `f` or
+`t`.
 
 > - **Guile**: `#f`, `#t`
 > - **JavaScript** and **JSON**: `false`, `true`
@@ -112,8 +112,8 @@ the values True and False are equal only to their respective selves.
 
 An arbitrary precision signed integer.
 
-Integer is represented by [Integer](Notation.md#integer) in the underlying
-abstract notation and concrete representation.
+Integer is represented by [Integer](Formats.md#integer) in the underlying
+format.
 
 > - **Guile**: `-1`, `0`, `1`
 > - **JavaScript**: `-1n`, `0n`, `1n`
@@ -133,8 +133,8 @@ arithmetic integer.
 
 An IEEE 754 64-bit floating point number.
 
-Float64 is represented by [Float64](Notation.md#float64) in the underlying
-abstract notation and concrete representation.
+Float64 is represented by [Float64](Formats.md#float64) in the underlying
+format.
 
 OCapN preserves the distinction between +0 and -0.
 
@@ -203,8 +203,7 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality):
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
 Strings are distinguished from [Selectors](#selector) by type, not content.
 
-String is represented by [String](Notation.md#string) in the underlying
-abstract notation and concrete representation.
+String is represented by [String](Formats.md#string) in the underlying format.
 
 > - **Guile**: `""`
 > - **JavaScript**: `''`
@@ -238,8 +237,8 @@ have the same respective Unicode code points in order.
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
 Selectors are distinguished from [String](#string)s by type, not content.
 
-Selector is represented by [Selector](Notation.md#string) in the underlying
-abstract notation and concrete representation.
+Selector is represented by [Selector](Formats.md#string) in the underlying
+format.
 
 > - **Guile**: symbols `'name`
 > - **JavaScript**: an object with two own properties:
@@ -291,8 +290,8 @@ have the same respective Unicode code points in order.
 
 An array of 8-bit bytes.
 
-ByteArray is represented by [ByteArray](Notation.md#bytearray) in the underlying
-abstract notation and concrete representation.
+ByteArray is represented by [ByteArray](Formats.md#bytearray) in the
+underlying format.
 
 > - **Guile**: `#vu8()`
 > - **JavaScript**: `new ArrayBuffer()`
@@ -330,21 +329,20 @@ A container is a value that contains other values.
 
 A list of any quantity of values.
 
-The abstract notation for a List is a List of the abstract notations of the
+The Presentation Format for a List is a List of the Presentation Formats of the
 respective contained values.
-For example, the abstract notation for a list containing the Integer 1, the
+For example, the Presentation Format for a list containing the Integer 1, the
 String "a" is:
 
 ```
 [ 1 "a" ]
 ```
 
-Likewise, the concrete representation of a List is a [List](Notation.md) of the
-representations of the respective contained values.
-The concrete representation of the same list is:
+Likewise, the Wire Format of a List is a [List](Formats.md) of the formatted
+values.
 
 ```
-[ 1+ 1"a ]
+[1+1"a]
 ```
 
 > - **Guile**: `'()`
@@ -370,26 +368,28 @@ respective value is equal, transitively.
 > The name "struct" is tentative.
 > https://github.com/ocapn/ocapn/pull/125
 
-A collection of unordered (key, value) pairs.
-Each key must be a [String](#string), and must be
-non-[Equal](#pass-invariant-equality) to any other key within a Struct.
+A collection of unordered (field name, value) pairs.
+Each field name must be a [String](#string), and must be
+non-[Equal](#pass-invariant-equality) to any other field name within a Struct.
 [Values](#value) within a Struct may be of heterogeneous type.
 
-The abstract notation for a Struct is a [Struct](Notation.md#struct) with the
-abstract notations of the respective keys and values.
-For example, the abstract notation for a Struct with a field named `"a"` and an
-Integer value of `1` is:
+The Presentation Format for a Struct is a [Struct](Formats.md#struct) with the
+Presentation Formats of the respective field names and values.
+For example, the Presentation Format for a Struct with a field named `"a"` and
+an Integer value of `1` is:
 
 ```
-{ a: 1 }
+{ b: 2, a: 1 }
 ```
 
-Likewise, the concrete representation is a [Struct](Notation.md#struct) with
-the concrete representations of the respective keys and values.
-For example, the concrete representation of the same struct is:
+Likewise, the Wire Format is a [Struct](Formats.md#struct) with the Wire
+Formats of the respective field names and values.
+The fields must appear in the bytewise order of their respective field names in
+the Wire Format.
+For example, the Wire Format of the same struct is:
 
 ```
-{ 1"a 1+ }
+{1"a1+1"b2+}
 ```
 
 > - **Guile**: `make-tbd-hash` a hash of undecided type
@@ -398,10 +398,6 @@ For example, the concrete representation of the same struct is:
 >
 > For the purposes of surviving a round trip, the order of appearance of
 > entries in the struct must not be important for determining equivalence.
-> A struct representation concretely using one key order may validly
-> round-trip into a struct representation using another key order.
-> However, we encourage concrete representations to use some canonical key
-> order, though this is not a concern of the abstract syntax and data model.
 >
 > A JavaScript object that owns any symbol-keyed properties or uses a prototype
 > other than `Object.prototype` cannot be passed as an OCapN struct.
@@ -410,8 +406,8 @@ For example, the concrete representation of the same struct is:
 
 A pair of structs are Equal for purposes of [Pass Invariant
 Equality](#pass-invariant-equality) if they mutually posses a value for every
-key in the other struct and every respective value is equal to their own,
-transitively.
+field name in the other struct and every respective value is equal to their
+own, transitively.
 
 > A pair of structs may be Equal regardless of the order of appearance of
 > fields.
@@ -420,22 +416,22 @@ transitively.
 
 A pair consisting of a tag and a [Value](#value).
 
-The abstraction notation for a Tagged value is a [Record](Notation.md#record)
+The Presentation Format for a Tagged value is a [Record](Formats.md#record)
 with three values.
-The first value is a [Selector](Notation.md#selector) spelled "desc:tagged".
-The second value is a [Selector](Notation.md#selector) containing the tag.
-The third value is the abstract notation of the tagged value itself.
-For example, the abstract notation for an Integer value of 42 tagged "meaning"
-is:
+The first value is a [Selector](Formats.md#selector) spelled "desc:tagged".
+The second value is a [Selector](Formats.md#selector) containing the tag.
+The third value is the Presentation Format of the tagged value itself.
+For example, the Presentation Format for an Integer value of 42 tagged
+"meaning" is:
 
 ```
 <'tagged 'meaning 42>
 ```
 
-The concrete representation of the same tagged value is:
+The Wire Format of the same tagged value is:
 
 ```
-<6'tagged 7'meaning 42+>
+<6'tagged7'meaning42+>
 ```
 
 > OCapN provides a small number of container types with minimal semantics.
@@ -490,11 +486,11 @@ A local target handles deliveries and produces either a return value
 (fulfillment) or thrown error (rejection reason) for a message delivery.
 A remote target (a presence) forwards messages to its corresponding local target.
 
-The abstract notation for a target is a [Record](Notation.md#record) with two
+The Presentation Format for a target is a [Record](Formats.md#record) with two
 values.
-The first value is a [Selector](Notation.md#selector) indicating whether the
+The first value is a [Selector](Formats.md#selector) indicating whether the
 value corresponds to a local or remote target.
-The second value is a positive [Integer](Notation.md#integer) specifying a
+The second value is a positive [Integer](Formats.md#integer) specifying a
 target as tracked by the sender or receiver.
 
 If the Selector is spelled `desc:import-object`, the target is local to the
@@ -502,9 +498,9 @@ sender and remote to the receiver of the value.
 If the Selector is spelled `desc:export`, the target is remote to the
 sender and local to the receiver of the value.
 
-For example, when handling a received message delivery, the abstract notation
-`<desc:import-object 0>` represents the sender's first shared target.  The
-corresponding concrete representation is `<18'desc:import-object 0+>`.
+For example, when handling a received message delivery, the Presentation Format
+`<desc:import-object 0>` represents the sender's first shared target.
+The corresponding Wire Format is `<18'desc:import-object0+>`.
 
 > - **Guile**: a procedure
 > - **JavaScript**: to be proposed
@@ -530,16 +526,16 @@ If the eventual fulfillment value of the Promise is a Target, OCapN forwards
 the queued messages to the Target.
 OCapN does not forward messages to non-references (non-capabilities).
 
-The abstract notation for a promise is a [Record](Notation.md#record) with two
-values.
-The first value is a [Selector](Notation.md#selector) that indicates whether
+The Presentation Format for a promise is a [Record](Formats.md#record) with
+two values.
+The first value is a [Selector](Formats.md#selector) that indicates whether
 the sender or receiver tracks and settles the promise.
-The second value is a positive [Integer](Notation.md#integer) identifying the
+The second value is a positive [Integer](Formats.md#integer) identifying the
 local or remote promise.
 
-For example, the abstract notation for the first promise sent by the remote is
-`<'desc:import-promise 0>`.
-The corresponding concrete representation is `<19'desc:import-promise 0+>`.
+For example, the Presentation Format for the first promise sent by the remote
+is `<'desc:import-promise 0>`.
+The corresponding Wire Format is `<19'desc:import-promise0+>`.
 
 If the Selector is spelled `import-promise`, the remote sender tracks and
 settles the promise.
@@ -576,10 +572,10 @@ received promises will satisfy the pass invariants applicable to their type.
 
 A value capturing the reason for rejecting a delivery.
 
-The _tentative_ abstract notation for an Error is a
-[Record](Notation.md#record) with two values.
-The first value is a [Selector](Notation.md#selector) spelled `desc:error`.
-The second value is a [String](Notation.md#string) with a description of the
+The _tentative_ Presentation Format for an Error is a
+[Record](Formats.md#record) with two values.
+The first value is a [Selector](Formats.md#selector) spelled `desc:error`.
+The second value is a [String](Formats.md#string) with a description of the
 error.
 
 > The description should not capture a stack trace and should redact sensitive
