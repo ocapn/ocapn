@@ -646,6 +646,131 @@ resolver when a resolution is available to the `listen-desc` object. If a
 resolution is already available, the resolver provided in `listen-desc` MUST be
 fulfilled or broken.
 
+## [`op:get`](#op-get)
+
+`op:get` requests the value for the named field of an eventually settled
+[Struct](Model.md#struct).
+The get operation follows promise resolutions, inheriting the rejection reason
+of any intermediate rejected promise.
+The operation rejects the answer if the ultimate fulfillment of the receiver
+is not a Struct or if the named field is absent on the Struct.
+
+The messages looks like:
+```
+<op:get receiver-desc       ; <desc:answer | desc:import-promise>
+        field-name          ; String
+        new-answer-pos>     ; Positive Integer
+```
+
+> The `op:get` operation allows a sender to pipeline messages to a
+> [Target](Model.md#target) that is deeply embedded in one or more enveloping
+> Structs, [Lists](Model.md#list), or [Tagged](Model.md#tagged) values.
+> For cases where the receiver of a get operation is an answer slot with no
+> listeners, sending `op:get` obviates the transmission of uninteresting fields
+> of a potentially large Struct.
+
+### Sending
+#### `receiver-desc`
+This must be the `desc:answer` or a `desc:import-promise` value which
+eventually leads to the Struct you wish to get the value from.
+#### `field-name`
+This must be a [String](Model.md#string) designating a field of the Struct
+you wish to get the value from.
+#### `new-answer-pos`
+This should be a new unique answer position that the selected value should be
+exported at.
+
+### Receiving
+When receiving the `op:get` message, export a promise at the
+answer position specified by `new-answer-pos`.
+The promise should eventually resolve to the value at the field specified by
+`field-name`, in fields of the `receiver-desc` Struct.
+If the `receiver-desc` promise breaks, or the `field-name` is absent on the
+eventual receiver, the promise breaks.
+
+## [`op:index`](#op-index)
+
+`op:index` requests the value at the given index of an eventually settled
+[List](Model.md#list).
+The index operation follows promise resolutions, inheriting the rejection
+reason of any intermediate rejected promise.
+The operation rejects the answer if the ultimate fulfillment of the receiver
+is not a List.
+
+The messages looks like:
+```
+<op:index receiver-desc       ; <desc:answer | desc:import-promise>
+          index               ; Integer
+          new-answer-pos>     ; Positive Integer
+```
+
+> The `op:index` operation allows a sender to pipeline messages to a
+> [Target](Model.md#target) that is deeply embedded in one or more enveloping
+> Lists, [Structs](Model.md#struct), or [Tagged](Model.md#tagged) values.
+> For cases where the receiver of an index operation is an answer slot with no
+> listeners, sending `op:index` obviates the transmission of uninteresting
+> values of a potentially large List.
+
+### Sending
+#### `receiver-desc`
+This must be the `desc:answer` or a`desc:import-promise` value which eventually
+leads to the List you wish to get the value from.
+#### `index`
+This must be a zero-indexed integer which specifies which value should be
+picked out of the List.
+#### `new-answer-pos`
+This must be a new unique answer position that the selected value should be
+exported at.
+
+### Receiving
+When the `op:index` message is received, a promise should be exported at the
+answer position specified by `new-answer-pos`.
+The promise should eventually resolve to the value at the index specified by
+`index`, in values provided in the List eventually fulfilled at
+`receiver-desc`.
+If the `receiver-desc` promise breaks, or the `index` is out of
+the bounds of the receiver List, the promise should break.
+
+## [`op:untag`](#op-untag)
+
+`op:untag` requests the value for an eventually settled
+[Tagged](Model.md#tagged) value.
+The operation rejects the answer if the ultimate fulfillment of the receiver is
+not a Tagged value.
+
+The messages looks like:
+```
+<op:untag receiver-desc       ; <desc:answer | desc:import-promise>
+          tag                 ; A String
+          new-answer-pos>     ; Positive Integer
+```
+
+> The `op:untag` operation allows a sender to pipeline messages to a
+> [Target](Model.md#target) that is deeply embedded in one or more enveloping
+> tagged values and to assert the expected tag, possibly enveloped in further
+> [Structs](Model.md#struct), [Lists](Model.md#list), or Tagged values.
+> For cases where the receiver of an untag operation is an answer slot with no
+> listeners, sending `op:untag` obviates the transmission of the uninteresting
+> intermediate tag.
+
+### Sending
+#### `receiver-desc`
+This must be the `desc:answer` or a`desc:import-promise` value which eventually
+leads to the Tagged value.
+#### `tag`
+This must be a [String](Model.md#string) corresponding to the expected tag
+string of the eventually settled receiver [Tagged](Model.md#tagged).
+#### `new-answer-pos`
+This must be a new unique answer position that the selected value should be
+exported at.
+
+### Receiving
+When the `op:untag` message is received, a promise should be exported at the
+answer position specified by `new-answer-pos`.
+The promise should eventually resolve to the tagged value, provided in the
+Tagged value eventually fulfilled at `receiver-desc` (the receiver), or rejected
+if the received tag does not match the tag of the receiver.
+
 ## [`op:gc-export`](#op-gc-export)
 
 When a reference is given out over CapTP, the reference must be kept
