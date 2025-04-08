@@ -646,6 +646,90 @@ resolver when a resolution is available to the `listen-desc` object. If a
 resolution is already available, the resolver provided in `listen-desc` MUST be
 fulfilled or broken.
 
+## `op:get`
+
+`op:get` requests the value for the named field of an eventually settled
+[Struct](Model.md#Struct).  The get operation follows promise resolutions,
+inheriting the rejection reason of any intermediate rejected promise.
+The operation rejects the answer if the ultimate fulfillment of the receiver
+is not a struct.
+
+The messages looks like:
+```
+<op:get <receiver-pos>       ; <desc:answer | desc:import-promise>
+        <field-name>         ; String
+        <new-anser-pos>      ; Positive Integer
+```
+
+> The `op:get` operation allows a sender to pipeline messages to a
+> [Target](Model.md#Target) that is deeply embedded in one or more enveloping
+> structs.
+> For cases where the receiver of a get operation is an answer slot with no
+> listeners, sending `op:get` obviates the transmission of uninteresting fields
+> of a potentially large Struct.
+
+### Sending
+#### `receiver-pos`
+This must be the `desc:answer` or a `desc:import-promise` value which
+eventually leads to the Struct you wish to get the value from.
+#### `field-name`
+This must be a [String](Model.md#String) designating a field of the Struct
+you wish to get the value from.
+#### `new-answer-pos`
+This should be a new unique answer position that the selected value should be
+exported at.
+
+### Receiving
+When receiving the `op:get` message, export a promise at the
+answer position specified by `new-answer-pos`.
+The promise should eventually resolve to the value at the field specified by
+`field-name`, in fields of the `receiver-pos` Struct.
+If the `receiver-pos` promise breaks, or the `field-name` is absent on the
+eventual receiver, the promise breaks.
+
+## `op:index`
+
+`op:index` requests the value at the given index of an eventually settled
+[List](Model.md#List).
+The index operation follows promise resolutions, inheriting the rejection
+reason of any intermediate rejected promise.
+The operation rejects the answer if the ultimate fulfillment of the receiver
+is not a List.
+
+The messages looks like:
+```
+<op:index <receiver-pos>       ; <desc:answer | desc:import-promise>
+          <index>              ; Integer
+          <new-anser-pos>      ; Positive Integer
+```
+
+> The `op:index` operation allows a sender to pipeline messages to a
+> [Target](Model.md#Target) that is deeply embedded in one or more enveloping
+> lists.
+> For cases where the receiver of an index operation is an answer slot with no
+> listeners, sending `op:index` obviates the transmission of uninteresting
+> values of a potentially large List.
+
+### Sending
+#### `receiver-pos`
+This must be the `desc:answer` or a`desc:import-promise` value which eventually
+leads to the List you wish to get the value from.
+#### `selected-value-pos`
+This must be a zero-indexed integer which specifies which value should be
+picked out of the List.
+#### `new-answer-pos`
+This must be a new unique answer position that the selected value should be
+exported at.
+
+### Receiving
+When the `op:index` message is received, a promise should be exported at the
+answer position specified by `new-answer-pos`.
+The promise should eventually resolve to the value at the index specified by
+`selected-value-pos`, in values provided in the List eventually fulfilled at
+`receiver-pos`.
+If the `promise-pos` promise breaks, or the `selected-value-pos` is out of
+the bounds of the receiver List, the promise should break.
+
 ## [`op:gc-export`](#op-gc-export)
 
 When a reference is given out over CapTP, the reference must be kept
