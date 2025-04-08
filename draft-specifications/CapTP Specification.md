@@ -171,14 +171,13 @@ The behavor of the two messages on the resolver object are as follows:
 
 ### `fulfill`
 
-This method can take any number of arguments. These arguments can be promise
-pipelined on with the [`op:pick`](#op-pick) operator and should be delivered to
-any listeners of the promise.
+This method takes exactly one argument, the fulfillment value for the promise.
+The value may be any passable value.
 
 ### `break`
 
-Break takes a single argument, which represents an error that occured. This
-error should be delivered to any listeners of the promise.
+Break takes a single argument, a value that represents an error that occured.
+This error should be delivered to any listeners of the promise.
 
 **NOTE:** The value of errors transmitted over CapTP is up to the transmitting
 party. However, including the contents of exception objects or debugging
@@ -198,12 +197,6 @@ When a message is sent with an `answer-pos` specified, the promise on the remote
 session can then be referenced and messaged with the
 [`desc:answer`](#desc-answer) descriptor. When a promise is fulfilled to an
 object, messages sent to the promise will be delivered to that object.
-
-If the answer contains multiple values, the [`op:pick`](#op-pick) operator
-MUST be used to choose the value to be pipelined on. This works by exporting the
-individual value in another answer position, which then can be used to message
-the promise. If multiple values are pipelined on, without the pick operation,
-the resulting promise MUST be broken with an error and not fulfilled.
 
 ### Promise pipelining by example
 
@@ -601,42 +594,6 @@ Messages sent to this promise MUST be delivered to the object when the promise
 resolves (unless the promise breaks). This promise should remain available until
 the [`op:gc-answer`](#op-gc-answer) message is received. If the `answer-pos` is
 false, then promise pipelining is not used.
-
-## [`op:pick`](#op-pick)
-
-`op:pick` is used when there is a promise that represents or will represent
-multiple values that you wish to send messages to. This often is the case when
-promise pipelining on an object in a promise which is fulfilled to multiple
-values. This is done by using the `op:pick` operation which will select one of
-the multiple values which are returned by the promise and allow that value to be
-exported at a specific answer position. If the promise represents a single
-value, only a `selected-value-pos` of `0` is valid, of course sending a message
-to that single value without an `op:pick` is also perfectly valid.
-
-The message looks like this:
-```
-<op:pick <promise-pos>         ; <desc:answer | desc:import-promise>
-         <selected-value-pos>  ; Positive Integer
-         <new-answer-pos>>     ; Positive Integer
-```
-
-### Sending
-#### `promise-pos`
-This should be the `desc:answer` or a`desc:import-promise` value which is the
-promise you wish to pick the value from.
-#### `selected-value-pos`
-This should be a zero indexed integer which specifies which value should be
-picked out of the multiple values.
-#### `new-answer-pos`
-This should be a new unique answer position that the selected value should be
-exported at.
-
-### Receiving
-When the `op:pick` message is received, a promise should be exported at the
-answer position specified by `new-answer-pos`. The promise should eventually
-resolve to the value at the index specified by `selected-value-pos`, in values
-provided in the `promise-pos` promise. If the `promise-pos` promise breaks, or
-the `selected-value-pos` is out of bounds, the promise should break.
 
 ## [`op:abort`](#op-abort)
 
