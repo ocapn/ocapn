@@ -258,12 +258,11 @@ public keys and the SHA512 hash algorithm. The EdDSA public keys are based on
 the Ed25519 elliptic curve. The public key is formatted as follows:
 
 ```text
-(public-key (ecc (curve Ed25519) (flags eddsa) (q ...) (s ...)))
+['public-key ['ecc ['curve 'Ed25519] ['flags 'eddsa] ['q q_value]]]
 ```
 
-In the above format, each `(` and `)` mark the start and end of a new Syrup
-sequence with each value with the sequence being a symbol except the `...`,
-which is replaced by Binary Data typed values representing the public key.
+In the above format, the `q_value` is a [ByteArray](https://github.com/ocapn/ocapn/blob/3bb8575a9b6a6de481c126cd0d1650ce48a30f68/draft-specifications/Model.md#bytearray) value of 32 bytes,
+representing the public key.
 
 ## [Signature](#signature)
 
@@ -271,12 +270,11 @@ Signatures are formatted using gcrypt's s-expression format and the EdDSA
 signature scheme. The formatted signature s-expression follows this structure:
 
 ```text
-(sig-val (eddsa (r ...) (s ...)))
+['sig-val ['eddsa ['r r_value] ['s s_value]]]
 ```
 
-In the above format, each `(` and `)` mark the start and end of a new Syrup
-sequence with each value with the sequence being a symbol except the `...`,
-which is replaced by Binary Data typed values representing the signature.
+In the above format, the `r_value` and `s_value` are [ByteArray](https://github.com/ocapn/ocapn/blob/3bb8575a9b6a6de481c126cd0d1650ce48a30f68/draft-specifications/Model.md#bytearray) values each of 32 bytes,
+representing the signature parameters.
 
 # [Third Party Handoffs](#third-party-handoffs)
 
