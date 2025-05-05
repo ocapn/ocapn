@@ -730,6 +730,40 @@ The promise should eventually resolve to the value at the index specified by
 If the `promise-pos` promise breaks, or the `selected-value-pos` is out of
 the bounds of the receiver List, the promise should break.
 
+## `op:untag`
+
+`op:untag` requests the value for an eventually settled
+[Tagged](Model.md#Tagged) tagged value.
+The operation rejects the answer if the ultimate fulfillment of the receiver is
+not a Tagged value.
+
+The messages looks like:
+```
+<op:untag <receiver-pos>       ; <desc:answer | desc:import-promise>
+          <new-anser-pos>      ; Positive Integer
+```
+
+> The `op:untag` operation allows a sender to pipeline messages to a
+> [Target](Model.md#Target) that is deeply embedded in one or more enveloping
+> tagged values.
+> For cases where the receiver of an untag operation is an answer slot with no
+> listeners, sending `op:untag` obviates the transmission of the uninteresting
+> intermediate tag.
+
+### Sending
+#### `receiver-pos`
+This must be the `desc:answer` or a`desc:import-promise` value which eventually
+leads to the Tagged value.
+#### `new-answer-pos`
+This must be a new unique answer position that the selected value should be
+exported at.
+
+### Receiving
+When the `op:untag` message is received, a promise should be exported at the
+answer position specified by `new-answer-pos`.
+The promise should eventually resolve to the tagged value, provided in the
+Tagged value eventually fulfilled at `receiver-pos`.
+
 ## [`op:gc-export`](#op-gc-export)
 
 When a reference is given out over CapTP, the reference must be kept
