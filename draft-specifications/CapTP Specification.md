@@ -717,6 +717,18 @@ this specific promise.
 <desc:import-promise position>  ; position: positive integer
 ```
 
+## [`desc:import-answer`](#desc-import-answer)
+
+When a peer receives [`op:deliver`](#op-deliver), the message contains
+the position of an answer promise reserved by the sender.
+The receiver may refer to that answer in any subsequent message with a
+`desc:import-answer` record until it receives an `op:gc-answer` for the answer
+position.
+
+```text
+<desc:import-answer position> ; position: non-negative integer (>=0)
+```
+
 ## [`desc:export`](#desc-export)
 
 When a message is sent across a CapTP boundary that refers to an imported object
