@@ -38,6 +38,10 @@ and potentially [Cap'N Proto](https://capnproto.org/) implementations
 can be unified (with significant help and review from the
 [Metamask](https://metamask.io/) team).
 
+The OCapN group has as its goal to have the OCapN specifications be fast and
+easy to implement, ideally not taking a dedicated seasoned developer more than a
+few weeks to implement.
+
 (See also: [this Spritely and Agoric CapTP interop issue](https://github.com/Agoric/agoric-sdk/issues/1827) for some more on current developments.)
 
 ## What do I get from using this?
@@ -56,7 +60,7 @@ You get:
    to their particular program.
 
  - Distributed (acyclic) garbage collection.
-   Nodes can cooperate to inform each other when they no longer need
+   Peers can cooperate to inform each other when they no longer need
    references across the network.
 
  - Network layers supporting live connections (tcp-like), store and
@@ -102,7 +106,7 @@ We are hoping to unify our work in the OCapN project.
 CapTP usually comes with some other pieces.
 The original implementation of CapTP was part of a suite called
 "Pluribus" (with E and Pluribus being two parts of the joke "E
-Pluribus Unum"); "OCapN" is thus the equivalent of "Pluribius".
+Pluribus Unum"); "OCapN" is thus the equivalent of "Pluribus".
 If you are familiar with the original CapTP work, you can think of the
 "netlayer" abstraction as being what used to be called
 ["VatTP"](http://erights.org/elib/distrib/vattp/index.html),
