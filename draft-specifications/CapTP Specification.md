@@ -733,19 +733,20 @@ the bounds of the receiver List, the promise should break.
 ## `op:untag`
 
 `op:untag` requests the value for an eventually settled
-[Tagged](Model.md#Tagged) tagged value.
+[Tagged](Model.md#Tagged) value.
 The operation rejects the answer if the ultimate fulfillment of the receiver is
 not a Tagged value.
 
 The messages looks like:
 ```
 <op:untag <receiver-pos>       ; <desc:answer | desc:import-promise>
+          <tag>                ; A String
           <new-anser-pos>      ; Positive Integer
 ```
 
 > The `op:untag` operation allows a sender to pipeline messages to a
 > [Target](Model.md#Target) that is deeply embedded in one or more enveloping
-> tagged values.
+> tagged values and to assert the expected tag.
 > For cases where the receiver of an untag operation is an answer slot with no
 > listeners, sending `op:untag` obviates the transmission of the uninteresting
 > intermediate tag.
@@ -754,6 +755,9 @@ The messages looks like:
 #### `receiver-pos`
 This must be the `desc:answer` or a`desc:import-promise` value which eventually
 leads to the Tagged value.
+#### `tag`
+This must be a [String](Model.md#String) corresponding to the expected tag
+string of the eventually settled receiver [Tagged](Model.md#Tagged).
 #### `new-answer-pos`
 This must be a new unique answer position that the selected value should be
 exported at.
@@ -762,7 +766,8 @@ exported at.
 When the `op:untag` message is received, a promise should be exported at the
 answer position specified by `new-answer-pos`.
 The promise should eventually resolve to the tagged value, provided in the
-Tagged value eventually fulfilled at `receiver-pos`.
+Tagged value eventually fulfilled at `receiver-pos` (the receiver), or rejected
+if the received tag does not match the tag of the receiver.
 
 ## [`op:gc-export`](#op-gc-export)
 
