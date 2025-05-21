@@ -652,13 +652,13 @@ fulfilled or broken.
 [Struct](Model.md#Struct).  The get operation follows promise resolutions,
 inheriting the rejection reason of any intermediate rejected promise.
 The operation rejects the answer if the ultimate fulfillment of the receiver
-is not a struct.
+is not a struct or if the named field is absent on the struct.
 
 The messages looks like:
 ```
-<op:get <receiver-pos>       ; <desc:answer | desc:import-promise>
-        <field-name>         ; String
-        <new-anser-pos>      ; Positive Integer
+<op:get receiver-desc       ; <desc:answer | desc:import-promise>
+        field-name          ; String
+        new-anser-pos>      ; Positive Integer
 ```
 
 > The `op:get` operation allows a sender to pipeline messages to a
@@ -669,7 +669,7 @@ The messages looks like:
 > of a potentially large Struct.
 
 ### Sending
-#### `receiver-pos`
+#### `receiver-desc`
 This must be the `desc:answer` or a `desc:import-promise` value which
 eventually leads to the Struct you wish to get the value from.
 #### `field-name`
@@ -683,8 +683,8 @@ exported at.
 When receiving the `op:get` message, export a promise at the
 answer position specified by `new-answer-pos`.
 The promise should eventually resolve to the value at the field specified by
-`field-name`, in fields of the `receiver-pos` Struct.
-If the `receiver-pos` promise breaks, or the `field-name` is absent on the
+`field-name`, in fields of the `receiver-desc` Struct.
+If the `receiver-desc` promise breaks, or the `field-name` is absent on the
 eventual receiver, the promise breaks.
 
 ## `op:index`
@@ -698,9 +698,9 @@ is not a List.
 
 The messages looks like:
 ```
-<op:index <receiver-pos>       ; <desc:answer | desc:import-promise>
-          <index>              ; Integer
-          <new-anser-pos>      ; Positive Integer
+<op:index receiver-desc       ; <desc:answer | desc:import-promise>
+          index               ; Integer
+          new-anser-pos>      ; Positive Integer
 ```
 
 > The `op:index` operation allows a sender to pipeline messages to a
@@ -711,10 +711,10 @@ The messages looks like:
 > values of a potentially large List.
 
 ### Sending
-#### `receiver-pos`
+#### `receiver-desc`
 This must be the `desc:answer` or a`desc:import-promise` value which eventually
 leads to the List you wish to get the value from.
-#### `selected-value-pos`
+#### `index`
 This must be a zero-indexed integer which specifies which value should be
 picked out of the List.
 #### `new-answer-pos`
@@ -725,9 +725,9 @@ exported at.
 When the `op:index` message is received, a promise should be exported at the
 answer position specified by `new-answer-pos`.
 The promise should eventually resolve to the value at the index specified by
-`selected-value-pos`, in values provided in the List eventually fulfilled at
-`receiver-pos`.
-If the `promise-pos` promise breaks, or the `selected-value-pos` is out of
+`index`, in values provided in the List eventually fulfilled at
+`receiver-desc`.
+If the `receiver-desc` promise breaks, or the `index` is out of
 the bounds of the receiver List, the promise should break.
 
 ## `op:untag`
@@ -739,9 +739,9 @@ not a Tagged value.
 
 The messages looks like:
 ```
-<op:untag <receiver-pos>       ; <desc:answer | desc:import-promise>
-          <tag>                ; A String
-          <new-anser-pos>      ; Positive Integer
+<op:untag receiver-desc       ; <desc:answer | desc:import-promise>
+          tag                 ; A String
+          new-anser-pos>      ; Positive Integer
 ```
 
 > The `op:untag` operation allows a sender to pipeline messages to a
@@ -752,7 +752,7 @@ The messages looks like:
 > intermediate tag.
 
 ### Sending
-#### `receiver-pos`
+#### `receiver-desc`
 This must be the `desc:answer` or a`desc:import-promise` value which eventually
 leads to the Tagged value.
 #### `tag`
@@ -766,7 +766,7 @@ exported at.
 When the `op:untag` message is received, a promise should be exported at the
 answer position specified by `new-answer-pos`.
 The promise should eventually resolve to the tagged value, provided in the
-Tagged value eventually fulfilled at `receiver-pos` (the receiver), or rejected
+Tagged value eventually fulfilled at `receiver-desc` (the receiver), or rejected
 if the received tag does not match the tag of the receiver.
 
 ## [`op:gc-export`](#op-gc-export)
