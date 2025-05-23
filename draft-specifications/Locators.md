@@ -96,7 +96,7 @@ identifier.
 
 # Sturdyref Locator
 
-A sturdyref locator includes a [Pode Locator](#peer-locator) and
+A sturdyref locator includes a [Peer Locator](#peer-locator) and
 a `swiss-num` which represents a specific object located at that
 peer. This should be considered a capability with this information
 alone being used to obtain a CapTP reference the given object.
