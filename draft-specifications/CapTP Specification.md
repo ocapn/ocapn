@@ -324,7 +324,7 @@ imported from a different session, a handoff MUST occur. The handoff is
 initated by the Gifter doing two things:
 
 - Depositing a "gift" to the exporter's bootstrap object.
-- Creating and sending a signed `desc:handoff-give` to the Recipient in place of the [Reference][Model-Reference].
+- Creating and sending a signed `desc:handoff-give` to the Receiver in place of the [Reference][Model-Reference].
 
 ### [Depositing the gift](#depositing-the-gift)
 
@@ -449,10 +449,10 @@ This should have been sent with the [`op:deliver-only`](#op-deliver-only) operat
 Here is an example of how to use this method:
 
 ```text
-<op:deliver-only <desc:export 0>         ; Remote bootstrap object
-                 ['deposit-gift          ; Argument 1: Symbol "deposit-gift"
-                  gift-id                ; Argument 2: Non-negative integer (>=0)
-                  <desc:import-object]>  ; Argument 3
+<op:deliver-only <desc:export 0>            ; Remote bootstrap object
+                 ['deposit-gift             ; Argument 1: Symbol "deposit-gift"
+                  gift-id                   ; Argument 2: Non-negative integer (>=0)
+                  <desc:import-object 5>]>  ; Argument 3: object being shared via handoff
 ```
 
 ## `withdraw-gift` Method
@@ -470,7 +470,7 @@ Here is an example of how to use this method:
 ```text
 <op:deliver <desc:export 0>           ; Remote bootstrap object
             [withdraw-gift            ; Argument 1: Symbol "withdraw-gift"
-             <desc:handoff-receive>]  ; Argument 2: desc:handoff-receive
+             <desc:handoff-receive>]  ; Argument 2: desc:handoff-receive (wrapped in sig:envelope)
             1                         ; Answer position: Non-negative integer (>=0)
             <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift.
 ```
