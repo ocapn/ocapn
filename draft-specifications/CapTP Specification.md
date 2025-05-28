@@ -789,7 +789,8 @@ result.
 
 ## [`desc:handoff-give`](#desc-handoff-give)
 
-This record is used in [Third Party Handoffs](#third-party-handoffs).
+In [Third Party Handoffs](#third-party-handoffs), the Gifter creates a `desc:handoff-give` and sends it to the Receiver.
+The Receiver uses the `desc:handoff-give` to redeem the gift from the Exporter.
 This record is a certificate created by the Gifter, sent to the Recevier,
 and ultimately used by the Receiver to redeem the gift from the Exporter.
 
