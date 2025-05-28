@@ -793,7 +793,7 @@ This record is used in [Third Party Handoffs](#third-party-handoffs).
 This record is a certificate created by the Gifter, sent to the Recevier,
 and ultimately used by the Receiver to redeem the gift from the Exporter.
 
-This record is prepared in the following way:
+The Gifter prepares the record by,
 1.  Creating a `desc:handoff-give`
 2.  Signing the `desc:handoff-give` and wrapping it within a `desc:sig-envelope`
 3.  Replace the [Reference][Model-Reference] to the remote object being gifted in the message with
