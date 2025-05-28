@@ -998,7 +998,7 @@ This document has been written with funding through the [NGI Assure Fund](https:
 [<img src="https://nlnet.nl/logo/banner.png" alt="NLnet foundation logo" width="20%" />](https://nlnet.nl)
 [<img src="https://nlnet.nl/image/logos/NGIAssure_tag.svg" alt="NGI Assure Logo" width="20%" />](https://nlnet.nl/assure)
 
-[Model-ByteArray]: ./Model#bytearray
+[Model-ByteArray]: ./Model.md#bytearray
 [Model-Reference]: ./Model.md#reference-capability
 [Model-Passable]: ./Model.md#value
 [Locators]: ./Locators.md
