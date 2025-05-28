@@ -470,7 +470,7 @@ Here is an example of how to use this method:
 ```text
 <op:deliver <desc:export 0>           ; Remote bootstrap object
             [withdraw-gift            ; Argument 1: Symbol "withdraw-gift"
-             <desc:handoff-receive>]  ; Argument 2: desc:handoff-receive (wrapped in sig:envelope)
+             <desc:handoff-receive>]  ; Argument 2: sig:envelope containing desc:handoff-receive
             1                         ; Answer position: Non-negative integer (>=0)
             <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift.
 ```
