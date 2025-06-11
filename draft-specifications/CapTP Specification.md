@@ -47,11 +47,11 @@ which together build up OCapN (Object Capability Network) specifications.
 
 This specification uses the following other specifications:
 
--   [Syrup](): The serialization format used for all messages between actors
+-   [Syrup](https://github.com/ocapn/syrup): The serialization format used for all messages between actors
     separated by a CapTP boundary.
--   [OCapN Netlayers](): Specification to open a secure communication channel
+-   [OCapN Netlayers](./Netlayers.md): Specification to open a secure communication channel
     between two sessions, often on different networks.
--   [OCapN Locators](): Specification covers representation of object references
+-   [OCapN Locators][Locators]: Specification covers representation of object references
     for both in-band and out-of-band usage.
 
 # CapTP Overview
@@ -251,19 +251,37 @@ a SHA512 hash.
 **NOTE:** These representations are considered temporary and we are anticipating
 replacing them, probably with record-based representations.
 
-## [Public key](#public-key)
+## [Public Key](#public-key)
 
 Public keys are formatted based on gcrypt's s-expression format, using EdDSA
 public keys and the SHA512 hash algorithm. The EdDSA public keys are based on
 the Ed25519 elliptic curve. The public key is formatted as follows:
 
 ```text
-(public-key (ecc (curve Ed25519) (flags eddsa) (q ...) (s ...)))
+['public-key ['ecc ['curve 'Ed25519] ['flags 'eddsa] ['q q_value]]]
 ```
 
-In the above format, each `(` and `)` mark the start and end of a new Syrup
-sequence with each value with the sequence being a symbol except the `...`,
-which is replaced by Binary Data typed values representing the public key.
+In the above format, the `q_value` is a [ByteArray][Model-ByteArray] value of 32 bytes,
+representing the public key.
+
+## [Public ID](#public-id)
+
+The Public ID for a peer is a [ByteArray][Model-ByteArray] of length 32.
+
+1. Serialize the per session public key [as described here](#public-key).
+2. SHA256 hash of the result produced in step 1.
+3. SHA256 hash of the result produced in step 2.
+
+## [Session ID](#session-id)
+
+The Session ID for a session is a [ByteArray][Model-ByteArray] of length 32.
+
+1. Calculate the Public ID of each side using [the process described here](#public-id).
+2. Sort both IDs based on the resulting octets.
+3. Concatinate the Public IDs in the order determined in step 2.
+4. Prepend the string "prot0" to the beginning.
+5. SHA256 hash the result from step 4.
+6. SHA256 hash the result from step 5.
 
 ## [Signature](#signature)
 
@@ -271,12 +289,11 @@ Signatures are formatted using gcrypt's s-expression format and the EdDSA
 signature scheme. The formatted signature s-expression follows this structure:
 
 ```text
-(sig-val (eddsa (r ...) (s ...)))
+['sig-val ['eddsa ['r r_value] ['s s_value]]]
 ```
 
-In the above format, each `(` and `)` mark the start and end of a new Syrup
-sequence with each value with the sequence being a symbol except the `...`,
-which is replaced by Binary Data typed values representing the signature.
+In the above format, the `r_value` and `s_value` are [ByteArray][Model-ByteArray] values each of 32 bytes,
+representing the signature parameters.
 
 # [Third Party Handoffs](#third-party-handoffs)
 
@@ -290,99 +307,100 @@ fashion, even if the messages are viewed by a malicious actor.
 
 Third party handoffs define three roles:
 
--   **Gifter**: The session sharing their `desc:import-object` or
-    `desc:import-promise`
--   **Receiver**: The session the `desc:import-object` or `desc:import-promise`
-    is being shared with.
--   **Exporter**: The session exporting the `desc:import-object` or
-    `desc:import-promise`
+- **Gifter**: The peer sharing their [Reference][Model-Reference].
+- **Receiver**: The peer the [Reference][Model-Reference] is being shared with.
+- **Exporter**: The peer exporting the [Reference][Model-Reference].
+
+These three peers imply three sessions connecting them:
+
+- **Gifter-Exporter**
+- **Gifter-Receiver**
+- **Exporter-Receiver**
 
 ## Handoffs from the Gifter's perspective
 
-When a message is sent over a CapTP boundary that includes a reference to an
-imported object from a different session, a handoff MUST occur. The handoff is
-initated by the gifter doing two things:
+When a message is sent over a CapTP boundary that includes a [Reference][Model-Reference]
+imported from a different session, a handoff MUST occur. The handoff is
+initated by the Gifter doing two things:
 
--  Depositing a "gift" to the exporter's bootstrap object.
-
-and:
-1.  Creating and sending a [`desc:handoff-give`](#desc-handoff-give)
-2.  Signing the `desc:handoff-give` and wrapping it within a `desc:sig-envolope`
-3.  Replace the reference to the remote object being gifted in the message to be
-    the signed handoff give in step 2
+- Depositing a "gift" to the exporter's bootstrap object.
+- Creating and sending a signed `desc:handoff-give` to the Receiver in place of the [Reference][Model-Reference].
 
 ### [Depositing the gift](#depositing-the-gift)
 
-The gift is simply the imported object
-([`desc:import-object`](#desc-import-object) or
-[`desc:import-promise`](#desc-import-promise)) that the gifter holds. This is
+The gift is simply the imported [Reference][Model-Reference] that the Gifter holds. This is
 deposited by sending a [`op:deliver-only`](#opdeliver-only) message to the
 exporter's bootstrap object with three `args`, which are:
 
 1.  A symbol that is the value `deposit-gift`
 2.  A non-negative integer that is the ID of the gift, this MUST not have been used
-    before in the `gifter <-> exporter` CapTP session (the `gift-id`)
-3.  The object reference being exported to the receiver (i.e. a
-    [`desc:import-object`](#desc-import-object) or
-    [`desc:import-promise`](#desc-import-promise))
+    before in the **Gifter-Exporter** session (the `gift-id`)
+3.  The [Reference][Model-Reference] being exported to the Receiver.
 
 This is an example of how the message would look like:
 
 ```text
 <op:deliver-only <desc:export 0>               ; Remote bootstrap object
                  ['deposit-gift                ; Symbol "deposit-gift"
-                  42                           ; gift-id, a non-negative integer
+                  42                           ; gift-id, a non-negative integer (>=0)
                   <desc:import-object ...>]>   ; remote object being shared
 ```
 
-### Creating and sending the `desc:handoff-give`
+### Creating the `desc:handoff-give`
 
-This MUST use the same gift ID (`gift-id`) as used in the [Depositing the
-gift](#depositing-the-gift) operation. Instead of including the
-`desc:import-object` or `desc:import-promise` of the object in the message,
-replace it with the signed `desc:handoff-give` created here.
+This certificate is provided by the Gifter to the Receiver, the Receiver then
+creates a `desc:handoff-receive` which includes this signed [`desc:handoff-give`](#desc-handoff-give)
+certificate and passes it to the Exporter to redeem the gift.
 
-The specifics of `desc:handoff-give` creation is described in
+The specifics of creating a `desc:handoff-give` is described in the
 [`desc:handoff-give` section](#desc-handoff-give).
 
-### Handoffs from the Receiver's perspective
+How to check the validity of this certificate as the Exporter is covered in the
+[`desc:handoff-receive`](#desc-handoff-receive).
+
+### Sending the `desc:handoff-give`
+
+The signed [`desc:handoff-give`](#desc-handoff-give) is used in any place that takes a [Passable value][Model-Passable] (such as `op:deliver` args) to represent
+the third-party [Reference][Model-Reference] in the message.
+
+## Handoffs from the Receiver's perspective
 
 When a [`desc:handoff-give`](#desc-handoff-give) is received, several actions
 should be taken:
 
+-   Validate the `desc:handoff-give`.
 -   Construct a local promise in order to deliver the message to the intended
     object. The promise should eventually resolve to the remote reference.
--   Establish a connection to the exporter if one does not exist.
+-   Establish a connection to the Exporter if one does not exist.
 -   Construct a [`desc:handoff-receive`](#desc-handoff-receive) and send it to
-    the exporter with a [`op:deliver`](#opdeliver)
+    the Exporter's Bootstrap object via the [`withdraw-gift` method](#withdraw-gift-method).
 
 The specifics of constructing the `desc:handoff-receive` message are specified
 in the [desc:handoff-receive](#desc-handoff-receive) section. Once constructed,
-you MUST send the `desc:handoff-receive` with an `op:deliver` message. The
+you MUST send the `desc:handoff-receive` to the Exporter's [`withdraw-gift` method](#withdraw-gift-method). The
 promise created by sending the message SHOULD resolve to the deposited gift,
 provided no error has occured during the handoff process.
 
-### Handoffs from the Exporter's perspective
+## Handoffs from the Exporter's perspective
 
-There are two events which will happen for the exporter, these can happen in any
-order:
+There are two events which will happen for the Exporter, these can happen *in any
+order*:
 
--   The gifter deposits a gift
--   The receiver sends a [`desc:handoff-receive`](#desc-handoff-receive).
+-   The Gifter deposits a gift.
+-   The Receiver sends a [`desc:handoff-receive`](#desc-handoff-receive) via the [`withdraw-gift` method](#withdraw-gift-method).
 
-The exporter performs the following:
+The Exporter performs the following:
 
-1.  MUST verify the `desc:handoff-receive` (see `desc:handoff-receive` section).
+1.  MUST verify the `desc:handoff-receive` and the `desc:handoff-give` it contains (see `desc:handoff-receive` section).
     If it is incorrect, abort the handoff; otherwise, continue.
-3.  If the gift has already been deposited return the gift; otherwise return the
+2.  If the gift has already been deposited return the gift; otherwise return the
     gift when it is received.
 
-Note: Gifts are per-session. This means that gifts deposited within the `Gifter
-<-> Exporter` session should only be available for withdrawal within the
-`Receiver <-> Exporter session`. The receiver should be the only party able to
-withdraw the gift left by the gifter. Implementers MUST ensure that the
-management of gifts adheres to this per-session requirement, preventing
-unauthorized access to gifts.
+Note: Gifts are specified by the Gifter to a single Receiver via the Receiver's Public Key from
+the **Gifter-Receiver** session. The Exporter will likely not have seen this Public Key before.
+The Receiver should be the only party able to withdraw the gift left by the Gifter.
+Implementers MUST ensure that the management of gifts adheres to this requirement,
+preventing unauthorized access to gifts.
 
 # [The bootstrap Object](#bootstrap-object)
 
@@ -419,21 +437,22 @@ An example of how to use this method is:
 
 ## `deposit-gift` Method
 
-The deposit gift method is used in conjunction with sending a [Third Party
-Handoff](#third-party-handoffs). This method is used to deposit a gift which has
-been sent to the bootstrap object. It has two arguments:
+The deposit gift method is used in conjunction with sending a [Third Party Handoff](#third-party-handoffs).
+This method is used to deposit a gift which has been sent to the bootstrap object. It has two arguments:
 
 1.  A gift ID that is non-negative integer.
-2.  A `desc:import-object` or `desc:import-promise` which has been exported
+2.  A [Reference][Model-Reference] which has been exported
     within the given CapTP session.
+
+This should have been sent with the [`op:deliver-only`](#op-deliver-only) operation.
 
 Here is an example of how to use this method:
 
 ```text
-<op:deliver-only <desc:export 0>                               ; Remote bootstrap object
-                 ['deposit-gift                                ; Argument 1: Symbol "deposit-gift"
-                  gift-id                                      ; Argument 2: Non-negative integer (>=0)
-                  <desc:import-object | desc:import-promise>]> ; Argument 3
+<op:deliver-only <desc:export 0>            ; Remote bootstrap object
+                 ['deposit-gift             ; Argument 1: Symbol "deposit-gift"
+                  gift-id                   ; Argument 2: Non-negative integer (>=0)
+                  <desc:import-object 5>]>  ; Argument 3: object being shared via handoff
 ```
 
 ## `withdraw-gift` Method
@@ -443,7 +462,7 @@ in order to receive a gift. It has one argument:
 
 - The `desc:handoff-receive`
 
-This should have been sent with the `op:deliver` operation, the response the
+This should have been sent with the [`op:deliver`](#op-deliver) operation, the response the
 bootstrap object should give is the gift which was (or will be) deposited.
 
 Here is an example of how to use this method:
@@ -451,7 +470,7 @@ Here is an example of how to use this method:
 ```text
 <op:deliver <desc:export 0>           ; Remote bootstrap object
             [withdraw-gift            ; Argument 1: Symbol "withdraw-gift"
-             <desc:handoff-receive>]  ; Argument 2: desc:handoff-receive
+             <desc:handoff-receive>]  ; Argument 2: sig:envelope containing desc:handoff-receive
             1                         ; Answer position: Non-negative integer (>=0)
             <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift.
 ```
@@ -895,143 +914,137 @@ result.
 
 ## [`desc:handoff-give`](#desc-handoff-give)
 
-You should have an overview of handoffs before reading this section, please read
-the [Third Party Handoffs section](#third-party-handoffs) first.
+In [Third Party Handoffs](#third-party-handoffs), the Gifter creates a `desc:handoff-give` and sends it to the Receiver.
+The Receiver uses the `desc:handoff-give` to redeem the gift from the Exporter.
+This record is a certificate created by the Gifter, sent to the Recevier,
+and ultimately used by the Receiver to redeem the gift from the Exporter.
 
-This certificate is provided by the gifter to the exporter, the exporter then
-creates a `desc:handoff-receive` which includes this `desc:handoff-give`
-certificate. The point of this certificate is to provide the exporter some
-crucial information that it needs to check the `desc:handoff-receive` message.
+The Gifter prepares the record by,
+1.  Creating a `desc:handoff-give`
+2.  Signing the `desc:handoff-give` and wrapping it within a `desc:sig-envelope`
+3.  Replace the [Reference][Model-Reference] to the remote object being gifted in the message with
+    the signed record produced in step 2.
 
-How to check the validity of this certificate is covered in the
-[`desc:handoff-receive`](#desc-handoff-receive).
-
-This message MUST always be encapsulated in a
-[`desc:sig-envelope`](#desc-sig-envelope) with a valid signature.
-
-### The message
+### The record
 
 ```text
 <desc:handoff-give receiver-key       ; Public Key (see cryptography section)
-                   exporter-location  ; OCapN session Locator
-                   session            ; Binary Data
-                   gifter-side        ; Binary Data
-                   gift-id>           ; Binary Data
+                   exporter-location  ; OCapN Locator (see Locator document)
+                   session            ; Session ID (ByteArray)
+                   gifter-side        ; Public ID (ByteArray)
+                   gift-id>           ; non-negative integer (>=0)
 ```
 
-1.  `receiver-key` This is the receiver's per-session public key in the `Gifter
-    <-> Receiver` session.
-2.  `exporter-location` This is the OCapN URI of the exporter.
-3.  `session` This is the session ID for the `Gifter <-> Exporter` session.
-4.  `gifter-side` This is a value derived from the per session public key of one
-    side within a session. The process of calculating this is described below.
+1.  `receiver-key` This is the Receiver's Public Key in the **Gifter-Receiver** session.
+2.  `exporter-location` This is the [OCapN Locator][Locators] of the Exporter.
+3.  `session` This is the [Session ID](#session-id) for the **Gifter-Exporter** session.
+4.  `gifter-side` This is the [Public ID](#public-id) for the gifter in the **Gifter-Exporter** session.
 5.  `gift-id` This is the gift ID that is generated by the Gifter that the
-    `desc:export` will be deposited at. This `gift-id` MUST be unique for gifts
-    deposited on the exporter by the gifter (i.e. per session).
-
-The `gifter-side` should be the ID of the side within the session which is the
-gifter, this can be created by doing the following:
-
-1. Serialize to Syrup the per session public key of the side in question
-2. SHA256 hash of the result produced in step 1.
-3. SHA256 hash of the result produced in step 2.
-
-The Session ID which is used both here and in the `desc:handoff-receive` is
-created by the following:
-
-1. Calculate the ID of each side using the process described above.
-2. Sort both IDs based on the resulting octets
-3. Concatinating them in the order from number 3
-4. Append the string "prot0" to the beginning
-5. SHA256 hash the resulting string, this is the `session-ID`
-6. SHA256 hash of the result produced in step 6.
-
-## [`desc:handoff-receive`](#desc-handoff-receive)
-
-You should have an overview of handoffs before reading this section, please read
-the [Third Party Handoffs](#third-party-handoffs) section first.
-
-The `desc:handoff-receive` object is created by the receiver for the exporter.
-This includes the signed [`desc:handoff-give`](#desc-handoff-give) as well as
-some additional data provided by the receiver.
+    gift will be deposited at. This `gift-id` MUST be unique for gifts
+    deposited by the Gifter in the **Gifter-Exporter** session.
 
 This message MUST always be encapsulated in a
 [`desc:sig-envelope`](#desc-sig-envelope) with a valid signature.
 
+The signature is made using the Gifter's key from the **Gifter-Exporter** session.
+
+### Validating the record
+
+The Receiver is the first to get the `desc:handoff-give`.
+The only field that the Receiver can verify is the receiver-key, it should match
+the Receiver's Public Key from the **Gifter-Receiver** session.
+
+The Exporter later receives the `desc:handoff-give` inside of the `desc:handoff-receive`,
+and the process for validating the `desc:handoff-give` is detailed in [`desc:handoff-receive`](#desc-handoff-receive).
+
+
+## [`desc:handoff-receive`](#desc-handoff-receive)
+
+This record is used in [Third Party Handoffs](#third-party-handoffs).
+
+The `desc:handoff-receive` record is created by the Receiver and sent to the Exporter.
+It includes the signed [`desc:handoff-give`](#desc-handoff-give) from the Gifter,
+as well as some additional data provided by the Receiver.
+
+The primary purpose of this certificate is to associate the Receiver's **Exporter-Receiver** session
+identity with the Receiver's **Gifter-Receiver** session identity. The Gifter specifies the gift recipient
+to the Exporter as the Receiver's **Gifter-Receiver** session identity.
+
+### The record
+
 ```text
-<desc:handoff-receive receiving-session  ; Binary Data
-                      receiving-side     ; Binary Data
+<desc:handoff-receive receiving-session  ; Session ID (ByteArray)
+                      receiving-side     ; Public ID (ByteArray)
                       handoff-count      ; Non-negative integer (>=0)
-                      signed-give>       ; desc:handoff-give
+                      signed-give>       ; desc:sig-envelope containing desc:handoff-give
 ```
 
-### The message
+1.  `receiving-session` This is the [Session ID](#session-id) in the **Exporter-Receiver** session.
+2.  `receiving-side` This is the Receiver's [Public Key](#public-key) **Exporter-Receiver** session.
+3.  `handoff-count` This is a non-negative integer which MUST not have been used in the **Exporter-Receiver** session.
+4.  `signed-give` This is the [`desc:handoff-give`](#desc-handoff-give) that is encapsulated in the
+    `desc:sig-envelope` from the Gifter.
 
-1.  `receiving-session` This is the CapTP session ID in the `receiver <->
-    exporter` session.
-2.  `receiving-side` This is the receiver's public key `receiver <-> exporter`
-    session.
-3.  `handoff-count` This is a non-negative integer which MUST not have been used
-    already in this CapTP session.
-4.  `signed-give` This is the `desc:handoff-give` that is encapsulated in the
-    `desc:sig-envelope` from the gifter.
+This message MUST always be encapsulated in a
+[`desc:sig-envelope`](#desc-sig-envelope) with a valid signature.
+
+The signature is made using the Receiver's key from the **Gifter-Receiver** session (**NOT** the **Exporter-Receiver** session).
 
 ### Checking the validity of the `desc:handoff-receive`
 
-There are a number if steps which must be followed to verify the
+There are a number of steps which must be followed to verify the
 `desc:handoff-receive`, these rely on information that is specific to the two
 sessions.
 
-#### Identifying the gifter session & receiver session
+#### Identifying the Gifter session & Receiver session
 
 The two sessions are:
--  **Gifter**: The session exporting the `desc:import-object`
--   **Receiver**: The session importing the `desc:import-object`
+-  **Gifter-Exporter**: The session where the Gifter designates the gift.
+-  **Exporter-Receiver**: The session where the Receiver is redeeming the gift.
 
-The gifter session can be found by looking at the session ID that is in the
-`session` field in the `desc:handoff-give`. The receiver session by looking at
-the session ID in the `receiving-session` field on the `desc:handoff-receive`.
+The **Gifter-Exporter** session can be found via the `session` field in the [`desc:handoff-give`](#desc-handoff-give)
+which specifies a [Session ID](#session-id). The **Exporter-Receiver** session can be found via
+the `receiving-session` field which specifies a [Session ID](#session-id) on the [`desc:handoff-receive`].
 
-#### Checking the signature on the `desc:handoff-give`
+#### Checking the signature on the [`desc:handoff-give`](#desc-handoff-give)
 
-The `desc:handoff-give` must have been wrapped in a `desc:sig-envelope`. This
-envelope carries with it a signature made by the gifter using the per-session
-key in the session between the exporter and the gifter.
+The [`desc:handoff-give`](#desc-handoff-give) must have been wrapped in a `desc:sig-envelope`. This
+envelope carries with it a signature made using the Gifter's key from the **Gifter-Exporter**
+session.
 
 The signature MUST be verified as correct.
 
-Once this has been verified the information in the `desc:handoff-give` is known
-to have been created by the gifter.
+Once this has been verified the information in the [`desc:handoff-give`](#desc-handoff-give) is known
+to have been created by the Gifter.
 
 #### Checking the signature on the `desc:handoff-receive`
 
-The information provided to the exporter must be verified to have come from the
-receiver that the gifter has designated. This can be done as the gifter has
-provided the receiver public key in the `Gifter <-> Receiver` session and the
-`desc:handoff-receive` has been signed by the receiver which their key in that
-session.
+The information provided to the Exporter must be verified to have come from the
+receiver that the Gifter has designated. This can be done as the Gifter has
+provided the Receiver's Public Key in the **Gifter-Receiver** session and the
+`desc:handoff-receive` has been signed by the Receiver using their private key
+for that same **Gifter-Receiver** session.
 
-To verify this the receiver's public key in the `gifter <-> receiver` session
-must be fetched from the `receiver-key` in the `handoff-give`. This key is then
-used to check the signature in the `desc:sig-envelope` encapsulating the
-`desc:handoff-receive`.
+To verify, take the Receiver's public key for the **Gifter-Receiver** session
+from the `receiver-key` field in the `handoff-give` and use it to check the
+signature in the `desc:sig-envelope` encapsulating the `desc:handoff-receive`.
 
 If the signature is invalid, the handoff procedure MUST be aborted. Otherwise if
 it is valid, the information is now known to have been created by the receiver
-that the gifter has designated.
+that the Gifter has designated.
 
 #### Checking the `handoff-count`
 
 The `handoff-count` in the `desc:handoff-receive` MUST be a non-negative integer
-that has NOT been used before in session between the exporter and the receiver.
+that has NOT been used before in the **Exporter-Receiver** session.
 If the `handoff-count` has been used before in this session, the handoff should
 be aborted. This protects against replay attacks.
 
 ### Receiving a `desc:handoff-receive`
 
-When receiving a `handoff-receive`, the following must happen:
+When the Bootstrap's [`withdraw-gift` method](#withdraw-gift-method) is invoked, the following must happen:
 
-1.  A promise is created and exported.
+1.  A local promise is created and exported.
 2.  The `desc:handoff-receive` is verified, if invalid the promise MUST be
     broken and the handoff aborted.
 3.  If the handoff-receive is valid:
@@ -1110,3 +1123,8 @@ This document has been written with funding through the [NGI Assure Fund](https:
 
 [<img src="https://nlnet.nl/logo/banner.png" alt="NLnet foundation logo" width="20%" />](https://nlnet.nl)
 [<img src="https://nlnet.nl/image/logos/NGIAssure_tag.svg" alt="NGI Assure Logo" width="20%" />](https://nlnet.nl/assure)
+
+[Model-ByteArray]: ./Model.md#bytearray
+[Model-Reference]: ./Model.md#reference-capability
+[Model-Passable]: ./Model.md#value
+[Locators]: ./Locators.md
