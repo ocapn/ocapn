@@ -236,7 +236,7 @@ Symbols are distinguished from [String](#string)s by type, not content.
 >
 > Tracking: https://github.com/ocapn/ocapn/issues/46
 >
-> OCapN uses the name Symbol to avoid the implication that they will
+> Although OCapN uses the name Symbol, they will
 > correspond to a language's symbol type in all languages that have a symbol
 > type.
 > Symbols may correspond to symbols in languages where a symbol is eligible
