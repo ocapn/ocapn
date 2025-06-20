@@ -178,7 +178,7 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality):
 ([JSON](#json-invariants)†)
 
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
-Strings are distinguished from [Selectors](#symbol) by type, not content.
+Strings are distinguished from [Symbols](#symbol) by type, not content.
 
 > - **Guile**: `""`
 > - **JavaScript**: `''`
@@ -210,7 +210,7 @@ have the same respective Unicode code points in order.
 ## Symbol
 
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
-Selectors are distinguished from [String](#string)s by type, not content.
+Symbols are distinguished from [String](#string)s by type, not content.
 
 > - **Guile**: symbols `'name`
 > - **JavaScript**: an object with two own properties:
@@ -239,10 +239,10 @@ Selectors are distinguished from [String](#string)s by type, not content.
 > OCapN uses the name Symbol to avoid the implication that they will
 > correspond to a language's symbol type in all languages that have a symbol
 > type.
-> Selectors may correspond to symbols in languages where a symbol is eligible
+> Symbols may correspond to symbols in languages where a symbol is eligible
 > for garbage collection when there are no extant references.
 > At this time, JavaScript cannot safely use registered symbols like
-> `Symbol.for('name')` for OCapN selectors, because some implementations intern
+> `Symbol.for('name')` for OCapN symbols, because some implementations intern
 > registered symbols without possibility of eventual garbage collection.
 >
 > OCapN supports one operator for delivering both function application and
@@ -250,12 +250,12 @@ Selectors are distinguished from [String](#string)s by type, not content.
 > By convention, method invocation is equivalent to function application, where
 > the first argument is a symbol followed by the remaining arguments.
 >
-> However, like symbols in Guile, selectors are values and can appear anywhere
+> However, like symbols in Guile, symbols are values and can appear anywhere
 > values appear, including any argument position, inside a container, or as a
 > promise fulfillment value or rejection reason.
 
 For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
-Selectors are equal if they have the same quantity of Unicode code points and
+Symbols are equal if they have the same quantity of Unicode code points and
 have the same respective Unicode code points in order.
 
 ## ByteArray
