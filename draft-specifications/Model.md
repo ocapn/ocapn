@@ -1,8 +1,8 @@
 
 This document captures a summary of consensus and remaining contention for the
-OCapN data model and abstract syntax, excluding the concern of concrete
-representation of these on the wire, but including non-normative
-representations in a selection of implementation languages.
+OCapN passable data model, abstract syntax, corresponding format in the
+bytewise serialization of messages, and non-normative representations in a
+selection of implementation languages.
 
 Commentary in block quotes is not normative.
 
@@ -43,6 +43,13 @@ Atoms are values that cannot contain or refer to other values.
 
 A value representing the absence of a value.
 
+The format of Undefined is a [Record](Formats.md#record)
+with a single [Selector](Formats.md#selector) spelled "void".
+
+```
+<'void>
+```
+
 > - **Guile**: `*unspecified*`
 > - **JavaScript**: `undefined`
 > - **Python**: `None`
@@ -64,6 +71,13 @@ there is only one Undefined value and it is equal to itself.
 A value representing `null` as distinct from `undefined` for the purpose
 of maintaining [JSON Invariants](#json-invariants).
 
+The format of Null is a [Record](Formats.md#record) with a single
+[Selector](Formats.md#selector) spelled "null".
+
+```
+<'null>
+```
+
 > - **Guile**: tentatively `json-null` (*imported*)
 > - **JavaScript** and **JSON**: `null`
 > - **Python**: `Null` (*imported*)
@@ -84,6 +98,9 @@ there is only one Null value and it is equal to itself.
 
 A value that is either true or false.
 
+The format of a Boolean is a bare [Boolean](Formats.md#boolean), simply `f` or
+`t`.
+
 > - **Guile**: `#f`, `#t`
 > - **JavaScript** and **JSON**: `false`, `true`
 > - **Python**: `False`, `True`
@@ -94,6 +111,9 @@ the values True and False are equal only to their respective selves.
 ## Integer
 
 An arbitrary precision signed integer.
+
+Integer is represented by [Integer](Formats.md#integer) in the underlying
+format.
 
 > - **Guile**: `-1`, `0`, `1`
 > - **JavaScript**: `-1n`, `0n`, `1n`
@@ -112,6 +132,9 @@ arithmetic integer.
 ([JSON](#json-invariants))
 
 An IEEE 754 64-bit floating point number.
+
+Float64 is represented by [Float64](Formats.md#float64) in the underlying
+format.
 
 OCapN preserves the distinction between +0 and -0.
 
@@ -180,6 +203,8 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality):
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
 Strings are distinguished from [Selectors](#selector) by type, not content.
 
+String is represented by [String](Formats.md#string) in the underlying format.
+
 > - **Guile**: `""`
 > - **JavaScript**: `''`
 > - **Python**: `''`
@@ -211,6 +236,9 @@ have the same respective Unicode code points in order.
 
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
 Selectors are distinguished from [String](#string)s by type, not content.
+
+Selector is represented by [Selector](Formats.md#string) in the underlying
+format.
 
 > - **Guile**: symbols `'name`
 > - **JavaScript**: an object with two own properties:
@@ -262,6 +290,9 @@ have the same respective Unicode code points in order.
 
 An array of 8-bit bytes.
 
+ByteArray is represented by [ByteArray](Formats.md#bytearray) in the
+underlying format.
+
 > - **Guile**: `#vu8()`
 > - **JavaScript**: `new ArrayBuffer()`
 > - **Python**: `b''`
@@ -298,6 +329,22 @@ A container is a value that contains other values.
 
 A list of any quantity of values.
 
+The Presentation Format for a List is a List of the Presentation Formats of the
+respective contained values.
+For example, the Presentation Format for a list containing the Integer 1, the
+String "a" is:
+
+```
+[ 1 "a" ]
+```
+
+Likewise, the Wire Format of a List is a [List](Formats.md) of the formatted
+values.
+
+```
+[1+1"a]
+```
+
 > - **Guile**: `'()`
 > - **JavaScript** and **JSON**: `[]`
 > - **Python**: `()` (We have not discussed whether to use tuple or list. Tuple
@@ -321,10 +368,29 @@ respective value is equal, transitively.
 > The name "struct" is tentative.
 > https://github.com/ocapn/ocapn/pull/125
 
-A collection of unordered (key, value) pairs.
-Each key must be a [String](#string), and must be
-non-[Equal](#pass-invariant-equality) to any other key within a Struct.
+A collection of unordered (field name, value) pairs.
+Each field name must be a [String](#string), and must be
+non-[Equal](#pass-invariant-equality) to any other field name within a Struct.
 [Values](#value) within a Struct may be of heterogeneous type.
+
+The Presentation Format for a Struct is a [Struct](Formats.md#struct) with the
+Presentation Formats of the respective field names and values.
+For example, the Presentation Format for a Struct with a field named `"a"` and
+an Integer value of `1` is:
+
+```
+{ b: 2, a: 1 }
+```
+
+Likewise, the Wire Format is a [Struct](Formats.md#struct) with the Wire
+Formats of the respective field names and values.
+The fields must appear in the bytewise order of their respective field names in
+the Wire Format.
+For example, the Wire Format of the same struct is:
+
+```
+{1"a1+1"b2+}
+```
 
 > - **Guile**: `make-tbd-hash` a hash of undecided type
 > - **JavaScript**: `{}`
@@ -332,10 +398,6 @@ non-[Equal](#pass-invariant-equality) to any other key within a Struct.
 >
 > For the purposes of surviving a round trip, the order of appearance of
 > entries in the struct must not be important for determining equivalence.
-> A struct representation concretely using one key order may validly
-> round-trip into a struct representation using another key order.
-> However, we encourage concrete representations to use some canonical key
-> order, though this is not a concern of the abstract syntax and data model.
 >
 > A JavaScript object that owns any symbol-keyed properties or uses a prototype
 > other than `Object.prototype` cannot be passed as an OCapN struct.
@@ -344,8 +406,8 @@ non-[Equal](#pass-invariant-equality) to any other key within a Struct.
 
 A pair of structs are Equal for purposes of [Pass Invariant
 Equality](#pass-invariant-equality) if they mutually posses a value for every
-key in the other struct and every respective value is equal to their own,
-transitively.
+field name in the other struct and every respective value is equal to their
+own, transitively.
 
 > A pair of structs may be Equal regardless of the order of appearance of
 > fields.
@@ -353,7 +415,24 @@ transitively.
 ## Tagged
 
 A pair consisting of a tag and a [Value](#value).
-The tag must be a [String](#string).
+
+The Presentation Format for a Tagged value is a [Record](Formats.md#record)
+with three values.
+The first value is a [Selector](Formats.md#selector) spelled "desc:tagged".
+The second value is a [Selector](Formats.md#selector) containing the tag.
+The third value is the Presentation Format of the tagged value itself.
+For example, the Presentation Format for an Integer value of 42 tagged
+"meaning" is:
+
+```
+<'tagged 'meaning 42>
+```
+
+The Wire Format of the same tagged value is:
+
+```
+<6'tagged7'meaning42+>
+```
 
 > OCapN provides a small number of container types with minimal semantics.
 > Tags allow protocols to emerge from values annotated to indicate a richer
@@ -407,6 +486,22 @@ A local target handles deliveries and produces either a return value
 (fulfillment) or thrown error (rejection reason) for a message delivery.
 A remote target (a presence) forwards messages to its corresponding local target.
 
+The Presentation Format for a target is a [Record](Formats.md#record) with two
+values.
+The first value is a [Selector](Formats.md#selector) indicating whether the
+value corresponds to a local or remote target.
+The second value is a positive [Integer](Formats.md#integer) specifying a
+target as tracked by the sender or receiver.
+
+If the Selector is spelled `desc:import-object`, the target is local to the
+sender and remote to the receiver of the value.
+If the Selector is spelled `desc:export`, the target is remote to the
+sender and local to the receiver of the value.
+
+For example, when handling a received message delivery, the Presentation Format
+`<desc:import-object 0>` represents the sender's first shared target.
+The corresponding Wire Format is `<18'desc:import-object0+>`.
+
 > - **Guile**: a procedure
 > - **JavaScript**: to be proposed
 > - **Python**: to be proposed
@@ -430,6 +525,22 @@ the queued messages to the next Promise.
 If the eventual fulfillment value of the Promise is a Target, OCapN forwards
 the queued messages to the Target.
 OCapN does not forward messages to non-references (non-capabilities).
+
+The Presentation Format for a promise is a [Record](Formats.md#record) with
+two values.
+The first value is a [Selector](Formats.md#selector) that indicates whether
+the sender or receiver tracks and settles the promise.
+The second value is a positive [Integer](Formats.md#integer) identifying the
+local or remote promise.
+
+For example, the Presentation Format for the first promise sent by the remote
+is `<'desc:import-promise 0>`.
+The corresponding Wire Format is `<19'desc:import-promise0+>`.
+
+If the Selector is spelled `import-promise`, the remote sender tracks and
+settles the promise.
+If the Selector is spelled `desc:answer`, the local receiver tracks and settles
+the promise.
 
 > - **Guile**: to be proposed
 > - **JavaScript**: a JavaScript promise
@@ -460,6 +571,15 @@ received promises will satisfy the pass invariants applicable to their type.
 # Error
 
 A value capturing the reason for rejecting a delivery.
+
+The _tentative_ Presentation Format for an Error is a
+[Record](Formats.md#record) with two values.
+The first value is a [Selector](Formats.md#selector) spelled `desc:error`.
+The second value is a [String](Formats.md#string) with a description of the
+error.
+
+> The description should not capture a stack trace and should redact sensitive
+> data including personally identifying information.
 
 > - **Guile**: to be proposed
 > - **JavaScript**: a JavaScript Error object
