@@ -236,9 +236,17 @@ Symbols are distinguished from [String](#string)s by type, not content.
 >
 > Tracking: https://github.com/ocapn/ocapn/issues/46
 >
-> Although OCapN uses the name Symbol, they will
-> correspond to a language's symbol type in all languages that have a symbol
-> type.
+> Although OCapN uses the name Symbol, not all languages have an appropriate, corresponding,
+> native symbol type and may use a representation that is not the language’s symbol.
+> For example, JavaScript has three kinds of symbol, none of which is an ideal representation
+> of an OCapN symbol. Some implementations of JavaScript retain registered symbols indefinitely,
+> which exposes a registry stuffing vulnerability or hazard. Anonymous symbols with the same
+> description are not strictly equal. Although OCapN pass-invariant equality does not correspond
+> to any JavaScript strict equality for all types, a reasonable developer might be confused or misled by
+> intuition. Well-known symbols might inadvertently elevate language-specific protocols to OCapN protocols,
+> imposing on other languages’ implementations of OCapN. So, it follows that a JavaScript implementation
+> might reasonably use an object envelope around a string, which would make OCapN’s pass-invariant equality
+> at least correspond to some common JavaScript deep equality operators.
 > Symbols may correspond to symbols in languages where a symbol is eligible
 > for garbage collection when there are no extant references.
 > At this time, JavaScript cannot safely use registered symbols like
