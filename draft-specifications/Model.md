@@ -236,31 +236,37 @@ Symbols are distinguished from [String](#string)s by type, not content.
 >
 > Tracking: https://github.com/ocapn/ocapn/issues/46
 >
-> Although OCapN uses the name Symbol, not all languages have an appropriate, corresponding,
-> native symbol type and may use a representation that is not the language’s symbol.
-> For example, JavaScript has three kinds of symbol, none of which is an ideal representation
-> of an OCapN symbol. Some implementations of JavaScript retain registered symbols indefinitely,
-> which exposes a registry stuffing vulnerability or hazard. Anonymous symbols with the same
-> description are not strictly equal. Although OCapN pass-invariant equality does not correspond
-> to any JavaScript strict equality for all types, a reasonable developer might be confused or misled by
-> intuition. Well-known symbols might inadvertently elevate language-specific protocols to OCapN protocols,
-> imposing on other languages’ implementations of OCapN. So, it follows that a JavaScript implementation
-> might reasonably use an object envelope around a string, which would make OCapN’s pass-invariant equality
-> at least correspond to some common JavaScript deep equality operators.
-> Symbols may correspond to symbols in languages where a symbol is eligible
-> for garbage collection when there are no extant references.
-> At this time, JavaScript cannot safely use registered symbols like
-> `Symbol.for('name')` for OCapN symbols, because some implementations intern
-> registered symbols without possibility of eventual garbage collection.
+> Although OCapN uses the name Symbol, not all languages have an appropriate,
+> corresponding, native symbol type and may use a representation that is not the
+> language’s symbol.
+>
+> For example, JavaScript has three kinds of symbol, none of which is an ideal
+> representation of an OCapN symbol.
+> - Some implementations of JavaScript retain registered symbols indefinitely,
+>   which exposes a registry stuffing vulnerability.
+> - Anonymous symbols with the same description are not equal in JavaScript.
+>   Although OCapN pass-invariant equality does not correspond to any JavaScript
+>   equality for all types, a reasonable developer might be confused or misled by
+>   intuition.
+> - Well-known symbols might inadvertently elevate language-specific protocols
+>   to OCapN protocols, imposing on other languages’ implementations of OCapN.
+>
+> So, it follows that a JavaScript implementation might reasonably use an object
+> envelope around a string, which would make OCapN’s pass-invariant equality
+> at least correspond to some common JavaScript deep equality operators
+> such as Ava's `t.deepEqual`.
+> OCapN symbols may correspond to language symbols in languages where an
+> unreachable symbol is eligible for unobservable garbage collection. But not
+> JavaScript.
 >
 > OCapN supports one operator for delivering both function application and
 > method invocation.
 > By convention, method invocation is equivalent to function application, where
 > the first argument is a symbol followed by the remaining arguments.
 >
-> However, like symbols in Guile, symbols are values and can appear anywhere
-> values appear, including any argument position, inside a container, or as a
-> promise fulfillment value or rejection reason.
+> However, like symbols in Guile, symbols are first-class values and can appear
+> anywhere values appear, including any argument position, inside a container,
+> or as a promise fulfillment value or rejection reason.
 
 For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
 Symbols are equal if they have the same quantity of Unicode code points and
