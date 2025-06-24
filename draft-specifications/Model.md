@@ -22,7 +22,7 @@ Atoms:
 - [Float64](#float64)
 - [String](#string)
 - [ByteArray](#bytearray)
-- [Selector](#selector)
+- [Symbol](#symbol)
 
 Containers:
 
@@ -178,7 +178,7 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality):
 ([JSON](#json-invariants)†)
 
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
-Strings are distinguished from [Selectors](#selector) by type, not content.
+Strings are distinguished from [Symbols](#symbol) by type, not content.
 
 > - **Guile**: `""`
 > - **JavaScript**: `''`
@@ -207,26 +207,26 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
 Strings are equal if they have the same quantity of Unicode code points and
 have the same respective Unicode code points in order.
 
-## Selector
+## Symbol
 
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
-Selectors are distinguished from [String](#string)s by type, not content.
+Symbols are distinguished from [String](#string)s by type, not content.
 
 > - **Guile**: symbols `'name`
 > - **JavaScript**: an object with two own properties:
 >   for the registered symbol key `passStyle`, the value is the string
->   `selector`; and
+>   `symbol`; and
 >   for the well-known symbol `toStringTag`, the value is a string consisting
->   of the code points of the selector.
+>   of the code points of the symbol.
 >   ```js
 >   ({
->     [Symbol.for('passStyle')]: 'selector',
+>     [Symbol.for('passStyle')]: 'symbol',
 >     [Symbol.toStringTag]: 'name',
 >   })
 >   ```
-> - **Python**: `Selector('name')` where `Selector` is imported from `ocapn`.
+> - **Python**: `Symbol('name')` where `Symbol` is imported from `ocapn`.
 >
-> A selector's content must be expressible in UTF-8.
+> A symbol's content must be expressible in UTF-8.
 > Some two-byte Unicode encodings, as in JavaScript strings, can contain
 > 16-bit surrogate code _units_ in the range from 0xD800-0xDFFF.
 > Pairs of surrogate code units correspond to a single Unicode code _point_
@@ -236,26 +236,40 @@ Selectors are distinguished from [String](#string)s by type, not content.
 >
 > Tracking: https://github.com/ocapn/ocapn/issues/46
 >
-> OCapN uses the name Selector to avoid the implication that they will
-> correspond to a language's symbol type in all languages that have a symbol
-> type.
-> Selectors may correspond to symbols in languages where a symbol is eligible
-> for garbage collection when there are no extant references.
-> At this time, JavaScript cannot safely use registered symbols like
-> `Symbol.for('name')` for OCapN selectors, because some implementations intern
-> registered symbols without possibility of eventual garbage collection.
+> Although OCapN uses the name Symbol, not all languages have an appropriate,
+> corresponding, native symbol type and may use a representation that is not the
+> language’s symbol.
+>
+> For example, JavaScript has three kinds of symbol, none of which is an ideal
+> representation of an OCapN symbol.
+> - Some implementations of JavaScript retain registered symbols indefinitely,
+>   which exposes a registry stuffing vulnerability.
+> - Anonymous symbols with the same description are not equal in JavaScript.
+>   Although OCapN pass-invariant equality does not correspond to any JavaScript
+>   equality for all types, a reasonable developer might be confused or misled by
+>   intuition.
+> - Well-known symbols might inadvertently elevate language-specific protocols
+>   to OCapN protocols, imposing on other languages’ implementations of OCapN.
+>
+> So, it follows that a JavaScript implementation might reasonably use an object
+> envelope around a string, which would make OCapN’s pass-invariant equality
+> at least correspond to some common JavaScript deep equality operators
+> such as Ava's `t.deepEqual`.
+> OCapN symbols may correspond to language symbols in languages where an
+> unreachable symbol is eligible for unobservable garbage collection. But not
+> JavaScript.
 >
 > OCapN supports one operator for delivering both function application and
 > method invocation.
 > By convention, method invocation is equivalent to function application, where
-> the first argument is a selector followed by the remaining arguments.
+> the first argument is a symbol followed by the remaining arguments.
 >
-> However, like symbols in Guile, selectors are values and can appear anywhere
-> values appear, including any argument position, inside a container, or as a
-> promise fulfillment value or rejection reason.
+> However, like symbols in Guile, symbols are first-class values and can appear
+> anywhere values appear, including any argument position, inside a container,
+> or as a promise fulfillment value or rejection reason.
 
 For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
-Selectors are equal if they have the same quantity of Unicode code points and
+Symbols are equal if they have the same quantity of Unicode code points and
 have the same respective Unicode code points in order.
 
 ## ByteArray

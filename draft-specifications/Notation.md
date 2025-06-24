@@ -51,11 +51,11 @@ Commentary in block quotes is not normative.
 A representation of any expressible value in an OCapN message.
 
 - _abstract-value_: _abstract-boolean_ / _abstract-integer_ /
-  _abstract-float64_ / _abstract-selector_ / _abstract-string_ /
+  _abstract-float64_ / _abstract-symbol_ / _abstract-string_ /
   _abstract-byte-array_ / _abstract-struct_ /
   _abstract-list_ / _abstract-record_
 - _concrete-value_: _concrete-boolean_ / _concrete-integer_ /
-  _concrete-float64_ / _concrete-selector_ / _concrete-string_ /
+  _concrete-float64_ / _concrete-symbol_ / _concrete-string_ /
   _concrete-byte-array_ / _concrete-struct_ /
   _concrete-list_ / _concrete-record_
 
@@ -118,20 +118,20 @@ We do not attempt to capture strings with embedded quotes or non-ASCII Unicode
 characters in the abstract notation, but all Unicode strings excluding
 surrogates (U+D800-U+DFFF) are expressible in the concrete representation.
 
-## Selector
+## Symbol
 
 A sequence of Unicode code points excluding surrogates (U+D800-U+DFFF).
 
 > Example: `'fleur-de-lis` corresponds to `12'fleur-de-lis`.
 
-- _abstract-selector_: `'` _name_
+- _abstract-symbol_: `'` _name_
 - _name_: _alpha_ ( _alpha_ / _digit_ / `-` / `:` )*
 - _alpha_: ( `a` - `z` ) / ( `A` - `Z` )
 - _digit_: `0` - `9`
-- _concrete-selector_: _length_ `'` _bytes_
-- _bytes_: _byte_* :: The bytes of the selector in UTF-8 encoding.
+- _concrete-symbol_: _length_ `'` _bytes_
+- _bytes_: _byte_* :: The bytes of the symbol in UTF-8 encoding.
 
-We do not attempt to capture selectors with arbitrary Unicode characters in the
+We do not attempt to capture symbols with arbitrary Unicode characters in the
 abstract notation, but all Unicode strings excluding surrogates (U+D800-U+DFFF)
 are expressible in the concrete representation.
 
@@ -201,14 +201,14 @@ A tuple of any quantity of values.
 - _abstract-record_: `<` _abstract-value_ * `>`
 - _concrete-record_: `<` _concrete-field_ * `>`
 - _concrete-field_: _concrete-field-name_ / _concrete-value_
-- _concrete-field-name_: _name_ :: Corresponding to a selector.
+- _concrete-field-name_: _name_ :: Corresponding to a symbol.
 
-> The first value is typically a selector to multiplex the shapes and behaviors
+> The first value is typically a symbol to multiplex the shapes and behaviors
 > implied by the record, but may be any value.
 
 The notation allows a shorthand where the first value of a record may be a bare
 alphanumeric name without a prefix `'`, in which case he value is a
-[Selector](#selector).
+[Symbol](#symbol).
 
 > Records do not correspond to a paricular type in the [Model](Model.md), but
 > are instrumental in representing messages in the
