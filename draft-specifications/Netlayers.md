@@ -102,19 +102,26 @@ supplied as the "designator" in the OCapN Node Locator.
 
 # TCP Testing Netlayer
 
-This is a testing-only, simplistic netlayer, providing no security or anonymity
-whatsoever, and only intended to run tests without the huge overhead of setting up
-Tor nodes.
+This is a netlayer designed only for testing purposes. It's designed to be simplistic
+and relatively easy to implement. This comes at the expense of providing no security
+or anonymity whatsoever, and thus must only be used in a testing environment.
 
 ## Implementation
 
-When creating and decoding the OCapN locator, the following information is used:
+The TCP netlayer relies on TCP sockets bound to an IPv4 address and port. The
+implementation should listen and accept all incoming connections to the peer and
+open new outbound connections when required by CapTP.
 
-- **designator**: IPv4 address of a machine. Usually 127.0.0.1 for testing.
-- **transport**: The symbol `tcp`
-- **hints**: Hints are not used, so this may be set to false/omitted.
+The OCapN Locator is as follows:
 
-Only send pure Syrup-encoded messages over the wire.
+- **designator**: A unique string which will identify the peer.
+- **transport**: The symbol `tcp-testing-only`
+- **hints**: The hints are a OCapN Struct with two keys:
+  - **host**: This should a string representation of an IPv4 address to be used to
+reach the peer.
+  - **port**: The port that should be used when connecting to the peer.
+
+All messages are sent encoded with Syrup.
 
 # Funding
 
