@@ -39,8 +39,7 @@ can be unified (with significant help and review from the
 [Metamask](https://metamask.io/) team).
 
 The OCapN group has as its goal to have the OCapN specifications be fast and
-easy to implement, ideally not taking a dedicated seasoned developer more than a
-few weeks to implement.
+easy to implement.
 
 (See also: [this Spritely and Agoric CapTP interop issue](https://github.com/Agoric/agoric-sdk/issues/1827) for some more on current developments.)
 
