@@ -215,7 +215,7 @@ The `to-desc` and `args` look familiar from before, but `op:deliver` has two new
 
 ```
 <op:deliver     <desc:export 0>
-                ['fulfill "..."]
+                ['fetch "..."]
                 false
                 <desc:import-object 1>>
 ```
