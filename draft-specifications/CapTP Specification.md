@@ -935,7 +935,7 @@ The Gifter prepares the record by,
                    gift-id>           ; non-negative integer (>=0)
 ```
 
-1.  `receiver-key` This is the Receiver's Public Key in the **Gifter-Receiver** session.
+1.  `receiver-key` This is the Receiver's [Public Key](#public-key) in the **Gifter-Receiver** session.
 2.  `exporter-location` This is the [OCapN Locator][Locators] of the Exporter.
 3.  `session` This is the [Session ID](#session-id) for the **Gifter-Exporter** session.
 4.  `gifter-side` This is the [Public ID](#public-id) for the gifter in the **Gifter-Exporter** session.
@@ -980,7 +980,7 @@ to the Exporter as the Receiver's **Gifter-Receiver** session identity.
 ```
 
 1.  `receiving-session` This is the [Session ID](#session-id) in the **Exporter-Receiver** session.
-2.  `receiving-side` This is the Receiver's [Public Key](#public-key) **Exporter-Receiver** session.
+2.  `receiving-side` This is the Receiver's [Public ID](#public-id) in the **Exporter-Receiver** session.
 3.  `handoff-count` This is a non-negative integer which MUST not have been used in the **Exporter-Receiver** session.
 4.  `signed-give` This is the [`desc:handoff-give`](#desc-handoff-give) that is encapsulated in the
     `desc:sig-envelope` from the Gifter.
