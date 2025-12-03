@@ -55,22 +55,21 @@ peer.
 
 ## [Syrup Serialization](#peer-syrup-serialization)
 
-It's encoded as a record with the label `ocapn-peer` and three arguments:
+It's encoded as a record with the label `ocapn-peer` (symbol) and three
+arguments:
 
 ```
-<ocapn-peer designator  ; string
-            transport   ; symbol (cannot contain ".")
-            hints>      ; hashmap | false
+<ocapn-peer transport   ; symbol (cannot contain ".")
+            designator  ; string
+            hints>      ; struct | false
 ```
 
 ### Hints
 
-This is a hashmap of key and values which are designed to encode additional
-connection information that the  netlayer might need to reach the peer. The keys
-should be symbols with the values as strings.
-
-There can be any number of hints, including none at all. If no hints are used
-this field should be set to false.
+The hints are a [struct](https://github.com/ocapn/ocapn/wiki/Abstract-Syntax#struct-json)
+which encode additional connection information that the netlayer might need to
+reach the peer. There can be any number of hints, including none at all. If no
+hints are used this field can be set to false.
 
 ## URI Serialization
 
@@ -91,7 +90,7 @@ the transport name. If any  hints exist they're added as part of the query
 parameters, otherwise emitted. 
 
 Note that the designator permits `.` to be used within it, however the final `.`
-should designate the seperator  between the designator segment and the transport
+should designate the separator  between the designator segment and the transport
 identifier.
 
 # Sturdyref Locator
@@ -122,7 +121,7 @@ The arguments are:
 ## URI Serialization
 
 The URI format follows a similar format to the peer URI format, except with a
-"/s/" suffix to denoate that it's a sturdyref, followed by the swiss number
+"/s/" suffix to denote that it's a sturdyref, followed by the swiss number
 value. Any hints are placed at the end of the URI.
 
 The URI format is as follows:
