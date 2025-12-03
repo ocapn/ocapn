@@ -479,11 +479,12 @@ Here is an example of how to use this method:
 
 ## [`op:start-session`](#opstart-session)
 
-On a new connection, a key pair for this session should be generated. This
-key pair should be an EdDSA key pair with a SHA512 hash.
+When setting up a new session, a EdDSA key pair with a SHA512 hash should be
+generated.
 
-This operation is used when a new connection is initiated over CapTP. Both
-parties MUST send upon a new connection. The operation looks like this:
+This operation is used when a new session is initiated over CapTP. Both
+parties MUST send an `op:start-session` message upon a new session. The
+operation looks like this:
 
 ```text
 <op:start-session captp-version             ; String value
@@ -492,13 +493,16 @@ parties MUST send upon a new connection. The operation looks like this:
                   acceptable-location-sig>  ; CapTP signature
 ```
 
-It's important that we only have one bidirectional connection between a CapTP
-session. Before trying to connect to a peer, it's important to check that a
-connection is not already open before proceeding. There is a race condition
-called the "crossed hellos" problem whereby each side tries to open a new
-connection at the same time and only one of these connection attempts must
-succeed. The way to check which attempt should succeed is to sort the serialized
-`session-pubkey`, the highest of the two wins.
+An important aspect of CapTP is that only one active session between two peers
+should exist. This allows peers to perform equality checks against objects from
+a remote peer and prevents [3rd Party Handoffs](#third-party-handoffs) when the
+receiver and exporter are on the same peer.
+
+There are several mechanisms put in place to ensure that only one session exists
+between two peers. The first is that a CapTP implementation MUST check if it has
+an active session with a given peer, before trying to establish a new
+connection. If the peer already has an active session, that session MUST be used
+instead of creating a new one.
 
 ### Constructing and sending
 
@@ -518,11 +522,44 @@ per-session key pair. This is serialized in accordance with
 
 ### Receiving
 
+If the session has already received an `op:start-session`, the session MUST be
+aborted.
+
 The `captp-version` MUST be equal to `1.0`. If the version does not match, the
 connection MUST be aborted.
 
 The `acceptable-location-sig` MUST be valid that the `session-pubkey` provided a
 valid signature of `acceptable-location`.
+
+The implementation should check if an active valid session already exists
+between the two peers, if one does exist the new session should be aborted.
+
+Detection and (if needed) mitigation of the Crossed Hellos problem described
+below MUST be performed.
+
+### Crossed Hellos Mitigation
+
+Crossed hellos is a race condition which occurs when two peers attempt to open a
+new session to one another simultaneously. If both sessions were to succeed
+the result would be multiple sessions between the same peers. Since this is
+not permitted in CapTP, all implementations are responsible for detecting and
+mitigating the problem.
+
+Implementations are responsible for keeping track the sessions they've
+initiated. After receiving the `op:start-session` message from the other side,
+the receiving side should check to see if it has a session it has opened with
+the peer located at the `acceptable-location` provided. If it both received a
+session from a peer that it has also opened a session to, the crossed hellos
+problem has been detected and must be mitigated.
+
+The way to mitigate the problem is by choosing which of the two sessions should
+be allowed to "win" (and the other to be aborted). This is done by
+deterministically calculating the [Public ID](#public-id) for its outbound
+connection and the other side's inbound connection. These two keys (in their
+syrup serialization) should be compared bytewise to each other. The lower of the
+two has its connection aborted. The higher of the two should continue to be the
+valid session for the two peers.
+
 
 ## [`op:deliver-only`](#opdeliver-only)
 
