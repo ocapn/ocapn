@@ -261,12 +261,12 @@ the Ed25519 elliptic curve. The public key is formatted as follows:
 ['public-key ['ecc ['curve 'Ed25519] ['flags 'eddsa] ['q q_value]]]
 ```
 
-In the above format, the `q_value` is a [ByteArray][Model-ByteArray] value of 32 bytes,
-representing the public key.
+In the above format, the `q_value` is a [ByteArray][Model-ByteArray] value of
+32 bytes, representing the public key.
 
-## [Public ID](#public-id)
+## [Public Identifier](#public-identifier)
 
-The Public ID for a peer is a [ByteArray][Model-ByteArray] of length 32.
+The Public Identifier for a peer is a [ByteArray][Model-ByteArray] of length 32.
 
 1. Serialize the per session public key [as described here](#public-key).
 2. SHA256 hash of the result produced in step 1.
@@ -276,9 +276,9 @@ The Public ID for a peer is a [ByteArray][Model-ByteArray] of length 32.
 
 The Session ID for a session is a [ByteArray][Model-ByteArray] of length 32.
 
-1. Calculate the Public ID of each side using [the process described here](#public-id).
+1. Calculate the Public Identifier of each side using [the process described here](#public-identifier).
 2. Sort both IDs based on the resulting octets.
-3. Concatinate the Public IDs in the order determined in step 2.
+3. Concatinate the Public Identifiers in the order determined in step 2.
 4. Prepend the string "prot0" to the beginning.
 5. SHA256 hash the result from step 4.
 6. SHA256 hash the result from step 5.
@@ -479,8 +479,7 @@ Here is an example of how to use this method:
 
 ## [`op:start-session`](#opstart-session)
 
-When setting up a new session, a EdDSA key pair with a SHA512 hash should be
-generated.
+When setting up a new session, a EdDSA key pair should be generated.
 
 This operation is used when a new session is initiated over CapTP. Both
 parties MUST send an `op:start-session` message upon a new session. The
@@ -537,28 +536,28 @@ between the two peers, if one does exist the new session should be aborted.
 Detection and (if needed) mitigation of the Crossed Hellos problem described
 below MUST be performed.
 
-### Crossed Hellos Mitigation
+### Crossed Hellos Resolution
 
 Crossed hellos is a race condition which occurs when two peers attempt to open a
 new session to one another simultaneously. If both sessions were to succeed
 the result would be multiple sessions between the same peers. Since this is
 not permitted in CapTP, all implementations are responsible for detecting and
-mitigating the problem.
+resolving the problem.
 
 Implementations are responsible for keeping track the sessions they've
 initiated. After receiving the `op:start-session` message from the other side,
 the receiving side should check to see if it has a session it has opened with
 the peer located at the `acceptable-location` provided. If it both received a
 session from a peer that it has also opened a session to, the crossed hellos
-problem has been detected and must be mitigated.
+problem has been detected and must be resolved.
 
-The way to mitigate the problem is by choosing which of the two sessions should
+The way to resolve the problem is by choosing which of the two sessions should
 be allowed to "win" (and the other to be aborted). This is done by
-deterministically calculating the [Public ID](#public-id) for its outbound
-connection and the other side's inbound connection. These two keys (in their
-syrup serialization) should be compared bytewise to each other. The lower of the
-two has its connection aborted. The higher of the two should continue to be the
-valid session for the two peers.
+deterministically calculating the [Public Identifier](#public-identifier) for
+its outbound connection and the other side's inbound connection. These two keys
+(in their syrup serialization) should be compared bytewise to each other. The
+lower of the two has its connection aborted. The higher of the two should
+continue to be the valid session for the two peers.
 
 
 ## [`op:deliver-only`](#opdeliver-only)
@@ -968,14 +967,14 @@ The Gifter prepares the record by,
 <desc:handoff-give receiver-key       ; Public Key (see cryptography section)
                    exporter-location  ; OCapN Locator (see Locator document)
                    session            ; Session ID (ByteArray)
-                   gifter-side        ; Public ID (ByteArray)
+                   gifter-side        ; Public Identifier (ByteArray)
                    gift-id>           ; non-negative integer (>=0)
 ```
 
 1.  `receiver-key` This is the Receiver's Public Key in the **Gifter-Receiver** session.
 2.  `exporter-location` This is the [OCapN Locator][Locators] of the Exporter.
 3.  `session` This is the [Session ID](#session-id) for the **Gifter-Exporter** session.
-4.  `gifter-side` This is the [Public ID](#public-id) for the gifter in the **Gifter-Exporter** session.
+4.  `gifter-side` This is the [Public Identifier](#public-identifier) for the gifter in the **Gifter-Exporter** session.
 5.  `gift-id` This is the gift ID that is generated by the Gifter that the
     gift will be deposited at. This `gift-id` MUST be unique for gifts
     deposited by the Gifter in the **Gifter-Exporter** session.
@@ -1011,7 +1010,7 @@ to the Exporter as the Receiver's **Gifter-Receiver** session identity.
 
 ```text
 <desc:handoff-receive receiving-session  ; Session ID (ByteArray)
-                      receiving-side     ; Public ID (ByteArray)
+                      receiving-side     ; Public Identifier (ByteArray)
                       handoff-count      ; Non-negative integer (>=0)
                       signed-give>       ; desc:sig-envelope containing desc:handoff-give
 ```
