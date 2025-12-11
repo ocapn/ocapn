@@ -790,43 +790,48 @@ The promise should eventually resolve to the tagged value, provided in the
 Tagged value eventually fulfilled at `receiver-desc` (the receiver), or rejected
 if the received tag does not match the tag of the receiver.
 
-## [`op:gc-export`](#opgc-export)
+## [`op:gc-exports`](#opgc-exports)
 
 When a reference is given out over CapTP, the reference must be kept
 valid until the other party within a session is done with it. This is
 achieved by reference counting the object with respect to how many
 times a reference has been sent. Each time a reference is sent, the
 count MUST be incremented (the first time it is sent, the reference
-count should be set to 1). When the reference count reaches 0, the
-object can be garbage collected.
+count should be set to 1).
 
-The reference count is decremented when the other side sends an `op:gc-export`
-message. The `wire-delta` value should be subtracted from the reference count.
-Each time the remote session no longer needs the reference, it should send an
-`op:gc-export` message with a `wire-delta` that reflects the number of
-references it has been given:
+Each time the remote session no longer needs a set of references, it MUST
+send an `op:gc-exports` message with two lists: one list containing the
+`export-pos` of each reference it no longer needs and another list containing
+the corresponding `wire-delta` that reflects the number of times the reference
+has been received since the last `op:gc-exports` message for that reference was
+sent.
+
+When receiving an `op:gc-exports` message, the reference count for each 
+`answer-pos` is decremented by its corresponding `wire-delta`. When a reference
+count reaches 0, the corresponding object can be garbage collected.
+
 
 The message looks like:
 
 ```text
-<op:gc-export export-pos   ; positive integer
-              wire-delta>  ; positive integer
+<op:gc-exports export-pos-list   ; list of positive integers
+               wire-delta-list>  ; list of positive integers
 ```
 
-## [`op:gc-answer`](#opgc-answer)
+## [`op:gc-answers`](#opgc-answers)
 
-When a [`op:deliver`](#opdeliver) is sent with an `answer-pos` for use with
-promise pipelining. The receiver will create a promise at the answer position.
-The receiver needs to know when it's able to garbage collect this promise. This
-is done by sending an `op:gc-answer` message. The `answer-pos` in this message
-MUST correspond to the `answer-pos` in the [`op:deliver`](#opdeliver) message,
-that you are no longer interested in.
+When an [`op:deliver`](#opdeliver) is sent with an `answer-pos` for use with
+promise pipelining, the receiver will create a promise at the provided answer
+position. The receiver needs to know when it's able to garbage collect these
+promises. This is done by sending an `op:gc-answers` message. Each element of
+`answer-pos-list` in this message MUST correspond to the `answer-pos` in an
+[`op:deliver`](#opdeliver) message that you are no longer interested in.
 
-Once the `answer-pos` has been GC'd through sending the `op:gc-answer`
+Once the `answer-pos` has been GC'd through sending the `op:gc-answers`
 operation, the `answer-pos` can be re-used.
 
 ```text
-<op:gc-answer answer-pos>  ; answer-pos: positive integer
+<op:gc-answers answer-pos-list>  ; answer-pos-list: list of positive integers
 ```
 
 # Descriptors
