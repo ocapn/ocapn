@@ -799,12 +799,12 @@ times a reference has been sent. Each time a reference is sent, the
 count MUST be incremented (the first time it is sent, the reference
 count should be set to 1).
 
-Each time the remote session no longer needs a set of references, it MUST
-send an `op:gc-exports` message with two lists: one list containing the
-`export-pos` of each reference it no longer needs and another list containing
-the corresponding `wire-delta` that reflects the number of times the reference
-has been received since the last `op:gc-exports` message for that reference was
-sent.
+When the remote session becomes aware that it no longer needs a set of
+references, it MUST send an `op:gc-exports` message with two lists: one list
+containing the `export-pos` of each reference it no longer needs and another
+list containing the corresponding `wire-delta` that reflects the number of
+times the reference has been received since the last `op:gc-exports` message
+for that reference was sent.
 
 When receiving an `op:gc-exports` message, the reference count for each 
 `answer-pos` is decremented by its corresponding `wire-delta`. When a reference
