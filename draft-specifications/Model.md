@@ -57,6 +57,8 @@ that owns a property with the value `undefined` for that key.
 For purposes of [Pass Invariant Equality](#pass-invariant-equality),
 there is only one Undefined value and it is equal to itself.
 
+The CBOR representation of OCapN Undefined is CBOR Major Type 7, Minor Type 23.
+
 ## Null
 
 ([JSON](#json-invariants))
@@ -78,6 +80,8 @@ that owns a property with the value `null` for that key.
 For purposes of [Pass Invariant Equality](#pass-invariant-equality),
 there is only one Null value and it is equal to itself.
 
+The CBOR Representation of OCapN Null is CBOR Major Type 7, Minor Type 22.
+
 ## Boolean
 
 ([JSON](#json-invariants))
@@ -90,6 +94,10 @@ A value that is either true or false.
 
 For purposes of [Pass Invariant Equality](#pass-invariant-equality),
 the values True and False are equal only to their respective selves.
+
+The CBOR Representation of OCapN False is CBOR Major Type 7, Minor Type 20.
+
+The CBOR Representation of OCapN True is CBOR Major Type 7, Minor Type 21.
 
 ## Integer
 
@@ -106,6 +114,16 @@ An arbitrary precision signed integer.
 For purposes of [Pass Invariant Equality](#pass-invariant-equality), every
 Integer value is only equal to Integer values that represent the same
 arithmetic integer.
+
+The CBOR representation of an integer is tagged byte string, an unsigned
+[bignum](https://www.rfc-editor.org/rfc/rfc8949.html#name-bignums) if positive
+and otherwise a negative bignum.
+
+|          | tag |
+|----------|-----|
+| positive | 2   |
+| negative | 3   |
+
 
 ## Float64
 
@@ -173,6 +191,9 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality):
 > JavaScript's `Object.is` is consistent with Pass Invariant Equality, whereas
 > `==` and `===` are not.
 
+The CBOR representation of an OCapN Float64 is Major Type 7, Minor Type 27,
+[Floating Point Numbers](https://www.rfc-editor.org/rfc/rfc8949.html#section-3.3).
+
 ## String
 
 ([JSON](#json-invariants)†)
@@ -206,6 +227,10 @@ Strings are distinguished from [Symbols](#symbol) by type, not content.
 For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
 Strings are equal if they have the same quantity of Unicode code points and
 have the same respective Unicode code points in order.
+
+The CBOR representation of an OCapN String is a CBOR Major Type 3
+https://www.rfc-editor.org/rfc/rfc8949.html#section-3.1
+Text String
 
 ## Symbol
 
@@ -272,6 +297,13 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
 Symbols are equal if they have the same quantity of Unicode code points and
 have the same respective Unicode code points in order.
 
+The CBOR Representation of Symbol is CBOR tag, Major Type 6
+whose tag number is
+280 (scheme symbol)
+[IANA Symbol](https://www.iana.org/assignments/cbor-tags/cbor-tags.xhtml)
+and tag content is
+the CBOR text string representation of the OCapN symbol, CBOR Major Type 3
+
 ## ByteArray
 
 An array of 8-bit bytes.
@@ -302,6 +334,10 @@ For purposes of [Pass Invariant Equality](#pass-invariant-equality), a pair of
 ByteArrays are equal if they have the same quantity of bytes and have the same
 respective bytes in order.
 
+The CBOR representation of an OCapN ByteArray is CBOR Major Type 2
+https://www.rfc-editor.org/rfc/rfc8949.html#section-3.1
+Byte String
+
 # Container
 
 A container is a value that contains other values.
@@ -327,6 +363,10 @@ A list of any quantity of values.
 A pair of lists are equal or Equal for purposes of [Pass Invariant
 Equality](#pass-invariant-equality) if they are the same length and every
 respective value is equal, transitively.
+
+The CBOR representation of an OCapN List is a CBOR Major Type 4
+https://www.rfc-editor.org/rfc/rfc8949.html#section-3.1
+Array
 
 ## Struct
 
@@ -363,6 +403,12 @@ transitively.
 
 > A pair of structs may be Equal regardless of the order of appearance of
 > fields.
+
+The CBOR representation of an OCapN Struct is a CBOR Major Type 5,
+Map of pairs of data items,
+
+Must not have duplicate keys.
+Pairs must appear in bytewise ascending order of keys.
 
 ## Tagged
 
@@ -402,6 +448,16 @@ Tagged values are equal or Equal for the purposes of [Pass Invariant
 Equality](#pass-invariant-equality) if the tag and value are Equal,
 transitively.
 
+The CBOR representation of an OCapN Tagged is CBOR Major Type 6,
+tag
+with tag number
+
+where the tagged value is a CBOR Array Major Type 4
+with length exactly 2.
+The index 0 value is a CBOR text string Major Type 3
+corresponding to the OCapN tag name
+The index 1 value is the CBOR representation of an OCapN value.
+
 # Reference (Capability)
 
 A value that can receive messages, either a Target or Promise.
@@ -431,6 +487,12 @@ Targets have [Pass Invariant Equality](#pass-invariant-equality).
 A target might be sent from a local peer to a remote peer, then the remote peer
 may send that target back to the local peer.
 The sent target will be equal to the received target and no other value.
+
+The CBOR representation of an OCapN Target is a CBOR Simple Value
+tentatively 32
+(TODO IANA reservation at https://www.iana.org/assignments/cbor-simple-values/cbor-simple-values.xhtml
+which is a place holder for the target referenced in
+the slots array at the end of an op:deliver message.
 
 ## Promise
 
@@ -471,6 +533,12 @@ received promises will satisfy the pass invariants applicable to their type.
 > [Containers](#container) maintain [Pass Invariant
 > Equality](#pass-invariant-equality).
 
+The CBOR representation of an OCapN Target is a CBOR Simple Value
+tentatively 32
+(TODO IANA reservation at https://www.iana.org/assignments/cbor-simple-values/cbor-simple-values.xhtml
+which is a place holder for the target referenced in
+the slots array at the end of an op:deliver message.
+
 # Error
 
 A value capturing the reason for rejecting a delivery.
@@ -491,6 +559,11 @@ A value capturing the reason for rejecting a delivery.
 > interpretation for now as to whether it is the "same" error.
 >
 > https://github.com/ocapn/ocapn/issues/142
+
+The CBOR representation of an OCapN Target is a CBOR Tag with number
+TODO
+and
+TODO
 
 # Pass Invariant
 
