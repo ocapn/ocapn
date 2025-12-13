@@ -436,9 +436,8 @@ An example of how to use this method is:
             <desc:import-object 5>>  ; object exported by us at position 5 should provide the answer
 ```
 
-> Fetch does not produce [Sturdy References](./Model.md#sturdy-reference).
-> Fetch produces live references, [Targets](./Model.md#target), for which there
-> may exist a corresponding Sturdy Reference or [Locator](./Locators.md).
+> Fetch may produce any [Value](./Model.md#value) in the model and is the
+> the mechanism for creating original [Sturdy References](./Model.md#sturdy-reference).
 > A mechanism for looking up a Locator or Sturdy Reference for a Target returned
 > by `fetch` is optional, implementation-specific, and necessarilly a closely held
 > capability of the OCapN implementation that should not be revealed to guest
