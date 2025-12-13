@@ -533,13 +533,14 @@ The `op:deliver-only` message is:
 
 ```text
 <op:deliver-only to-desc  ; desc:export
-                 args>    ; Sequence
+                 args>    ; List
 ```
 
 `to-desc` is a `desc:export` descriptor which corresponds to the object the
 message is being sent to.
 
-`args` is a sequence which are the arguments to invoke the object with.
+`args` is a [List](./Model.md#list) which are the arguments to invoke the
+object with.
 
 Since this message has no result, it should be delivered to the object but
 nothing further is required.
@@ -552,7 +553,7 @@ value which should be installed at the location specified in `answer-pos`. The
 
 ``` text
 <op:deliver to-desc           ; desc:export
-            args              ; sequence
+            args              ; List
             answer-pos        ; positive integer | false
             resolve-me-desc>  ; desc:import-object | desc:import-promise
 ```
@@ -576,7 +577,7 @@ representing the answer position. In other cases, this MUST be a
 the recipient in the CapTP session.
 
 ### `args`
-`args` is a sequence of the arguments to invoke the object with.
+`args` is a [List](./Model.md#list) of the arguments to invoke the object with.
 
 ### `answer-pos`
 When [promise pipelining](#promise-pipelining) is being used, this value should
