@@ -419,11 +419,12 @@ receive both [`op:start-session`](#opstart-session) messages.
 
 ## `fetch` Method
 
-This method is used to fetch an object from the bootstrap object. To use it you
-need a `swiss-number` which is a Binary Data type. This swiss number should
-correspond an object which exists in this session. The result will be the object
-which corresponds to this `swiss-number` or an error if the object does not
-exist or a swiss number was not provided.
+This method is used to fetch a Target object from the bootstrap object.
+To use it you need a `swiss-number` which is a
+[ByteArray](./Model.md#bytearray).
+This swiss number should correspond an object which exists in this session.
+The result will be the object which corresponds to this `swiss-number` or an
+error if the object does not exist or a swiss number was not provided.
 
 An example of how to use this method is:
 
@@ -434,6 +435,16 @@ An example of how to use this method is:
             3                        ; Answer position: positive integer
             <desc:import-object 5>>  ; object exported by us at position 5 should provide the answer
 ```
+
+> Fetch does not produce [Sturdy References](./Model.md#sturdy-reference).
+> Fetch produces live references, [Targets](./Model.md#target), for which there
+> may exist a corresponding Sturdy Reference or [Locator](./Locators.md).
+> A mechanism for looking up a Locator or Sturdy Reference for a Target returned
+> by `fetch` is optional, implementation-specific, and necessarilly a closely held
+> capability of the OCapN implementation that should not be revealed to guest
+> code by default.
+> In E, this capability was called an
+> [Introducer](http://erights.org/elang/concurrency/introducer.html).
 
 ## `deposit-gift` Method
 

@@ -118,6 +118,10 @@ The arguments are:
 - **peer**: Syrup record defined in the [Syrup serialization of the peer locator](#peer-syrup-serialization)
 - **swiss-num**: String which identifies the object.
 
+The Syrup serialization of a Sturdyref locator participates in the
+[Model](./Model.md#sturdy-reference) as the in-band on-the-wire representation
+of a Sturdy Reference.
+
 ## URI Serialization
 
 The URI format follows a similar format to the peer URI format, except with a
