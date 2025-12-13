@@ -34,6 +34,7 @@ References:
 
 - [Target](#target)
 - [Promise](#promise)
+- [Sturdy References](#sturdy-reference)
 
 # Atom
 
@@ -432,6 +433,11 @@ A target might be sent from a local peer to a remote peer, then the remote peer
 may send that target back to the local peer.
 The sent target will be equal to the received target and no other value.
 
+> Target is synonymous with Object Capability, Ocap, Live Reference, Online
+> Capability, and Permission.
+> Authority is what one can accomplish with the permissions they hold and
+> may exceed the sum of the permissions.
+
 ## Promise
 
 A Promise represents the eventual return value (fulfillment) or thrown error
@@ -470,6 +476,61 @@ received promises will satisfy the pass invariants applicable to their type.
 > that is a Struct, the sent and received structs will be equal, because all
 > [Containers](#container) maintain [Pass Invariant
 > Equality](#pass-invariant-equality).
+
+## Sturdy Reference
+
+A Sturdy Reference (Sturdy Ref) represents the capability to attempt to obtain
+a live reference (a Target) for a [Locator](./Locator.md), but encapsulating
+the locator.
+
+> - **Guile**: to be proposed
+> - **JavaScript**: a JavaScript object with one own property:
+>   for the registered symbol key `passStyle`, the value is the string `sturdyRef`.
+>   The object is otherwise entirely opaque.
+>   ```js
+>   ({ [Symbol.for('passStyle')]: 'sturdyRef' })
+>   ```
+> - **Python**: to be proposed
+
+OCapN implementations must provide a mechanism that produces a Promise
+for a Target from the encapsulated Locator, by attempting to establish
+a session with the designated Peer and Fetching the designated Swissnum.
+The mechanism should not be closely held.
+That is, the mechanism should require no special capability beyond the Sturdy
+Reference itself.
+
+> Some names for this mechanism are "redeem", "revive", "vivify", or "enliven".
+
+A Sturdy Reference is unlike a Target in that it is transferrable to another
+peer, and the destination peer no longer requires a session with the original
+peer to redeem the Sturdy Reference.
+The Sturdy Reference is transferred as data.
+
+Although a Sturdy Reference does not keep the encapsulated Locator a secret
+among peers, peers can collude to encapsulate a Locator in a Sturdy Ref and
+hide it from their respective guest programs, while preserving those programs'
+ability to transfer and redeem the Sturdy Reference for a live ref at the
+designated Locator.
+
+A Sturdy Reference only encapsulates a Designator, Transport, Swissnum, and
+Connection Hints.
+A Locator URL might convey other hints, but these are not captured by a Sturdy
+Reference or transferred when a Sturdy Reference passes to another peer.
+
+Sturdy References do not have [Pass Invariant Equality](#pass-invariant-equality).
+A sturdy reference sent from a local peer to a remote peer, then from the
+remote peer back, will not be equal to the original.
+
+> Holding a Sturdy Reference does not implicitly convey the capability to
+> reveal the underlying Locator.
+> Although OCapN CapTP specifies that sturdy references are opaque,
+> transferrable, and redeemable for a live reference, obtaining a Sturdy
+> Reference for a Locator or a Locator from a Sturdy Reference is a closely
+> held implementation-specific protocol, conventionally called an
+> [Introducer](http://erights.org/elang/concurrency/introducer.html),
+> that is beyond the scope of this CapTP specification.
+>
+> Sturdy references and locators are collectively Offline Capabilities.
 
 # Error
 
