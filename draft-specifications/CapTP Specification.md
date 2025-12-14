@@ -652,8 +652,8 @@ partial notification) then further `op:listen` operations should be sent.
 `to-desc` MUST be a `desc:export` or `desc:export` which corresponds to a
 promise on the remote side.
 
-`listen-desc` MUST be a `desc:import` that is being imported. This will be
-invoked when the promise comes to a resolution.
+`listen-desc` MUST be a `desc:import-object` that is being imported. This will
+be invoked when the promise comes to a resolution.
 
 ### Receiving
 
