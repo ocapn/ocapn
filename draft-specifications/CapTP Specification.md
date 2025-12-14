@@ -22,7 +22,7 @@ it. In other words, "if you don't have it, you can't use it."
 CapTP offers several valuable features, including:
 
 - Powerful promises and promise pipelining, allowing remote value usage before
-  resolution.
+  fulfillment.
 - Error propagation across the network.
 - Distributed garbage collection.
 - Secure third-party handoffs, even when CapTP messages are not kept secret.
@@ -70,7 +70,7 @@ Here's an overview of some things which may occur during a CapTP session:
         other.
     -   Promises may be created when messages are sent.
     -   Messages may be pipelined to promises, queueing those messages to
-        eventually be delivered to their resolution.
+        eventually be delivered to their fulfillment.
     -   Handoffs are initiated when sending a message with a reference to an
         object outside of the CapTP session.
     -   Both parties cooperate to free object references which are recognized to
@@ -127,42 +127,39 @@ convention is followed for the CapTP bootstrap object and for promises.
 Finally, a session may end due to an unrecoverable error or because
 either side wishes to end it. Both situations are covered by the
 [`op:abort`](#opabort) message. When this is received the session
-should be severed and unresolved promises broken.
+should be severed and pending promises broken.
 
 # Promises
 
-Promises are a key part of CapTP. They are used to represent a value which is
-not yet known. Promises without a value are said to be unresolved, they can
-become resolved by being `fulfill`ed with a value (including another promise),
-or broken (`break`) with an error.
+[Promises](./Model.md#promise) are a key part of CapTP. They are used to
+represent a value which is initially unknown, and are said to be pending until
+they become settled by either being fulfilled with a value or broken with an
+error.
 
-Promises are often created by sending an `op:deliver` message, where they
-represent the eventual value of the response. They can be chained together in
-what is called [Promise Pipelining](#promise-pipelining), whereby messages are
-sent to the promise which should be delivered to its resolution value if it is
-fulfilled with a single (as opposed to breaking with an error, or fulfilled with
-multiple values).
+Promises are often created for representing the eventual response to an
+[`op:deliver`](#opdeliver) message. They can be chained together in what is
+called [Promise Pipelining](#promise-pipelining), whereby messages are sent
+directly to a promise as a proxy for its eventual fulfillment value.
 
 ## [Promise and Resolver Objects](#promise-objects)
 
 Promises work like regular objects in CapTP. Promises come as a pair:
 
 - The promise object itself which represents a value.
-- The resolver object which is used to provide the promise with its resolved
-  value, or break it in the case of an error.
+- The resolver object which is notified to provide the promise with its
+  fulfillment value or break it in the case of an error.
 
- The promise object may eventually resolve to either a concrete value, object
- reference, another promise (in the case of promise pipelining), or may break.
- When a promise breaks its resolved with an error, breakages can be caused by
- either explicit instruction, by implicit error propagation, or network
- partition.
+A promise object can remain pending indefinitely, but usually either fulfills
+to a [Value](./Model.md#value) (which in the case of promise pipelining can
+itself be a promise) or breaks with an error. Breakages can be caused by either
+explicit instruction, implicit error propagation, or network partition.
 
-Promises can be listened to with the [`op:listen`](#oplisten) operation, or
-messages can be sent to them as if it were the resolved object. The messages
-will be relayed to the eventual object if it is `fulfill`ed to one. If the
-promise instead `break`s and thus has no resolved object, messages cannot be
-delivered and promises created during the sending of those messages should also
-break.
+Promises can be listened to with the [`op:listen`](#oplisten) operation, and
+messages can be sent to them as a proxy for their eventual fulfillment value.
+Upon fulfillment, such messages are relayed to that value. But if the promise
+breaks or fulfills to a non-[Reference](./Model.md#reference-capability) value,
+the messages cannot be delivered and any promises representing their results
+should break.
 
 The behavor of the two messages on the resolver object are as follows:
 
@@ -172,12 +169,12 @@ The behavor of the two messages on the resolver object are as follows:
 ### `fulfill`
 
 This method takes exactly one argument, the fulfillment value for the promise.
-The value may be any passable value.
+It should be delivered to any listeners of the promise.
 
 ### `break`
 
-Break takes a single argument, a value that represents an error that occured.
-This error should be delivered to any listeners of the promise.
+This method takes a single argument, representing the reason for breakage. This
+error should be delivered to any listeners of the promise.
 
 **NOTE:** The value of errors transmitted over CapTP is up to the transmitting
 party. However, including the contents of exception objects or debugging
@@ -191,7 +188,7 @@ relevant sealers/unsealers can safely decode them.
 
 When an [`op:deliver`](#opdeliver) message is sent and a result is pending, it
 is often desirable to use this result. One way to do this would be to wait until
-the promise has been resolved and then send the next message to the result.
+the promise has been fulfilled and then send the next message to the result.
 While this approach can be taken within OCapN, promise pipelining is preferred.
 When a message is sent with an `answer-pos` specified, the promise on the remote
 session can then be referenced and messaged with the
@@ -215,8 +212,8 @@ The messages delivered are as follows:
 ```
 
 In this way, it is not necessary to wait to dispatch messages until the promise
-has been resolved. Messages can just be sent in advance to a promise of the
-eventual object as they normally would to its eventual resolution. This also
+has been fulfilled. Messages can just be sent in advance to a promise of the
+eventual object as they normally would to its eventual fulfillment. This also
 improves efficiency by reducing the number of round trips needed to perform the
 same task. Take the above example of a car factory which produces a car, the car
 then can be driven which will produce a noise. Without promise pipelining this
@@ -370,7 +367,7 @@ should be taken:
 
 -   Validate the `desc:handoff-give`.
 -   Construct a local promise in order to deliver the message to the intended
-    object. The promise should eventually resolve to the remote reference.
+    object. The promise should eventually fulfill to the remote reference.
 -   Establish a connection to the Exporter if one does not exist.
 -   Construct a [`desc:handoff-receive`](#desc-handoff-receive) and send it to
     the Exporter's Bootstrap object via the [`withdraw-gift` method](#withdraw-gift-method).
@@ -378,7 +375,7 @@ should be taken:
 The specifics of constructing the `desc:handoff-receive` message are specified
 in the [desc:handoff-receive](#desc-handoff-receive) section. Once constructed,
 you MUST send the `desc:handoff-receive` to the Exporter's [`withdraw-gift` method](#withdraw-gift-method). The
-promise created by sending the message SHOULD resolve to the deposited gift,
+promise created by sending the message SHOULD fulfill to the deposited gift,
 provided no error has occured during the handoff process.
 
 ## Handoffs from the Exporter's perspective
@@ -547,7 +544,7 @@ nothing further is required.
 ## [`op:deliver`](#opdeliver)
 
 This operation delivers a message to an object with the expectation of a return
-value.
+value (referred to as an "answer").
 
 The message looks like:
 ```
@@ -558,8 +555,8 @@ The message looks like:
 ```
 
 The `resolve-me-desc` is a `desc:import-object` or `desc:import-promise` which
-represents a reference to a local object which will be notified upon the
-resolution of the promise.
+represents a reference to a resolver which will be notified upon settlement
+of the answer (as for [`op:listen`](#oplisten)).
 
 ### Sending
 
@@ -580,7 +577,7 @@ the recipient in the CapTP session.
 
 ### `answer-pos`
 When [promise pipelining](#promise-pipelining) is being used, this value should
-represent the location the promise should be created at. This location is
+represent the location the answer promise should be created at. This location is
 described as the "answer position", this is different form the regular exporting
 position used when a session exports an object. This is because the position is
 decided by the sender of the message, not the receiver. The answer position is a
@@ -590,14 +587,14 @@ not in use, it is a valid answer position.
 
 This answer position is then referenced with a [`desc:answer`](#desc-answer)
 descriptor. Note that when the answer position is no longer needed, it's
-important to notify the other side with a [`op:gc-answer`](#opgc-answer)
+important to inform the other side with a [`op:gc-answer`](#opgc-answer)
 message (see section for details).
 
 If no promise pipelining is needed, this value should be false.
 
 ### `resolve-me-desc`
 This is a `desc:import-object` or `desc:import-promise` which represents a
-reference to a local object which will be notified upon the resolution of the
+reference to a resolver which will be notified upon settlement of the
 promise.
 
 ### Receiving
@@ -608,11 +605,11 @@ expecting a result. This result should be delivered to the object specified by
 
 If `answer-pos` is a positive integer, then promise pipeling is used. In this
 case, a promise MUST be created and exported at the answer position specified by
-`answer-pos`. This promise MUST resolve to the result the object returns.
+`answer-pos`. This promise MUST settle to the result the object returns.
 Messages sent to this promise MUST be delivered to the object when the promise
-resolves (unless the promise breaks). This promise should remain available until
-the [`op:gc-answer`](#opgc-answer) message is received. If the `answer-pos` is
-false, then promise pipelining is not used.
+settles (unless it settles to a non-[Target](./Model.md#target)). This promise
+should remain available until the [`op:gc-answer`](#opgc-answer) message is
+received. If the `answer-pos` is false, then promise pipelining is not used.
 
 ## [`op:abort`](#opabort)
 
@@ -639,35 +636,34 @@ The message looks like:
 ```
 
 The `wants-partial` flag indicates if a "partial" update should be provided as
-the notification to `listen-desc` when the promise resolves to another promise.
-If `wants-partial` is false, a notification is sent only when the promise
-resolves to a non-promise value or breaks (i.e., not when it resolves to another
-promise). If `wants-partial` is true, a notification is sent for any resolution,
-including to another promise. Any notification is considered to conclude the
-`op:listen` interaction, and if future notifications are desired (e.g., after a
-partial notification) then further `op:listen` operations should be sent.
+the notification to `listen-desc` when the promise encounters an intermediate
+resolution to another promise. If `wants-partial` is false, a notification is
+sent only when the promise fulfills to a non-promise value or breaks (i.e., not
+when it resolves to another promise). If `wants-partial` is true, a notification
+is sent for any resolution, including to another promise. Any notification is
+considered to conclude the `op:listen` interaction, and if future notifications
+are desired (e.g., after a partial notification) then further `op:listen`
+operations should be sent.
 
 ### Sending
 
-`to-desc` MUST be a `desc:export` or `desc:export` which corresponds to a
+`to-desc` MUST be a `desc:export` or `desc:answer` which corresponds to a
 promise on the remote side.
 
-`listen-desc` MUST be a `desc:import-object` that is being imported. This will
-be invoked when the promise comes to a resolution.
+`listen-desc` MUST be a `desc:import-object` which corresponds to a local
+promise resolver being exported to the remote side.
 
 ### Receiving
 
-When receiving this message, providing `to-desc` matches a promise exported to
-this session, a mechanism MUST be setup to fulfill or break the provided
-resolver when a resolution is available to the `listen-desc` object. If a
-resolution is already available, the resolver provided in `listen-desc` MUST be
-fulfilled or broken.
+A mechanism MUST be setup to deliver either a `fulfill` or `break` message to
+`listen-desc` when a suitable resolution is available. If one is already
+available, the corresponding message must be delivered immediately.
 
 ## [`op:get`](#opget)
 
 `op:get` requests the value for the named field of an eventually settled
 [Struct](Model.md#struct).
-The get operation follows promise resolutions, inheriting the rejection reason
+The get operation follows promise settlment, inheriting the rejection reason
 of any intermediate rejected promise.
 The operation rejects the answer if the ultimate fulfillment of the receiver
 is not a Struct or if the named field is absent on the Struct.
@@ -700,7 +696,7 @@ exported at.
 ### Receiving
 When receiving the `op:get` message, export a promise at the
 answer position specified by `new-answer-pos`.
-The promise should eventually resolve to the value at the field specified by
+The promise should eventually fulfill to the value at the field specified by
 `field-name`, in fields of the `receiver-desc` Struct.
 If the `receiver-desc` promise breaks, or the `field-name` is absent on the
 eventual receiver, the promise breaks.
@@ -709,7 +705,7 @@ eventual receiver, the promise breaks.
 
 `op:index` requests the value at the given index of an eventually settled
 [List](Model.md#list).
-The index operation follows promise resolutions, inheriting the rejection
+The index operation follows promise settlement, inheriting the rejection
 reason of any intermediate rejected promise.
 The operation rejects the answer if the ultimate fulfillment of the receiver
 is not a List.
@@ -742,7 +738,7 @@ exported at.
 ### Receiving
 When the `op:index` message is received, a promise should be exported at the
 answer position specified by `new-answer-pos`.
-The promise should eventually resolve to the value at the index specified by
+The promise should eventually fulfill to the value at the index specified by
 `index`, in values provided in the List eventually fulfilled at
 `receiver-desc`.
 If the `receiver-desc` promise breaks, or the `index` is out of
@@ -784,9 +780,8 @@ exported at.
 ### Receiving
 When the `op:untag` message is received, a promise should be exported at the
 answer position specified by `new-answer-pos`.
-The promise should eventually resolve to the tagged value, provided in the
-Tagged value eventually fulfilled at `receiver-desc` (the receiver), or rejected
-if the received tag does not match the tag of the receiver.
+The promise should eventually fulfill to the tagged value, or break if the
+received tag does not match the tag of the receiver.
 
 ## [`op:gc-export`](#opgc-export)
 
