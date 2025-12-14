@@ -47,9 +47,9 @@ which together build up OCapN (Object Capability Network) specifications.
 
 This specification uses the following other specifications:
 
--   [Syrup](https://github.com/ocapn/syrup): The serialization format used for all messages between actors
+-   [Syrup][Syrup]: The serialization format used for all messages between actors
     separated by a CapTP boundary.
--   [OCapN Netlayers](./Netlayers.md): Specification to open a secure communication channel
+-   [OCapN Netlayers][Netlayers]: Specification to open a secure communication channel
     between two sessions, often on different networks.
 -   [OCapN Locators][Locators]: Specification covers representation of object references
     for both in-band and out-of-band usage.
@@ -131,7 +131,7 @@ should be severed and pending promises broken.
 
 # Promises
 
-[Promises](./Model.md#promise) are a key part of CapTP. They are used to
+[Promises][Model-Promise] are a key part of CapTP. They are used to
 represent a value which is initially unknown, and are said to be pending until
 they become settled by either being fulfilled with a value or broken with an
 error.
@@ -151,16 +151,15 @@ Promises work like regular objects in CapTP. Promises come as a pair:
   fulfillment value or break it in the case of an error.
 
 A promise object can remain pending indefinitely, but usually either fulfills
-to a [Value](./Model.md#value) (which in the case of promise pipelining can
+to a [Value][Model-Passable] (which in the case of promise pipelining can
 itself be a promise) or breaks with an error. Breakages can be caused by either
 explicit instruction, implicit error propagation, or network partition.
 
 Promises can be listened to with the [`op:listen`](#oplisten) operation, and
 messages can be sent to them as a proxy for their eventual fulfillment value.
 Upon fulfillment, such messages are relayed to that value. But if the promise
-breaks or fulfills to a non-[Reference](./Model.md#reference-capability) value,
-the messages cannot be delivered and any promises representing their results
-should break.
+breaks or fulfills to a non-[Reference][Model-Reference] value, the messages
+cannot be delivered and any promises representing their results should break.
 
 The behavor of the two messages on the resolver object are as follows:
 
@@ -420,8 +419,8 @@ receive both [`op:start-session`](#opstart-session) messages.
 ## `fetch` Method
 
 This method requests the value associated with a `swiss-number`
-[ByteArray](./Model.md#bytearray). Its answer will fulfill to the value
-identified by `swiss-number`, or break if there is no such value.
+[ByteArray][Model-ByteArray]. Its answer will fulfill to the value identified by
+`swiss-number`, or break if there is no such value.
 
 An example of how to use this method is:
 
@@ -599,7 +598,7 @@ to the object specified by `resolve-me-desc`.
 If `answer-pos` is a positive integer, then promise pipeling is used and the
 promise created above must be associated with the specified available answer
 position. Messages sent to this promise MUST be delivered to the object when the
-promise settles (unless it settles to a non-[Target](./Model.md#target)). This
+promise settles (unless it settles to a non-[Target][Model-Target]). This
 promise should remain available until the [`op:gc-answer`](#opgc-answer) message
 is received.
 
@@ -1036,7 +1035,10 @@ This document has been written with funding through the [NGI Assure Fund](https:
 [<img src="https://nlnet.nl/image/logos/NGIAssure_tag.svg" alt="NGI Assure Logo" width="20%" />](https://nlnet.nl/assure)
 
 [Model-ByteArray]: ./Model.md#bytearray
+[Model-Promise]: ./Model.md#promise
 [Model-Reference]: ./Model.md#reference-capability
 [Model-Passable]: ./Model.md#value
+[Model-Target]: ./Model.md#target
 [Locators]: ./Locators.md
+[Netlayers]: ./Netlayers.md
 [Syrup]: https://github.com/ocapn/syrup
