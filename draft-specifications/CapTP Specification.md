@@ -483,9 +483,10 @@ On a new connection, a key pair for this session should be generated. This
 key pair should be an EdDSA key pair with a SHA512 hash.
 
 This operation is used when a new connection is initiated over CapTP. Both
-parties MUST send upon a new connection. The operation looks like this:
+parties MUST send upon a new connection.
 
-```text
+The message looks like:
+```
 <op:start-session captp-version             ; String value
                   session-pubkey            ; CapTP public key value
                   acceptable-location       ; OCapN Reference type
@@ -529,9 +530,8 @@ valid signature of `acceptable-location`.
 This operation delivers a message to an object and does not expect any result
 from the receiving object.
 
-The `op:deliver-only` message is:
-
-```text
+The message looks like:
+```
 <op:deliver-only to-desc  ; desc:export
                  args>    ; Sequence
 ```
@@ -547,10 +547,10 @@ nothing further is required.
 ## [`op:deliver`](#opdeliver)
 
 This operation delivers a message to an object with the expectation of a return
-value which should be installed at the location specified in `answer-pos`. The
-`op:deliver` message is:
+value.
 
-``` text
+The message looks like:
+```
 <op:deliver to-desc           ; desc:export
             args              ; sequence
             answer-pos        ; positive integer | false
@@ -620,9 +620,8 @@ This is used to abort a CapTP session, when this is sent the connection should
 be severed and any per session information (e.g. session key pair, etc.) should
 be removed.
 
-The `op:abort` message is:
-
-```text
+The message looks like:
+```
 <op:abort reason>  ; reason: String
 ```
 
@@ -632,9 +631,8 @@ This is used to listen to a promise. This is done in order to get notified when
 the promise is fulfilled with a value or broken on an error. Please see the
 [promises section](#promises) for more information on how promises work.
 
-The `op:listen` message is:
-
-```text
+The message looks like:
+```
 <op:listen to-desc           ; desc:export | desc:answer
            listen-desc       ; desc:import-object
            wants-partial?    ; boolean
@@ -674,7 +672,7 @@ of any intermediate rejected promise.
 The operation rejects the answer if the ultimate fulfillment of the receiver
 is not a Struct or if the named field is absent on the Struct.
 
-The messages looks like:
+The message looks like:
 ```
 <op:get receiver-desc       ; <desc:answer | desc:import-promise>
         field-name          ; String
@@ -716,7 +714,7 @@ reason of any intermediate rejected promise.
 The operation rejects the answer if the ultimate fulfillment of the receiver
 is not a List.
 
-The messages looks like:
+The message looks like:
 ```
 <op:index receiver-desc       ; <desc:answer | desc:import-promise>
           index               ; Integer
@@ -757,7 +755,7 @@ the bounds of the receiver List, the promise should break.
 The operation rejects the answer if the ultimate fulfillment of the receiver is
 not a Tagged value.
 
-The messages looks like:
+The message looks like:
 ```
 <op:untag receiver-desc       ; <desc:answer | desc:import-promise>
           tag                 ; A String
@@ -807,8 +805,7 @@ Each time the remote session no longer needs the reference, it should send an
 references it has been given:
 
 The message looks like:
-
-```text
+```
 <op:gc-export export-pos   ; positive integer
               wire-delta>  ; positive integer
 ```
@@ -825,7 +822,8 @@ that you are no longer interested in.
 Once the `answer-pos` has been GC'd through sending the `op:gc-answer`
 operation, the `answer-pos` can be re-used.
 
-```text
+The message looks like:
+```
 <op:gc-answer answer-pos>  ; answer-pos: positive integer
 ```
 
