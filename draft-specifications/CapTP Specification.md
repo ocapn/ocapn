@@ -141,7 +141,8 @@ Promises are often created for representing the eventual response to an
 called [Promise Pipelining](#promise-pipelining), whereby messages are sent
 directly to a promise as a proxy for its eventual fulfillment value.
 
-## [Promise and Resolver Objects](#promise-objects)
+<a id="promise-objects"></a>
+## [Promise and Resolver Objects](#promise-and-resolver-objects)
 
 Promises work like regular objects in CapTP. Promises come as a pair:
 
@@ -341,8 +342,8 @@ This is an example of how the message would look like:
                   <desc:import-object ...>]>   ; reference being shared
 ```
 
-<a name="creating-the-deschandoff-give"></a>
-<a name="sending-the-deschandoff-give"></a>
+<a id="creating-the-deschandoff-give"></a>
+<a id="sending-the-deschandoff-give"></a>
 ### [Referencing the gift](#referencing-the-gift)
 
 The Gifter sends a message to the Receiver in which some place that takes a
@@ -474,6 +475,7 @@ Here is an example of how to use this method:
 
 # Operations
 
+<a id="op-start-sesson"></a>
 ## [`op:start-session`](#opstart-session)
 
 On a new connection, a key pair for this session should be generated. This
@@ -522,6 +524,7 @@ connection MUST be aborted.
 The `acceptable-location-sig` MUST be valid that the `session-pubkey` provided a
 valid signature of `acceptable-location`.
 
+<a id="op-deliver-only"></a>
 ## [`op:deliver-only`](#opdeliver-only)
 
 This operation delivers a message to an object and does not expect any result
@@ -540,6 +543,7 @@ The message looks like:
 The message should be delivered to the object referenced by `to-desc` with the
 arguments specified in `args`.
 
+<a id="op-deliver"></a>
 ## [`op:deliver`](#opdeliver)
 
 This operation delivers a message to an object with the expectation of a return
@@ -599,6 +603,7 @@ promise settles (unless it settles to a non-[Target](./Model.md#target)). This
 promise should remain available until the [`op:gc-answer`](#opgc-answer) message
 is received.
 
+<a id="op-abort"></a>
 ## [`op:abort`](#opabort)
 
 This is used to abort a CapTP session, when this is sent the connection should
@@ -610,6 +615,7 @@ The message looks like:
 <op:abort reason>  ; reason: String
 ```
 
+<a id="op-listen"></a>
 ## [`op:listen`](#oplisten)
 
 This is used to listen to a promise. This is done in order to get notified when
@@ -647,6 +653,7 @@ A mechanism MUST be setup to deliver either a `fulfill` or `break` message to
 `listen-desc` when a suitable resolution is available. If one is already
 available, the corresponding message must be delivered immediately.
 
+<a id="op-get"></a>
 ## [`op:get`](#opget)
 
 `op:get` requests the value for the named field of an eventually settled
@@ -689,6 +696,7 @@ The promise should eventually fulfill to the value at the field specified by
 If the `receiver-desc` promise breaks, or the `field-name` is absent on the
 eventual receiver, the promise breaks.
 
+<a id="op-index"></a>
 ## [`op:index`](#opindex)
 
 `op:index` requests the value at the given index of an eventually settled
@@ -732,6 +740,7 @@ The promise should eventually fulfill to the value at the index specified by
 If the `receiver-desc` promise breaks, or the `index` is out of
 the bounds of the receiver List, the promise should break.
 
+<a id="op-untag"></a>
 ## [`op:untag`](#opuntag)
 
 `op:untag` requests the value for an eventually settled
@@ -771,6 +780,7 @@ answer position specified by `new-answer-pos`.
 The promise should eventually fulfill to the tagged value, or break if the
 received tag does not match the tag of the receiver.
 
+<a id="op-gc-export"></a>
 ## [`op:gc-export`](#opgc-export)
 
 When a reference is given out over CapTP, the reference must be kept
@@ -793,6 +803,7 @@ The message looks like:
               wire-delta>  ; positive integer
 ```
 
+<a id="op-gc-answer"></a>
 ## [`op:gc-answer`](#opgc-answer)
 
 When a [`op:deliver`](#opdeliver) is sent with an `answer-pos` for use with
@@ -819,6 +830,7 @@ choose the receiver's side. This means if an object is exported from
 Alice to Bob, Alice sends a `desc:import-object` as Alice is describing
 it from Bob's perspective.
 
+<a id="desc-import-object"></a>
 ## [`desc:import-object`](#desc-import-object)
 
 Any object which is exported over CapTP is described with a positive integer.
@@ -831,6 +843,7 @@ specific object.
 
 Position `0` is reserved for the [bootstrap object](#bootstrap-object).
 
+<a id="desc-import-promise"></a>
 ## [`desc:import-promise`](#desc-import-promise)
 
 When a promise is exported over a CapTP boundary is it described with a
@@ -842,6 +855,7 @@ this specific promise.
 <desc:import-promise position>  ; position: positive integer
 ```
 
+<a id="desc-export"></a>
 ## [`desc:export`](#desc-export)
 
 When a message is sent across a CapTP boundary that refers to an imported object
@@ -857,6 +871,7 @@ Party Handoffs](#third-party-handoffs) section.
 <desc:export position>  ; position: positive integer
 ```
 
+<a id="desc-answer"></a>
 ## [`desc:answer`](#desc-answer)
 
 This is used to refer to a promise which is being pipelined. The position MUST
@@ -868,6 +883,7 @@ has been sent for this position.
 <desc:answer answer-pos> ; position: positive integer
 ```
 
+<a id="desc-sig-envelope"></a>
 ## [`desc:sig-envelope`](#desc-sig-envelope)
 
 This encapsulates a value and provides a signature over its canonical
@@ -886,6 +902,7 @@ Whenever a `desc:sig-envelope` is received, its `signature` must be validated
 using the corresponding public key. If the signature is not valid, the operation
 should be rejected with any corresponding promises being broken.
 
+<a id="desc-handoff-give"></a>
 ## [`desc:handoff-give`](#desc-handoff-give)
 
 In [Third Party Handoffs](#third-party-handoffs), the Gifter creates a
@@ -913,6 +930,7 @@ session.
     gift will be deposited at. This `gift-id` MUST be unique for gifts
     deposited by the Gifter in the **Gifter-Exporter** session.
 
+<a id="desc-handoff-receive"></a>
 ## [`desc:handoff-receive`](#desc-handoff-receive)
 
 In [Third Party Handoffs](#third-party-handoffs), the Receiver creates a
