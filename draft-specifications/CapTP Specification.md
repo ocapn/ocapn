@@ -529,17 +529,16 @@ from the receiving object.
 
 The message looks like:
 ```
-<op:deliver-only to-desc  ; desc:export
+<op:deliver-only to-desc  ; desc:export | desc:answer
                  args>    ; Sequence
 ```
 
-`to-desc` is a `desc:export` descriptor which corresponds to the object the
-message is being sent to.
+### Sending
+`to-desc` and `args` have the same semantics as in [`op:deliver`](#opdeliver).
 
-`args` is a sequence which are the arguments to invoke the object with.
-
-Since this message has no result, it should be delivered to the object but
-nothing further is required.
+### Receiving
+The message should be delivered to the object referenced by `to-desc` with the
+arguments specified in `args`.
 
 ## [`op:deliver`](#opdeliver)
 
@@ -548,7 +547,7 @@ value (referred to as an "answer").
 
 The message looks like:
 ```
-<op:deliver to-desc           ; desc:export
+<op:deliver to-desc           ; desc:export | desc:answer
             args              ; sequence
             answer-pos        ; positive integer | false
             resolve-me-desc>  ; desc:import-object | desc:import-promise
@@ -560,37 +559,27 @@ of the answer (as for [`op:listen`](#oplisten)).
 
 ### Sending
 
-When sending a message which expects a result, a promise should be generated on
-the side which is sending the `op:deliver`. This promise should be provided
-to the object sending this message. See the [promises section](#promises) for
-more information.
-
 #### `to-desc`
-This value corresponds to the object the message is being sent to. When promise
-pipelining is being used, this MUST be a [`desc:answer`](#desc-answer)
-representing the answer position. In other cases, this MUST be a
-[`desc:export`](#desc-export) representing an object that has been exported by
-the recipient in the CapTP session.
+This value corresponds to the object the message is being sent to, either an
+object that has been exported by the recipient or [for
+[promise pipelining](#promise-pipelining)] a [`desc:answer`](#desc-answer)
+identifying the answer from a previous `op:deliver` sent to the recipient.
 
 ### `args`
 `args` is a sequence of the arguments to invoke the object with.
 
 ### `answer-pos`
-When [promise pipelining](#promise-pipelining) is being used, this value should
-represent the location the answer promise should be created at. This location is
-described as the "answer position", this is different form the regular exporting
-position used when a session exports an object. This is because the position is
-decided by the sender of the message, not the receiver. The answer position is a
-positive integer, which must be unique within the CapTP session. This is usually
-incremented as an incrementing integer, however provided the answer position is
-not in use, it is a valid answer position.
+For [promise pipelining](#promise-pipelining), the position at which an answer
+promise should be created for reference by future [`desc:answer`](#desc-answer)
+descriptors. Note that this is decided by the message sender, not the receiver.
+It must not collide with a previously-used answer position (except as freed by
+[`op:gc-answer`](#opgc-answer)), and is usually implemented as a monotonically
+incrementing integer.
 
-This answer position is then referenced with a [`desc:answer`](#desc-answer)
-descriptor. Note that when the answer position is no longer needed, it's
-important to inform the other side with a [`op:gc-answer`](#opgc-answer)
-message (see section for details).
+When the answer position is no longer needed, it is important to inform the
+other side with a [`op:gc-answer`](#opgc-answer) message.
 
-If no promise pipelining is needed, this value should be false.
+If no promise pipelining is needed, this value should be `false`.
 
 ### `resolve-me-desc`
 This is a `desc:import-object` or `desc:import-promise` which represents a
@@ -599,17 +588,16 @@ promise.
 
 ### Receiving
 The message should be delivered to the object referenced by `to-desc` with the
-arguments specified in `args`. As the message is an `op:deliver`, the sender is
-expecting a result. This result should be delivered to the object specified by
-`resolve-me-desc` when available.
+arguments specified in `args`, with the eventual result represented as a new
+promise. When the settlement of that promise becomes known, it must be relayed
+to the object specified by `resolve-me-desc`.
 
-If `answer-pos` is a positive integer, then promise pipeling is used. In this
-case, a promise MUST be created and exported at the answer position specified by
-`answer-pos`. This promise MUST settle to the result the object returns.
-Messages sent to this promise MUST be delivered to the object when the promise
-settles (unless it settles to a non-[Target](./Model.md#target)). This promise
-should remain available until the [`op:gc-answer`](#opgc-answer) message is
-received. If the `answer-pos` is false, then promise pipelining is not used.
+If `answer-pos` is a positive integer, then promise pipeling is used and the
+promise created above must be associated with the specified available answer
+position. Messages sent to this promise MUST be delivered to the object when the
+promise settles (unless it settles to a non-[Target](./Model.md#target)). This
+promise should remain available until the [`op:gc-answer`](#opgc-answer) message
+is received.
 
 ## [`op:abort`](#opabort)
 
