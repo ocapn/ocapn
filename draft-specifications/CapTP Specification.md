@@ -680,15 +680,17 @@ The message looks like:
 > of a potentially large Struct.
 
 ### Sending
+
 #### `receiver-desc`
 This must be the `desc:answer` or a `desc:import-promise` value which
 eventually leads to the Struct you wish to get the value from.
+
 #### `field-name`
 This must be a [String](Model.md#string) designating a field of the Struct
 you wish to get the value from.
+
 #### `new-answer-pos`
-This should be a new unique answer position that the selected value should be
-exported at.
+This has the same semantics as `answer-pos` in [`op:deliver`](#opdeliver).
 
 ### Receiving
 When receiving the `op:get` message, export a promise at the
@@ -723,15 +725,17 @@ The message looks like:
 > values of a potentially large List.
 
 ### Sending
+
 #### `receiver-desc`
 This must be the `desc:answer` or a`desc:import-promise` value which eventually
 leads to the List you wish to get the value from.
+
 #### `index`
 This must be a zero-indexed integer which specifies which value should be
 picked out of the List.
+
 #### `new-answer-pos`
-This must be a new unique answer position that the selected value should be
-exported at.
+This has the same semantics as `answer-pos` in [`op:deliver`](#opdeliver).
 
 ### Receiving
 When the `op:index` message is received, a promise should be exported at the
@@ -766,15 +770,17 @@ The message looks like:
 > intermediate tag.
 
 ### Sending
+
 #### `receiver-desc`
 This must be the `desc:answer` or a`desc:import-promise` value which eventually
 leads to the Tagged value.
+
 #### `tag`
 This must be a [String](Model.md#string) corresponding to the expected tag
 string of the eventually settled receiver [Tagged](Model.md#tagged).
+
 #### `new-answer-pos`
-This must be a new unique answer position that the selected value should be
-exported at.
+This has the same semantics as `answer-pos` in [`op:deliver`](#opdeliver).
 
 ### Receiving
 When the `op:untag` message is received, a promise should be exported at the
