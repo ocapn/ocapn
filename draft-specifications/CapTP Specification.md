@@ -837,8 +837,9 @@ it from Bob's perspective.
 ## [`desc:import-object`](#desc-import-object)
 
 Any object which is exported over CapTP is described with a positive integer.
-This positive integer MUST be unique to this CapTP session and refer to this
-specific object.
+This positive integer MUST be unique within all of the sender's export values
+for this CapTP session (inclusive of both `desc:import-object` and
+`desc:import-promise`) and refer to this specific object.
 
 ```text
 <desc:import-object position>  ; position: positive integer
@@ -849,10 +850,10 @@ Position `0` is reserved for the [bootstrap object](#bootstrap-object).
 <a id="desc-import-promise"></a>
 ## [`desc:import-promise`](#desc-import-promise)
 
-When a promise is exported over a CapTP boundary is it described with a
-`desc:import-promise` message. This message contains a positive integer which is
-unique to the exporting party within the CapTP session and refers to
-this specific promise.
+Any promise which is exported over CapTP is described with a positive integer.
+This positive integer MUST be unique within all of the sender's export values
+for this CapTP session (inclusive of both `desc:import-object` and
+`desc:import-promise`) and refer to this specific promise.
 
 ```text
 <desc:import-promise position>  ; position: positive integer
