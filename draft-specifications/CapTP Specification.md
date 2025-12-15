@@ -146,9 +146,13 @@ directly to a promise as a proxy for its eventual fulfillment value.
 
 Promises work like regular objects in CapTP. Promises come as a pair:
 
-- The promise object itself which represents a value.
+- The promise object itself which represents an eventual value (usually sent in
+  responses, and also with promise pipelining as the target of almost any
+  message).
 - The resolver object which is notified to provide the promise with its
-  fulfillment value or break it in the case of an error.
+  fulfillment value or break it in the case of an error (usually sent in
+  requests, notably including [`op:deliver`](#opdeliver) and
+  [`op:listen`](#oplisten)).
 
 A promise object can remain pending indefinitely, but usually either fulfills
 to a [Value][Model-Passable] (which in the case of promise pipelining can
