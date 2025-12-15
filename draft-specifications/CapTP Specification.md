@@ -659,7 +659,7 @@ available, the corresponding message must be delivered immediately.
 ## [`op:get`](#opget)
 
 `op:get` requests the value for the named field of an eventually settled
-[Struct](Model.md#struct).
+[Struct][Model-Struct].
 The get operation follows promise settlment, inheriting the rejection reason
 of any intermediate rejected promise.
 The operation rejects the answer if the ultimate fulfillment of the receiver
@@ -673,8 +673,8 @@ The message looks like:
 ```
 
 > The `op:get` operation allows a sender to pipeline messages to a
-> [Target](Model.md#target) that is deeply embedded in one or more enveloping
-> Structs, [Lists](Model.md#list), or [Tagged](Model.md#tagged) values.
+> [Target][Model-Target] that is deeply embedded in one or more enveloping
+> Structs, [Lists][Model-List], or [Tagged][Model-Tagged] values.
 > For cases where the receiver of a get operation is an answer slot with no
 > listeners, sending `op:get` obviates the transmission of uninteresting fields
 > of a potentially large Struct.
@@ -686,8 +686,8 @@ This must be the `desc:answer` or a `desc:import-promise` value which
 eventually leads to the Struct you wish to get the value from.
 
 #### `field-name`
-This must be a [String](Model.md#string) designating a field of the Struct
-you wish to get the value from.
+This must be a [String][Model-String] designating a field of the Struct you wish
+to get the value from.
 
 #### `new-answer-pos`
 This has the same semantics as `answer-pos` in [`op:deliver`](#opdeliver).
@@ -704,7 +704,7 @@ eventual receiver, the promise breaks.
 ## [`op:index`](#opindex)
 
 `op:index` requests the value at the given index of an eventually settled
-[List](Model.md#list).
+[List][Model-List].
 The index operation follows promise settlement, inheriting the rejection
 reason of any intermediate rejected promise.
 The operation rejects the answer if the ultimate fulfillment of the receiver
@@ -718,8 +718,8 @@ The message looks like:
 ```
 
 > The `op:index` operation allows a sender to pipeline messages to a
-> [Target](Model.md#target) that is deeply embedded in one or more enveloping
-> Lists, [Structs](Model.md#struct), or [Tagged](Model.md#tagged) values.
+> [Target][Model-Target] that is deeply embedded in one or more enveloping
+> Lists, [Structs][Model-Struct], or [Tagged][Model-Tagged] values.
 > For cases where the receiver of an index operation is an answer slot with no
 > listeners, sending `op:index` obviates the transmission of uninteresting
 > values of a potentially large List.
@@ -750,7 +750,7 @@ the bounds of the receiver List, the promise should break.
 ## [`op:untag`](#opuntag)
 
 `op:untag` requests the value for an eventually settled
-[Tagged](Model.md#tagged) value.
+[Tagged][Model-Tagged] value.
 The operation rejects the answer if the ultimate fulfillment of the receiver is
 not a Tagged value.
 
@@ -762,9 +762,9 @@ The message looks like:
 ```
 
 > The `op:untag` operation allows a sender to pipeline messages to a
-> [Target](Model.md#target) that is deeply embedded in one or more enveloping
+> [Target][Model-Target] that is deeply embedded in one or more enveloping
 > tagged values and to assert the expected tag, possibly enveloped in further
-> [Structs](Model.md#struct), [Lists](Model.md#list), or Tagged values.
+> [Structs][Model-Struct], [Lists][Model-List], or Tagged values.
 > For cases where the receiver of an untag operation is an answer slot with no
 > listeners, sending `op:untag` obviates the transmission of the uninteresting
 > intermediate tag.
@@ -776,8 +776,8 @@ This must be the `desc:answer` or a`desc:import-promise` value which eventually
 leads to the Tagged value.
 
 #### `tag`
-This must be a [String](Model.md#string) corresponding to the expected tag
-string of the eventually settled receiver [Tagged](Model.md#tagged).
+This must be a [String][Model-String] corresponding to the expected tag
+string of the eventually settled receiver [Tagged][Model-Tagged].
 
 #### `new-answer-pos`
 This has the same semantics as `answer-pos` in [`op:deliver`](#opdeliver).
@@ -1046,9 +1046,13 @@ This document has been written with funding through the [NGI Assure Fund](https:
 
 [Model-ByteArray]: ./Model.md#bytearray
 [Model-Error]: ./Model.md#error
+[Model-List]: ./Model.md#list
 [Model-Promise]: ./Model.md#promise
 [Model-Reference]: ./Model.md#reference-capability
 [Model-Passable]: ./Model.md#value
+[Model-String]: ./Model.md#string
+[Model-Struct]: ./Model.md#struct
+[Model-Tagged]: ./Model.md#tagged
 [Model-Target]: ./Model.md#target
 [Locators]: ./Locators.md
 [Netlayers]: ./Netlayers.md
