@@ -676,7 +676,7 @@ is not a Struct or if the named field is absent on the Struct.
 
 The messages looks like:
 ```
-<op:get receiver-desc       ; <desc:answer | desc:import-promise>
+<op:get receiver-desc       ; <desc:answer | desc:export>
         field-name          ; String
         new-answer-pos>     ; Positive Integer
 ```
@@ -690,7 +690,7 @@ The messages looks like:
 
 ### Sending
 #### `receiver-desc`
-This must be the `desc:answer` or a `desc:import-promise` value which
+This must be the `desc:answer` or a `desc:export` value which
 eventually leads to the Struct you wish to get the value from.
 #### `field-name`
 This must be a [String](Model.md#string) designating a field of the Struct
@@ -718,7 +718,7 @@ is not a List.
 
 The messages looks like:
 ```
-<op:index receiver-desc       ; <desc:answer | desc:import-promise>
+<op:index receiver-desc       ; <desc:answer | desc:export>
           index               ; Integer
           new-answer-pos>     ; Positive Integer
 ```
@@ -732,7 +732,7 @@ The messages looks like:
 
 ### Sending
 #### `receiver-desc`
-This must be the `desc:answer` or a`desc:import-promise` value which eventually
+This must be the `desc:answer` or a`desc:export` value which eventually
 leads to the List you wish to get the value from.
 #### `index`
 This must be a zero-indexed integer which specifies which value should be
@@ -759,7 +759,7 @@ not a Tagged value.
 
 The messages looks like:
 ```
-<op:untag receiver-desc       ; <desc:answer | desc:import-promise>
+<op:untag receiver-desc       ; <desc:answer | desc:export>
           tag                 ; A String
           new-answer-pos>     ; Positive Integer
 ```
@@ -774,7 +774,7 @@ The messages looks like:
 
 ### Sending
 #### `receiver-desc`
-This must be the `desc:answer` or a`desc:import-promise` value which eventually
+This must be the `desc:answer` or a`desc:export` value which eventually
 leads to the Tagged value.
 #### `tag`
 This must be a [String](Model.md#string) corresponding to the expected tag
