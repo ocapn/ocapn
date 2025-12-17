@@ -476,21 +476,30 @@ received promises will satisfy the pass invariants applicable to their type.
 A value capturing the reason for rejecting a delivery.
 
 > - **Guile**: to be proposed
-> - **JavaScript**: a JavaScript Error object
+> - **JavaScript**: a JavaScript Error object, caveats below
 > - **Python**: to be proposed
->
-> We have not yet converged on consensus for any particular details about the
-> modeling of errors. The purpose of errors is typically to indicate that some
-> requested operation failed. The purpose of the contents of errors is to
-> preserve and convey diagnostic information, mostly to help debug problems,
-> such as the root cause of a surprising failure. This is a best-efforts
-> obligation, for which we have not yet decided either what contents are
-> required, nor what is allowed, nor what must be preserved as errors are
-> passed from one site to another. Until these details are decided, the only
-> hard requirement is that an error round trip to an error. We avoid any
-> interpretation for now as to whether it is the "same" error.
->
-> https://github.com/ocapn/ocapn/issues/142
+
+An error has a `message` String and a Struct for further associated data.
+No field names are reserved.
+
+An error may also have a hidden `identifier` ByteArray for purposes of tracing.
+The identifier may be revealed by a closely held capability of the OCapN
+implementation to assist distributed debugging.
+As such, the identifier is visible on the wire protocol and may be hidden from
+guest code on a particular peer.
+
+Errors maintain [Pass Invariant Equality](#pass-invariant-equality).
+They are data that will be copied if passed.
+
+> A JavaScript reification of an error will generally expose all the
+> fields of the auxillary data Struct as orindary properties.
+> However, if the aux data has properties with the names `message`, `name`,
+> `__proto__`, `constructor`, `prototype`, or 'toString', these may be
+> deflected to properties with the corresponding registered symbol for their
+> names.
+> Regardless, if an implementation receives an Error and sends it back to the
+> originating peer, the returned Error must be equal to the original to
+> maintain [Pass Invariant Equality](#pass-invariant-equality).
 
 # Pass Invariant
 
