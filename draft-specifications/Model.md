@@ -35,6 +35,14 @@ References:
 - [Target](#target)
 - [Promise](#promise)
 
+## Data
+
+Data are a subset of Value that excludes References.
+
+- Atoms are Data.
+- DataList, DataStruct, and DataTagged are also Data,
+- analogous to List, Struct, and Tagged except they can only contain nested Data.
+
 # Atom
 
 Atoms are values that cannot contain or refer to other values.
@@ -480,7 +488,10 @@ A value capturing the reason for rejecting a delivery.
 > - **Python**: to be proposed
 
 An error has a `message` String and a Struct for further associated data.
-No field names are reserved.
+
+For the data, no field names are reserved.
+However, all transitive Values beneath data must be [Data](#data).
+An error must not close over any [References](#reference-capability)
 
 An error may also have a hidden `identifier` ByteArray for purposes of tracing.
 The identifier may be revealed by a closely held capability of the OCapN
