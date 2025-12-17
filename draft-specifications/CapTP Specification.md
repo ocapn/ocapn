@@ -876,6 +876,22 @@ Party Handoffs](#third-party-handoffs) section.
 <desc:export position>  ; position: positive integer
 ```
 
+## [`desc:tag`](#desc-tag)
+
+A [Tagged](Model-Tagged) Value is a point of extensibility for the data model
+that allow for discriminated unions of user-defined types.
+These appear in-band as `desc:tag`
+
+```
+<desc:tag
+  label   ; String
+  value   ; Value
+>
+```
+
+[`op:untag`](#opuntag) can assert that a referrent has a particular `label`
+and pipeline a message to the underlying `value`.
+
 ## [`desc:answer`](#desc-answer)
 
 This is used to refer to a promise which is being pipelined. The position MUST
@@ -1127,4 +1143,5 @@ This document has been written with funding through the [NGI Assure Fund](https:
 [Model-ByteArray]: ./Model.md#bytearray
 [Model-Reference]: ./Model.md#reference-capability
 [Model-Passable]: ./Model.md#value
+[Model-Tagged]: ./Model.md#tagged
 [Locators]: ./Locators.md
