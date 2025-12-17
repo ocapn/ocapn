@@ -34,7 +34,7 @@ References:
 
 - [Target](#target)
 - [Promise](#promise)
-- [Sturdy References](#sturdy-reference)
+- [Sturdyref](#sturdyref)
 
 # Atom
 
@@ -477,11 +477,11 @@ received promises will satisfy the pass invariants applicable to their type.
 > [Containers](#container) maintain [Pass Invariant
 > Equality](#pass-invariant-equality).
 
-## Sturdy Reference
+## Sturdyref
 
-A Sturdy Reference (Sturdy Ref) represents the capability to attempt to obtain
-a live reference (a Target) for a [Locator](./Locator.md), but encapsulating
-the locator.
+A Sturdyref (sturdy reference) represents the capability to attempt to obtain a
+live reference (a Target) for a [Locator](./Locator.md), but encapsulating the
+locator.
 
 > - **Guile**: to be proposed
 > - **JavaScript**: a JavaScript object with one own property:
@@ -501,36 +501,45 @@ Reference itself.
 
 > Some names for this mechanism are "redeem", "revive", "vivify", or "enliven".
 
-A Sturdy Reference is unlike a Target in that it is transferrable to another
+A Sturdyref is unlike a Target in that it is transferrable to another
 peer, and the destination peer no longer requires a session with the original
-peer to redeem the Sturdy Reference.
-The Sturdy Reference is transferred as data.
+peer to redeem the Sturdyref.
+The Sturdyref is transferred as data.
 
-Although a Sturdy Reference does not keep the encapsulated Locator a secret
+Although a Sturdyref does not keep the encapsulated Locator a secret
 among peers, peers can collude to encapsulate a Locator in a Sturdy Ref and
 hide it from their respective guest programs, while preserving those programs'
-ability to transfer and redeem the Sturdy Reference for a live ref at the
+ability to transfer and redeem the Sturdyref for a live ref at the
 designated Locator.
 
-A Sturdy Reference only encapsulates a Designator, Transport, Swissnum, and
+A Sturdyref only encapsulates a Designator, Transport, Swissnum, and
 Connection Hints.
 A Locator URL might convey other hints, but these are not captured by a Sturdy
-Reference or transferred when a Sturdy Reference passes to another peer.
+Reference or transferred when a Sturdyref passes to another peer.
 
-Sturdy References do not have [Pass Invariant Equality](#pass-invariant-equality).
+Sturdyrefs do not have [Pass Invariant Equality](#pass-invariant-equality).
 A sturdy reference sent from a local peer to a remote peer, then from the
 remote peer back, will not be equal to the original.
 
-> Holding a Sturdy Reference does not implicitly convey the capability to
-> reveal the underlying Locator.
+> Holding a Sturdyref does not implicitly convey the capability to reveal the
+> underlying Locator under the terms of [Distributed Confinement][].
 > Although OCapN CapTP specifies that sturdy references are opaque,
-> transferrable, and redeemable for a live reference, obtaining a Sturdy
-> Reference for a Locator or a Locator from a Sturdy Reference is a closely
-> held implementation-specific protocol, conventionally called an
-> [Introducer](http://erights.org/elang/concurrency/introducer.html),
-> that is beyond the scope of this CapTP specification.
+> transferrable, and redeemable for a live reference, obtaining a Sturdyref for
+> a Locator or a Locator from a Sturdyref may be a closely held
+> implementation-specific protocol, conventionally called an
+> [Introducer](http://erights.org/elang/concurrency/introducer.html), that is
+> beyond the scope of this CapTP specification.
 >
-> Sturdy references and locators are collectively Offline Capabilities.
+> Not all peers are obligated to participate in Distributed Confinement.
+> Distributed Confinement is a cooperative arrangement among some peers to hide
+> sturdyref locators from confined guest programs but enable those guest
+> programs to pass sturdyrefs among themselves, regardless of whether the
+> referrent peer is online.
+> The locators are transparent to the peers, who can simply read them off the
+> wire protocol.
+> So, sturdyrefs provide a very specific and limited kind of secrecy.
+>
+> Sturdyrefs and locators are collectively Offline Capabilities.
 
 # Error
 
@@ -643,3 +652,5 @@ OCapN holds invariant that:
 >
 > OCapN does not hold invariant the preservation of arbitrary JSON texts
 > through arbitrary JSON implementations in arbitrary languages.
+
+[Distributed Confinement]: http://www.erights.org/elib/capability/dist-confine.html

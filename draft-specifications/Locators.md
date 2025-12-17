@@ -34,7 +34,7 @@ This specification uses the following other specifications:
     Syntax](https://www.rfc-editor.org/rfc/rfc3986): For encoding URI
     representations of locations.
 
-# [peer Locator](#ocapn-peer)
+# [Peer Locator](#ocapn-peer)
 
 This identifies an OCapN peer, not a specific object. This includes enough
 information to specify which netlayer and provide that netlayer with all of the
@@ -53,6 +53,7 @@ pieces of information which need to match. Two peer locators can have the same
 designator and transport but  different hints and be considered to be the same
 peer.
 
+<a name="peer-syrup"></a>
 ## [Syrup Serialization](#peer-syrup-serialization)
 
 It's encoded as a record with the label `ocapn-peer` (symbol) and three
@@ -105,6 +106,7 @@ The pieces of information encoded in the sturdyref are:
 - [Peer Locator](#peer-locator)
 - Swiss number: string used to obtain an object
 
+<a name="sturdyref-syrup"></a>
 ## Syrup Serialization
 
 It's encoded as a record with the label `ocapn-sturdyref` and two arguments:

@@ -437,8 +437,8 @@ An example of how to use this method is:
 ```
 
 > Fetch may produce any [Value](./Model.md#value) in the model and is the
-> the mechanism for creating original [Sturdy References](./Model.md#sturdy-reference).
-> A mechanism for looking up a Locator or Sturdy Reference for a Target returned
+> the mechanism for creating original [Sturdyrefs][Model-Sturdyref].
+> A mechanism for looking up a Locator or Sturdyref for a Target returned
 > by `fetch` is optional, implementation-specific, and necessarilly a closely held
 > capability of the OCapN implementation that should not be revealed to guest
 > code by default.
@@ -886,6 +886,28 @@ Party Handoffs](#third-party-handoffs) section.
 <desc:export position>  ; position: positive integer
 ```
 
+## [`ocapn-sturdyref`](#ocapn-sturdyref)
+
+A [Sturdyref][Model-Sturdyref] is a value that represents a passable capability
+to obtain a "live" value from a peer, even if that peer is currently offline.
+
+In a message, a sturdy reference is the serialized form of a [Sturdyref
+Locator][Locator-Sturdyref-Syrup].
+
+```
+<ocapn-sturdyref peer swiss-num>
+```
+
+Where `peer` is the serialized form of a [Peer Locator][Locator-Peer-Syrup].
+
+```
+<ocapn-peer transport   ; symbol (cannot contain ".")
+            designator  ; string
+            hints>      ; struct | false
+```
+
+> Sturdyref locators are the only value descriptor that lacks a `desc:` prefix.
+
 ## [`desc:answer`](#desc-answer)
 
 This is used to refer to a promise which is being pipelined. The position MUST
@@ -1137,4 +1159,7 @@ This document has been written with funding through the [NGI Assure Fund](https:
 [Model-ByteArray]: ./Model.md#bytearray
 [Model-Reference]: ./Model.md#reference-capability
 [Model-Passable]: ./Model.md#value
+[Model-Sturdyref]: ./Model.md#sturdy-reference
 [Locators]: ./Locators.md
+[Locator-Sturdyref-Syrup]: ./Locators.md#sturdyref-syrup
+[Locator-Peer-Syrup]: ./Locators.md#peer-syrup
