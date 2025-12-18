@@ -499,9 +499,14 @@ implementation to assist distributed debugging.
 As such, the identifier is visible on the wire protocol and may be hidden from
 guest code on a particular peer.
 
-Errors maintain [Pass Invariant Equality](#pass-invariant-equality).
+Errors maintain [Pass Invariant Equality](#pass-invariant-equality)
+for errors with the same `message` and `data`.
 They are data that will be copied if passed.
 
+> A JavaScript implementation must not attempt to preserve the identity of an
+> error if it makes a round trip, as this would leak the equivalence of the
+> identifier, which is otherwise hidden from guest code.
+>
 > A JavaScript reification of an error will generally expose all the
 > fields of the auxillary data Struct as orindary properties.
 > However, if the aux data has properties with the names `message`, `name`,
