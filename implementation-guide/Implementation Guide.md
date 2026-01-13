@@ -294,24 +294,26 @@ Alisha looks at her export table and sees the following:
 
 Alisha already has the reference to the robot, a promise for the response to the beep, and the robot has sent a resolution to the promise it sent Alisha with its reply, "Beeeep!" But these are a lot of objects still hanging around and being exported by both sides. Alisha decides it's time to implement garbage collection so that she may remove these from her table and it doesn't grow too large, ensuring also that Ben's peer doesn't have to hang on to all of these objects as well.
 
-There are two garbage collection operations in OCapN's CapTP, but one of thse operations has to do with questions and answers and Alisha isn't doing anything with those yet. Alisha decides to look at the `op:gc-export` operation which looks like this:
+There are two garbage collection operations in OCapN's CapTP, but one of thse operations has to do with questions and answers and Alisha isn't doing anything with those yet. Alisha decides to look at the `op:gc-exports` operation which looks like this:
 
 ```
-<op:gc-export export-pos   ; positive integer
-              wire-delta>  ; positive integer
+<op:gc-exports export-pos-list   ; list of positive integers
+               wire-delta-list>  ; list of positive integers
 ```
 
-The `export-pos` is the same position that's used for the import position and the wire-delta outstanding references to the object that's been received. OCapN's GC implementation is a collaborative process where by both sides keep track of the number of times a given object has been referenced in CapTP messages. When the importing side no longer needs the object, it should send an `op:gc-export` message, with the `wire-delta` being the outstanding reference count. Each time a reference to an object is received the CapTP session should keep track of this and can emit the `op:gc-export` with this amount and remove it from the count. The reason for keeping track of the wire-delta is the importing peer could no longer need the reference and send a GC operation while at the same time the exporting side might send another message which refers to that object, if the exporting side were then to get this GC operation, the exporting side needs to know if it's safe to actually GC it or not.
+OCapN's GC implementation is a collaborative process whereby both sides keep track of the number of times a given object has been referenced in CapTP messages. When the importing side no longer needs a set of objects, it should send an `op:gc-exports` message where `export-pos-list` contains the `export-pos` of each object being released and `wire-delta-list` contains the corresponding number of times a reference to each object in `export-pos-list` has been received by the importer since the last time an `op:gc-exports` was sent for that object. 
 
-Here you can see two peers with a CapTP session Peer A and Peer B. On Peer A lives an object called `alice`, there are many messages that have referenced the `alice` object, two of which has been received by Peer B, three of which are still on the wire yet to be received. Peer B in this situation has incremented their reference count of alice twice as its seen two references and decides it no longer needs this object so emits a GC export. What would happen next would be three more messages referencing `alice` arrive, if Peer A got the `op:gc-export` message and then GC'd alice, this would be a problem for B.
+The reason for keeping track of the wire-delta is the importing peer could no longer need the reference and send a GC operation while at the same time the exporting side might send another message which refers to that object. If the exporting side were then to get this GC operation, the exporting side needs to know if it's safe to actually GC it or not.
 
-Fortunately when Peer A receives the `op:gc-export` operation it can remove from its reference count the value conveyed in the `wire-delta` field which would leave Peer A with the value of `3`. Since this still leaves three references unaccounted for Peer A knows it cannot GC this object and must wait for Peer B to emit further GC export operations.
+Here you can see two peers with a CapTP session Peer A and Peer B. On Peer A lives an object called `alice`, there are many messages that have referenced the `alice` object, two of which has been received by Peer B, three of which are still on the wire yet to be received. Peer B in this situation has incremented their reference count of alice twice as its seen two references and decides it no longer needs this object so emits an `op:gc-exports`. What would happen next would be three more messages referencing `alice` arrive. If Peer A got the `op:gc-exports` message and then GC'd alice, this would be a problem for B.
+
+Fortunately when Peer A receives the `op:gc-exports` operation it can remove from its reference count the value conveyed in the `wire-delta-list` which would leave Peer A with the value of `3`. Since this still leaves three references unaccounted for Peer A knows it cannot GC this object and must wait for Peer B to emit further GC export operations.
 
 Alisha begins by two tables, one for keeping track of reference count for imported objects and one for exported objects. She makes it so that before transmission of any `op:deliver` or `op:deliver-only` she looks through all the arguments and everytime a reference is mentioned she increments the reference count in her export GC count table. She also implements a similar system to keep track of references in incoming messages.
 
-Alisha's programming language supports garbage collection and allows her to register a function to be called as an object is freed. She registers one which emits a `op:gc-export` message with the `wire-delta` equal to the number of times she has outstanding references to the `op:gc-export` since the last time she sent a `op:gc-export` for the relevant imported object.
+Alisha's programming language supports garbage collection and allows her to register a function to be called as an object is freed. She registers one which emits an `op:gc-exports` message with `export-pos-list` containing the `export-pos` of the freed object and `wire-delta-list` containing the number of times she has received a reference to the `export-pos` since the last time she sent an `op:gc-exports` for that `export-pos`. If Alisha has access to a list of multiple freed objects, she can send one `op:gc-exports` for the whole list.
 
-Alisha also implements the receiving side, each time a `op:gc-export` message comes in she decrements the wire-delta from her count and if the remaining count is zero, she removes the object from both her GC count table and the export table.
+Alisha also implements the receiving side, each time a `op:gc-exports` message comes in she decrements each wire-delta from her count for the corresponding `export-pos` and if the remaining count is zero for any object, she removes that object from both her GC count table and the export table.
 
 ### Stage 4: promise pipelining
 
@@ -353,13 +355,13 @@ Alisha modifies both her `op:deliver` and `op:deliver-only` message handling cod
 
 ### Stage 5: question/answer gc
 
-When it comes to questions and answers those also can build up as the exporting peer can't know when they can be garbage collected. This is where the `op:gc-answer` operation comes in, this is sent by the questioner when it no longer needs the answer. Since the questioner both created the question and is the only side to use it, it's also the questioner's responsibility to notify the other side it can garbage collect it when no longer needed. Due to how questions and answers work with them only being used by the questioner, it allows the GC operation to be a lot simpler, it looks like:
+When it comes to questions and answers those also can build up as the exporting peer can't know when they can be garbage collected. This is where the `op:gc-answers` operation comes in, which is sent by the questioner when it no longer needs the answer. Since the questioner both created the question and is the only side to use it, it's also the questioner's responsibility to notify the other side it can garbage collect it when no longer needed. Due to how questions and answers work with them only being used by the questioner, it allows the GC operation to be a lot simpler, it looks like:
 
 ```
-<op:gc-answer answer-pos>  ; answer-pos: positive integer
+<op:gc-answers answer-pos-list>  ; answer-pos-list: list of positive integers
 ```
 
-Alisha sets up a hook to be called when her internal question representation is collected. When her hook is called she looks up the question in her questions table, getting the `answer-pos`and constructs and emits the `op:gc-answer` record. Alisha is now able to safely remove this entry from her answers table. Finally she also implements the other side adding some code to handle an incoming `op:gc-answer`, removing the answer from her answer table when this operation is received.
+Alisha sets up a hook to be called when her internal question representations are collected. When her hook is called she looks up the questions in her questions table, getting each corresponding `answer-pos`, and constructs and emits the `op:gc-answers` record. Alisha is now able to safely remove those entries from her answers table. Finally she also implements the other side adding some code to handle an incoming `op:gc-answers`, removing the answers from her answer table when this operation is received.
 
 ### Stage 6: 3rd Party Handoffs
 
