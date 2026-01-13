@@ -928,6 +928,18 @@ has been sent for this position.
 <desc:answer answer-pos> ; position: positive integer
 ```
 
+## [`desc:error`](#desc-error)
+
+An error represents an [Error][Model-Error].
+
+```
+<desc:error
+  message    ; String
+  identifier ; ByteArray
+  data       ; Struct
+>
+```
+
 ## [`desc:sig-envelope`](#desc-sig-envelope)
 
 This encapsulates a CapTP object and provides a signature. The signature is
@@ -1167,5 +1179,6 @@ This document has been written with funding through the [NGI Assure Fund](https:
 
 [Model-ByteArray]: ./Model.md#bytearray
 [Model-Reference]: ./Model.md#reference-capability
+[Model-Error]: ./Model.md#error
 [Model-Passable]: ./Model.md#value
 [Locators]: ./Locators.md
