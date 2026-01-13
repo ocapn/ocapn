@@ -419,11 +419,12 @@ receive both [`op:start-session`](#opstart-session) messages.
 
 ## `fetch` Method
 
-This method is used to fetch an object from the bootstrap object. To use it you
-need a `swiss-number` which is a Binary Data type. This swiss number should
-correspond an object which exists in this session. The result will be the object
-which corresponds to this `swiss-number` or an error if the object does not
-exist or a swiss number was not provided.
+This method is used to fetch a Target object from the bootstrap object.
+To use it you need a `swiss-number` which is a
+[ByteArray](./Model.md#bytearray).
+This swiss number should correspond an object which exists in this session.
+The result will be the object which corresponds to this `swiss-number` or an
+error if the object does not exist or a swiss number was not provided.
 
 An example of how to use this method is:
 
@@ -434,6 +435,15 @@ An example of how to use this method is:
             3                        ; Answer position: positive integer
             <desc:import-object 5>>  ; object exported by us at position 5 should provide the answer
 ```
+
+> Fetch may produce any [Value](./Model.md#value) in the model and is the
+> the mechanism for creating original [Sturdyrefs][Model-Sturdyref].
+> A mechanism for looking up a Locator or Sturdyref for a Target returned
+> by `fetch` is optional, implementation-specific, and necessarilly a closely held
+> capability of the OCapN implementation that should not be revealed to guest
+> code by default.
+> In E, this capability was called an
+> [Introducer](http://erights.org/elang/concurrency/introducer.html).
 
 ## `deposit-gift` Method
 
@@ -917,6 +927,28 @@ Party Handoffs](#third-party-handoffs) section.
 <desc:export position>  ; position: positive integer
 ```
 
+## [`ocapn-sturdyref`](#ocapn-sturdyref)
+
+A [Sturdyref][Model-Sturdyref] is a value that represents a passable capability
+to obtain a "live" value from a peer, even if that peer is currently offline.
+
+In a message, a sturdy reference is the serialized form of a [Sturdyref
+Locator][Locator-Sturdyref-Syrup].
+
+```
+<ocapn-sturdyref peer swiss-num>
+```
+
+Where `peer` is the serialized form of a [Peer Locator][Locator-Peer-Syrup].
+
+```
+<ocapn-peer transport   ; symbol (cannot contain ".")
+            designator  ; string
+            hints>      ; struct | false
+```
+
+> Sturdyref locators are the only value descriptor that lacks a `desc:` prefix.
+
 ## [`desc:answer`](#desc-answer)
 
 This is used to refer to a promise which is being pipelined. The position MUST
@@ -1168,4 +1200,7 @@ This document has been written with funding through the [NGI Assure Fund](https:
 [Model-ByteArray]: ./Model.md#bytearray
 [Model-Reference]: ./Model.md#reference-capability
 [Model-Passable]: ./Model.md#value
+[Model-Sturdyref]: ./Model.md#sturdy-reference
 [Locators]: ./Locators.md
+[Locator-Sturdyref-Syrup]: ./Locators.md#sturdyref-syrup
+[Locator-Peer-Syrup]: ./Locators.md#peer-syrup
