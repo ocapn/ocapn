@@ -665,25 +665,26 @@ The `op:abort` message is:
 ## [`op:listen`](#oplisten)
 
 This is used to listen to a promise. This is done in order to get notified when
-the promise is fulfilled with a value or broken on an error. Please see the
-[promises section](#promises) for more information on how promises work.
+the promise is:
+
+1. Fulfilled with a value
+2. Broken on an error
+3. Eventually fulfilled with a promise on our peer
+4. Eventually fulfilled with a promise on a third peer
+
+Please see the [promises section](#promises) for more information on how 
+promises work.
 
 The `op:listen` message is:
 
 ```text
 <op:listen to-desc           ; desc:export | desc:answer
-           listen-desc       ; desc:import-object
-           wants-partial?    ; boolean
+           listen-desc>      ; desc:import-object
 ```
 
-The `wants-partial` flag indicates if a "partial" update should be provided as
-the notification to `listen-desc` when the promise resolves to another promise.
-If `wants-partial` is false, a notification is sent only when the promise
-resolves to a non-promise value or breaks (i.e., not when it resolves to another
-promise). If `wants-partial` is true, a notification is sent for any resolution,
-including to another promise. Any notification is considered to conclude the
-`op:listen` interaction, and if future notifications are desired (e.g., after a
-partial notification) then further `op:listen` operations should be sent.
+Any notification is considered to conclude the `op:listen` interaction, and if 
+future notifications are desired (e.g., after chaining to a promise on a third 
+peer) then further `op:listen` operations should be sent.
 
 ### Sending
 
@@ -700,6 +701,11 @@ this session, a mechanism MUST be setup to fulfill or break the provided
 resolver when a resolution is available to the `listen-desc` object. If a
 resolution is already available, the resolver provided in `listen-desc` MUST be
 fulfilled or broken.
+
+An `op:listen` request should NOT be notified when the promise is fulfilled 
+with another promise on the same peer unless that promise has been settled to
+either a value or an error, in which case the `op:listen` request is informed
+of the settled result.
 
 ## [`op:get`](#opget)
 

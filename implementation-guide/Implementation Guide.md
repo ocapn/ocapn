@@ -247,18 +247,16 @@ Cool! but wait, `import-promise`? The robot has created a promise to beep and se
 
 ```
 <op:listen to-desc           ; desc:export | desc:answer
-           listen-desc       ; desc:import-object
-           wants-partial?>   ; boolean
+           listen-desc>      ; desc:import-object
 ```
 
-So Alisha needs to send this operation to the promise which was exported to her with an object that wants to be notified. Fortunately that's just the same notification object that promises she implemented before has. Finally the promise has this `wants-partial?` boolean which will decide if she'll get updates even if it's just to another promise. She decides at her CapTP boundary look for `desc:import-promise` references and create a promise pair, she'll replace the references to the remote promise with her local one and transmit an `op:listen` with the resolver to the vow in the `listen-desc`, for `wants-partial?` she'll just leave that at false for now.
+So Alisha needs to send this operation to the promise which was exported to her with an object that wants to be notified. Fortunately that's just the same notification object that promises she implemented before has. She decides at her CapTP boundary she'll look for `desc:import-promise` references and create a promise pair, she'll replace the references to the remote promise with her local one and transmit an `op:listen` with the resolver to the vow in the `listen-desc`.
 
 She sets up a promise pair and transmits `op:listen` for the promise she got earlier for the beep, the message like this:
 
 ```
 <op:listen  <desc:export 2>
-            <desc:import-object 3>
-            true>
+            <desc:import-object 3>>
 ```
 
 After another while she gets another message with the resolution to that promise:
