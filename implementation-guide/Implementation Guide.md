@@ -156,7 +156,7 @@ CapTP describes object across the network with descriptors, these descriptors in
 To give an example of this, let's say there are two peers, Peer A with two objects Alisha and Arthur and Peer B with Ben. Peer B is exporting the object Ben at export position 3, when Peer B refers to this reference, his peer would use `<desc:export 3>`. Peer A is importing this reference to Ben, and would reference Ben by using `<desc:import-object 3>`. Now If we imagine Alisha sends a reference to Arthur (who lives on Peer A) to Ben within a message. This is done by Peer A exporting this reference to peer B so Ben can have this reference e.g.
 
 ```
-<op:deliver <desc:import-object 3>> [<desc:export 4>] false false>
+<op:deliver <desc:import-object 3>> [<desc:export 4>] #f #f>
 ``` 
 
 This is that `<desc:export 4>` is representing Arthur for Peer A.
@@ -190,8 +190,8 @@ Alisha adds to her CapTP implementation a function to send a message which takes
 ```
 <op:deliver <desc:export 0>
             ['fetch "..."]
-            false
-            false>
+            #f
+            #f>
 ```
 
 Okay, looks great. Alisha sends that... but she doesn't hear anything back. That's to be expected since she didn't ask for a response from the object. She decides to move on and implement the rest of `op:deliver` so she can get the reference to the robot.
@@ -222,7 +222,7 @@ The `answer-pos` is related to promise pipelining and that seems like functional
 ```
 <op:deliver     <desc:export 0>
                 ['fulfill "..."]
-                false
+                #f
                 <desc:import-object 1>>
 ```
 
@@ -231,8 +231,8 @@ Okay, that looks good and she's got her vow back from it too. She tries sending 
 ```
 <op:deliver    <desc:export 1>
                ['fulfill <desc:import-object 1>]
-               false
-               false>
+               #f
+               #f>
 ```
 
 Great, Alisha has a reference to Ben's robot. Alisha wants to make an adjustment to her send message with response function so she allows it to take a vow object and the function will set itself up to listen for the response and when it comes it, it'll then send the message to the reference it's fulfilled with. Alisha wants to try asking the robot to beep, so she calls her send message with response function again, but this time using the vow to the robot. Since it's actually already resolved it immediately makes and sends the next deliver message:
@@ -240,7 +240,7 @@ Great, Alisha has a reference to Ben's robot. Alisha wants to make an adjustment
 ```
 <op:deliver  <desc:export 1>
              ['beep]
-             false
+             #f
              <desc:import-object 2>>
 ```
 
@@ -249,8 +249,8 @@ The message looks good, it seems to have made a new resolver object and exported
 ```
 <op:deliver    <desc:export 2>
                ['fulfill <desc:import-promise 2>]
-               false
-               false>
+               #f
+               #f>
 ```
 
 Cool! but wait, `import-promise`? The robot has created a promise to beep and send that. Okay, that's fine, she just has to listen to it like before. She looks at the CapTP specification and sees the `op:listen` operation, this lets her give a promise and setup a listener so it can respond. The `op:listen` operation looks like this:
@@ -275,8 +275,8 @@ After another while she gets another message with the resolution to that promise
 ```
 <op:deliver    <desc:import-object 3>
                ['fulfill "beeeep!"]
-               false
-               false>
+               #f
+               #f>
 ```
 
 Oh cool! that all worked. Now she has promises though she needs to modify how her `op:abort` works, before it just terminated the session if she got one, but now she has promises she needs to ensure they break if the session ends. She sets up the promise creation code to add her promise to a set of unresolved promises that her `op:abort` handling code can access. When the resolver gets the resolution, it removes itself from the set of unresolved promises. She next makes it so that when an `op:abort` comes in, she iterates through the set sending the resolver objects a break with a network partition error. This should ensure promises are handled correctly.
@@ -287,11 +287,11 @@ Promises might not only be fulfilled through, lets imagine that Alisha sents ano
 ;; Alisha's message to the robot to move forward.
 <op:deliver     <desc:export 1>
                 '['move-forward 10]
-                false
+                #f
                 <desc:import-object 4>>
 
 ;; The robot's reply to the promise she created in her `op:deliver`
-<op:deliver  <desc:export 4> ['break "Unkown error occured"] false false>
+<op:deliver  <desc:export 4> ['break "Unkown error occured"] #f #f>
 ```
 
 ### Stage 3: import/export gc
@@ -408,7 +408,7 @@ In a high level Alisha will deposit a "gift" which is just a reference to the ga
 That's a lot to take in so we can look at each step one by one and see what's actually happening. The first thing to do before that is to look at the message Alice sends to Ben, the `desc:handoff-give` is used in place of gallery object on Peer C the message conceptually would look like this:
 
 ```
-<op:deliver <reference to Ben (desc:import-object)>  [<desc:handoff-give representing the reference to the gallery>] false false>
+<op:deliver <reference to Ben (desc:import-object)>  [<desc:handoff-give representing the reference to the gallery>] #f #f>
 ```
 
 #### Depositing the gift
@@ -421,7 +421,7 @@ Alisha starts implementing this by creating a gift table for each session and an
 
 ```
 ;; Deposit the object Peer C is exporting at position `1` at gift ID `5`
-<op:deliver <desc:export 0> ['deposit-gift 5 <desc:export 1>] false false>
+<op:deliver <desc:export 0> ['deposit-gift 5 <desc:export 1>] #f #f>
 ```
  
 #### Creating the `desc:handoff-give` certificate
@@ -538,7 +538,7 @@ Going back to the initial story of Alisha who's wanting to give a reference to C
 
 ```
 ;; Assuming the robot gallery object is exported by Carol at position 4.
-<op:deliver (desc:export 0) ['deposit-gift 5 (desc:export 4)] false false>
+<op:deliver (desc:export 0) ['deposit-gift 5 (desc:export 4)] #f #f>
 ```
 
 Alisha then sends a message to Ben on peer B, the message is following the CapTP convention of message invocation so it's a list with the first item being a symbol to describe the method and then the rest being the arguments, in this case this would be the method "send-robot-photos" and the argument being the reference to carol's robot gallery. Of course, this reference is on Peer C (Carol's peer) so instead of the normal import/export reference, it's the signed `(desc:handoff-give`):
@@ -554,8 +554,8 @@ Alisha then sends a message to Ben on peer B, the message is following the CapTP
                  <Alisha's public key in her session with Carol>
                  5)
                <signature Alisha made with her private key in the session with Carol's Peer>)]
-            false
-            false>
+            #f
+            #f>
 ```
 
 Ben's Peer then gets the `op:deliver` message and then looks through the arguments and sees a signed `desc:handoff-give` and so must perform a handoff and create a certificate. Ben's implementation replaces this handoff reference with a promise and delivers it to the object and then begins the handoff. Ben's peer checks and sees he doesn't have any open session to the peer specified so opens a new connection to `(ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)`. Once his instance has initiated the connection by performing the steps outlined in step 0, bootstrapping a connection, he's able to use this session to send his handoff certificate. Ben's peer creates the `desc:handoff-receive` and signs it using the key from his session with Alisha's peer. Ben's peer then sends this signed certificate to the bootstrap object on Carol's peer in the session he's just made:
@@ -593,7 +593,7 @@ Since all those checks pass, Carol can know that the handoff is valid and she sh
 
 ```
 ;; Fulfilling the promise created in Ben's `op:deliver`
-<op:deliver (desc:export 1) ['fulfill (desc:import-object 1)] false false>
+<op:deliver (desc:export 1) ['fulfill (desc:import-object 1)] #f #f>
 ```
 
 Finally Carol is able to remove the reference from the gift table as the handoff is complete.
