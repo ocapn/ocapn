@@ -1,0 +1,130 @@
+# Agenda
+
+- Fold op:deliver-only into op:deliver #253 which addresses
+  - Fold op:deliver-only into op:deliver #202 and
+  - Proposal: Single op:deliver message type with resolution subscription via op:listen #167,
+- Ridley: There seems to be broad support for folding op:deliver-only into op:deliver and keeping an auto-listen option of some kind for op:deliver (currently resolve-me-desc),
+- Resolver target objects or message operations #236
+- #252
+
+# Attendees
+
+- ridley: (independent) scribe
+- Christine Lemmer-Webber (Spritely)
+- Jessica Tallon (Spritely)
+- David Thompson (Spritely)
+- Richard Gibson (Agoric)
+- kumavis (Metamask)
+- Baldur (independent)
+- Mark Miller (Agoric)
+- Kris Kowal (Agoric)
+
+# Minutes
+
+#253 - 
+
+Ridley: I did notice regarding 252 (?) there was request for op:listen change
+
+JAR: That's related right?
+
+Ridley: They're not the same
+
+JAR: Yes, but closely related. 
+
+Ridley: Yes.
+
+JAR: Adding to agenda. Can you summarize quickly? Is there anything left to summarize? Particularly for 253
+
+Ridley: Summary of 253 is that we are changing op:deliver so that resolve-me-desc is optional and answer-desc is optional, so folding op:deliver in to answer that, and permitting optional between instant listen and delayed listen. If you include resolve-me-desc it's expecting you're indicating you want response, and if you don't include you have to send op:listen later. I wrote it so you know I'm into it, I know theoretically Spritely is on board, I don't know if anyone else read the PR.
+
+Jessica: Spritely is in favor of this in principle, we've discussed it a lot, I think the only thing left is for me to take a pass over the PR, haven't yet since I've been sick since FOSDEM. I will make sure this is on my agenda to review. If everyone else is happy with this change we can consider it reviewed in principle, as long as I don't see anything blocking, we can consider it merged.
+
+JAR: I don't know what the relation for 236.
+
+Ridley: This is something Kris has championed but I can explain. At first it seemed like aesthetic preference that Kris was pushing for which made me not particularly interested. But as we discussed if we switch from currently exporting a resolver in export table, which requires a GC message for that resolver. We figured out that if instead of doing that instead of exporting a resolver object and you used op:resolve or etc then in all situations we'd have less or equal message count, which for me is motivational.
+
+Ridley: Currently you export a resolve-me-desc which you're always exporting a resolver object which you're using only a single time to send a response. So currently that works but then later you have to send a gc message because you have that resolver in the import table. Kris' suggestion is that you can have a new ocapn operator instead, and you can save sending that GC message.
+
+Christine: In previous discussion with Baldur there was mention of benefit to potentially have a third-party handoff of a resolver but it seems like more of an academic feature. The benefit of avoiding a GC operation seems highly compelling since this will be one of the most common things we will see in OCapN.
+
+Baldur: It happens more often than you think if you have many peers, say you have Bob that is talking with Alice, knows that result of service from Alice will be handled by Carol peer in a different place. There's a way for Bob to just return a promise, but then you have to think yeah you can do that but then you get promise chains. As someone pointed out many years ago since Carol can('t) resolve that answer on Alice, work can continu. I'm okay with it, it will just look weird in cases you have (?) off answer, Bob is getting Carol to answer questions
+
+Baldur edits in an apologie here for his rambly response after the meeting.
+
+Christine: I think that even if this could occur in theory, I feel like our implementation would not ever do that. I don't think of a good heuristic by which that would be figured out.
+
+Mark M: This kind of cutting out the middle man, without any special mechanism, Bob would do an eventual send of the corresponding message to Carol. Then Bob would return to Alice a promise for the response to Carol. The promise that Alice already had would be forwarded to the promise that Bob returned. If we had shortening of unresolved promise chains (which E did have) then that would cut out Bob as a middle man anyway. It wouldn't do it immediately but it would do it promptly. For me the major term there is succeeding at the shortening. There is a huge advantage at cutting out intermediate hops. Do we have shortening of unsettled promise chains on our radar?
+
+Christine: We have shortening in general and it works together with 3rd party handoffs. Here we are talking about the op:deliver specifically. If Alice is sending something to Bob, Alice is looking for a resolution to that particular message. Is there any scenario (even in E) where you would hand over that resolver object?
+
+Mark M: In Pluribus there is such a resolver object but it would ONLY be handled by CapTP and not exposed beyond the objects. My point about shortening is that the motivation you have is taken care of by default if you have promise shortening. The residual motivations are not compelling.
+
+Christine: In Pluribus' deliver op there was no descriptor - only an integer. There's nothing in E where you were able to specify a different resolver on Carol.
+
+Mark M: Given shortening of unresolved promise chains, what is the motivation for reifying resolvers in op:deliver?
+
+Christine: We are currently doing so and this proposal would remove that. That resolver is only exported in this particular case and this would remove a GC message.
+
+Mark M: In E this was not even done with a regular resolver. It used a redirector. I would be very upset if we retreated from point-to-point FIFO.
+
+Christine: If there is an ordering issue in the current spec it would be nice to see an issue made for that. But that seems orthogonal to this particular issue.
+
+Mark M: A regular promise resolver may not be useful in this are since it might affect ordering. Are you confident that the current spec implies shortening of unsettled promise chains?
+
+Christine: I don't think that is relevant to this particular issue. There has been a compelling motivation to this change. Does anyone object to it?
+
+Kris K: Can someone please state the change that is being settled upon?
+
+Christine: This is about having separate ops for promise resolution of an op:deliver.
+
+Kris K: Are there any objections to that direction? 
+
+No objections.
+
+Kris K: Are there any objections to the 2 operator format? I propose op:resolve and op:break where op:resolve handles both forwarding and settling.
+
+Mark M: Break is a break from JS terminology but is so much better. There doesn't need to be an op:break because an op:resolve to a broken promise takes care of that case. But due to intuitiveness I won't object to including break.
+
+If I do an op:forward to a local broken promise what happens on the wire?
+
+Kris K: Could we get away with no break?
+
+Mark M: Given all the other constraints you can't not have the break operation.
+
+Christine: If we're talking about having operations for break and resolve, what happens if I intentionally construct a promise resolver and pass that resolver as an argument in an invocation somewhere. Do the operations that we're talking about get used there? What happens with proxying? At the moment there's no problem at all with proxying that resolver. Have we lost the ability to be able to proxy resolvers in this case?
+
+Mark M: What E did is that CapTP does not recognize a resolver object as anything other than a regular target. These new ops that we are talking about for the result of a deliver have nothing to do with interacting with a first-class resolver.
+
+Christine: (scribe: oops missed this sorry)
+
+Mark M: CapTP would not affect resolver objects in general.
+
+Christine: Part of the original motivation was to avoid having a methods convention encouraged by the spec. This would be a way to avoid that. Would this mean divergent ways of resolving promises across CapTP implementations and does that bother us?
+
+Mark M: That could be discussed as a separate standard in addition to the CapTP standard.
+
+Christine: Since this is such a basic part of using a CapTP protocol are we going to get into issues if we don't have agreement on this issue?
+
+Mark M: This would be a motivation to move quickly on a shared standard for implementing such things on top of CapTP.
+
+Kris K: I would agree with Mark M to put first-class resolver objects into an additional standard along with other important things.
+
+JAR: What is the status of #236?
+
+Kris K: We have consensus to change to two operators and we have consensus for them to be named op:break and op:resolve. Additionally there is a further step to be taken to explore an enum rather than two bools.
+
+Ridley: Yes but we will still need an answer-pos somehow when needed, whether that is false or optional when not needed.
+
+Jessica: I think promises and resolvers are too fundamental to CapTP to leave out (and their API).
+
+I don't think it makes sense to have promises, promise pipelining, and everything but then not have a Promise/Resolver API in the CapTP spec.
+
+I think we should make sure the spec is clear on how resolvers work and what their API is and we should not leave that to a higher-level spec.
+
+Mark M: OCapN already makes a special case for promises, which it must. Not making a special case for resolvers, and allowing different implementations to have different resolver APIs, how does that impact the ability to proxy resolvers?
+
+Christine: I think that is a longer conversation than we have time left for today. I agree with Jessica that it would be a lost opportunity if we left it out of the spec.
+
+Kris is voluntold to write a PR.
+
+Meeting adjourned.
