@@ -452,7 +452,7 @@ Here is an example of how to use this method:
 <op:deliver-only <desc:export 0>            ; Remote bootstrap object
                  ['deposit-gift             ; Argument 1: Symbol "deposit-gift"
                   gift-id                   ; Argument 2: Non-negative integer (>=0)
-                  <desc:import-object 5>]>  ; Argument 3: object being shared via handoff
+                  <desc:export 5>]>         ; Argument 3: object being shared via handoff
 ```
 
 ## `withdraw-gift` Method
