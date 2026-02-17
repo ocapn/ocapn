@@ -221,7 +221,7 @@ The `answer-pos` is related to promise pipelining and that seems like functional
 
 ```
 <op:deliver     <desc:export 0>
-                ['fulfill "..."]
+                ['fetch "..."]
                 #f
                 <desc:import-object 1>>
 ```

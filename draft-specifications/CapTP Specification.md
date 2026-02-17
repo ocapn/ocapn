@@ -574,7 +574,7 @@ expect a result. The `op:deliver` message is:
 
 ``` text
 <op:deliver to-desc           ; desc:export
-            args              ; sequence
+            args              ; List
             answer-pos        ; positive integer | false
             resolve-me-desc>  ; desc:import-object | false
 ```
@@ -595,7 +595,7 @@ this MUST be a [`desc:export`](#desc-export) representing an object that has
 been exported by the recipient in the CapTP session.
 
 ### `args`
-`args` is a sequence of the arguments to invoke the object with.
+`args` is a [List](./Model.md#list) of the arguments to invoke the object with.
 
 ### `answer-pos`
 When [promise pipelining](#promise-pipelining) is being enabled, this value 
