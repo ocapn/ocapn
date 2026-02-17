@@ -576,7 +576,7 @@ expect a result. The `op:deliver` message is:
 <op:deliver to-desc           ; desc:export
             args              ; List
             answer-pos        ; positive integer | false
-            resolve-me-desc>  ; desc:import-object | false
+            resolve-me-desc>  ; desc:import-object | desc:import-promise | false
 ```
 
 ### Sending
@@ -664,7 +664,7 @@ The `op:listen` message is:
 
 ```text
 <op:listen to-desc           ; desc:export | desc:answer
-           listen-desc       ; desc:import-object
+           listen-desc       ; desc:import-object | desc:import-promise
            wants-partial?    ; boolean
 ```
 
