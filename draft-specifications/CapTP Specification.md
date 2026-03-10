@@ -671,12 +671,7 @@ The `op:listen` message is:
 
 ```text
 <op:listen to-desc           ; desc:export | desc:answer
-<<<<<<< op_listen_work
-           listen-desc>      ; desc:import-object
-=======
-           listen-desc       ; desc:import-object | desc:import-promise
-           wants-partial?    ; boolean
->>>>>>> main
+           listen-desc>      ; desc:import-object | desc:import-promise
 ```
 
 Any notification is considered to conclude the `op:listen` interaction, and if 
