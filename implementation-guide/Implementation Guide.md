@@ -413,13 +413,13 @@ That's a lot to take in so we can look at each step one by one and see what's ac
 
 ![](./handoffs-3party2.webm)
 
-This is done by the gifter, in our example Alisha's peer, Peer A. Each peer needs a per-session gifting table which stores a gift ID to some reference to an object or promise. The gift ID is just a positive integer (usually incrementing integer) which is unique to the session which represents the reference being shared. When a handoff is initiated it's to a specific object on a peer, not just the peer, the gifting mechanism is providing a secure way to share a specific reference to the receiver. The way a peer deposits a gift is on the bootstrap object (on the exporter) which has a specific `deposit-gift` method.
+This is done by the gifter, in our example Alisha's peer, Peer A. Each peer needs a per-session gifting table which stores a gift ID to some reference to an object or promise. The gift ID is 32 random bytes which represents the reference being shared. When a handoff is initiated it's to a specific object on a peer, not just the peer, the gifting mechanism is providing a secure way to share a specific reference to the receiver. The way a peer deposits a gift is on the bootstrap object (on the exporter) which has a specific `deposit-gift` method.
 
-Alisha starts implementing this by creating a gift table for each session and an auto incrementing counter to track the gift IDs she's sending. Alisha also implements the `deposit-gift` method on her bootstrap object which takes two arguments a gift ID and a reference and she puts these things into her gift table she's just made. Alisha then starts by adding code to her `op:deliver` to look through all the arguments being sent and when it encounters a reference to an remote object on a peer from a different session, she initilizes a handoff and replaces that reference with a `desc:handoff-give`. When a handoff is initialized in Alisha's system, it gets the current next gift ID and sends a message to the deposit gift method on the exporter's bootstrap object, this looks like this:
+Alisha starts implementing this by creating a gift table for each session and an auto incrementing counter to track the gift IDs she's sending. Alisha also implements the `deposit-gift` method on her bootstrap object which takes two arguments a gift ID and a reference and she puts these things into her gift table she's just made. Alisha then starts by adding code to her `op:deliver` to look through all the arguments being sent and when it encounters a reference to an remote object on a peer from a different session, she initilizes a handoff and replaces that reference with a `desc:handoff-give`. When a handoff is initialized in Alisha's system, it generates a new gift ID by generating 32 strongly random bytes, and sends a message to the deposit gift method on the exporter's bootstrap object, this looks like this:
 
 ```
-;; Deposit the object Peer C is exporting at position `1` at gift ID `5`
-<op:deliver <desc:export 0> ['deposit-gift 5 <desc:export 1>] #f #f>
+;; Deposit the object Peer C is exporting at position `1` at the gift ID we generated.
+<op:deliver <desc:export 0> ['deposit-gift <gift-id-bytes> <desc:export 1>] #f #f>
 ```
  
 #### Creating the `desc:handoff-give` certificate
@@ -433,7 +433,7 @@ Alisha next needs to create the `desc:handoff-give` certificate which she can gi
                    exporter-location  ; OCapN Locator for the exporter
                    session            ; The session ID for the gifter <-> exporter session
                    gifter-side        ; the public key of the gifter in the gifter <-> exporter session
-                   gift-id>           ; Positive Integer or zero.
+                   gift-id>           ; Bytearray (length: 32 bytes)
 ```
 
 This includes a lot of information, some of which comes from the Gifter's session with the Receiver and some of it comes from the Gifter's session with the Exporter. It's important to keep in mind when thinking about handoffs is that it does not rely on keeping secrets, all messages sent can be public while remaining secure and handoffs are capabilities which only allow the receiver to obtain a reference to the object that the gifter deposits. The burden for checking the information within the certificates rests with the exporter since it is the Peer which has the reference to provide.
@@ -484,7 +484,7 @@ When the exporter receives the signed `desc:handoff-receive` from the exporter, 
         ”ocapn://machine-c.foo”     ; exporter-location: Machine address to C
         AtoC-session                ; session: Session ID for A ↔ C session
         A-key-of-AtoC               ; gifter-side: A’s public key in A ↔ C
-        5)                          ; gift-id: key in A ↔ C’s gift table
+        <gift-id-bytes>)            ; gift-id: key in A ↔ C’s gift table
     <signature-by-A-key-of-AtoC>))  ; Signature A made using their key in A ↔ C
   <signature-by-B-key-of-AtoB>)     ; Signature B has made using their A ↔ B key
 ```
@@ -536,7 +536,7 @@ Going back to the initial story of Alisha who's wanting to give a reference to C
 
 ```
 ;; Assuming the robot gallery object is exported by Carol at position 4.
-<op:deliver (desc:export 0) ['deposit-gift 5 (desc:export 4)] #f #f>
+<op:deliver (desc:export 0) ['deposit-gift <gift-id-bytes> (desc:export 4)] #f #f>
 ```
 
 Alisha then sends a message to Ben on peer B, the message is following the CapTP convention of message invocation so it's a list with the first item being a symbol to describe the method and then the rest being the arguments, in this case this would be the method "send-robot-photos" and the argument being the reference to carol's robot gallery. Of course, this reference is on Peer C (Carol's peer) so instead of the normal import/export reference, it's the signed `(desc:handoff-give`):
@@ -550,7 +550,7 @@ Alisha then sends a message to Ben on peer B, the message is following the CapTP
                  (ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)
                  <ID of the session Alisha and Carol's peer have>
                  <Alisha's public key in her session with Carol>
-                 5)
+                 <gift-id-bytes>)
                <signature Alisha made with her private key in the session with Carol's Peer>)]
             #f
             #f>
@@ -571,7 +571,7 @@ Ben's Peer then gets the `op:deliver` message and then looks through the argumen
                     (ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)
                     <ID of the session Alisha and Carol's peer have>
                     <Alisha's public key in her session with Carol>
-                    5)
+                    <gift-id-bytes>)
                   <signature Alisha made with her private key in the session with Carol's Peer>)))
             ]
            #f
