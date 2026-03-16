@@ -177,7 +177,8 @@ A collection of unordered (key, value) pairs.
 > and representation allow any value.
 
 The abstract notation allows a shorthand where a field name may be an alphanumeric ASCII
-name without a prefix `"`, in which case the field name is a [String](#string).
+_name_ without a prefix `"`, in which case the field name is a [String](#string) (e.g.,
+`{ n11n: "NFC" }` is equivalent to `{ "n11n": "NFC" }`).
 
 ## List
 
@@ -207,8 +208,8 @@ A tuple of any quantity of values.
 > implied by the record, but may be any value.
 
 The notation allows a shorthand where the first value of a record may be a bare
-alphanumeric name without a prefix `'`, in which case he value is a
-[Symbol](#symbol).
+_name_ without a prefix `'`, in which case the value is a [Symbol](#symbol)
+(e.g., `<desc:export 0>` is equivalent to `<'desc:export 0>`).
 
 > Records do not correspond to a paricular type in the [Model](Model.md), but
 > are instrumental in representing messages in the
