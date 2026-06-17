@@ -131,8 +131,9 @@ should be severed and unresolved promises broken.
 
 Promises are a key part of CapTP. They are used to represent a value which is
 not yet known. Promises without a value are said to be unresolved, they can
-become resolved by being `fulfill`ed with a value (including another promise),
-or broken (`break`) with an error.
+become resolved by being `fulfill`ed with a value 
+([including another promise](#promise-shortening)), or broken (`break`) with 
+an error.
 
 Promises are often created by sending an `op:deliver` message, where they
 represent the eventual value of the response. They can be chained together in
@@ -405,6 +406,53 @@ the **Gifter-Receiver** session. The Exporter will likely not have seen this Pub
 The Receiver should be the only party able to withdraw the gift left by the Gifter.
 Implementers MUST ensure that the management of gifts adheres to this requirement,
 preventing unauthorized access to gifts.
+
+# [Promise Shortening](#promise-shortening)
+
+Promise shortening occurs when a promise is fulfilled with a promise on another peer. Extra steps must be 
+taken beyond ordinary reference passing to ensure consistent message ordering.
+
+Promise shortening involves peers with the following roles:
+- **Holder**: The peer holding a reference to a promise hosted by the Shortener that is being given a
+shorter promise on another peer.
+- **Shortener**: The peer hosting a promise that wishes to pass a shorter promise to the Holder.
+- **Terminator**: The peer hosting the promise that the Shortener will be passing to the Holder.
+
+**Note**: It is possible for the Holder and the Terminator to be the same peer.
+**Note**: A Terminator may also play the role of Shortener for a yet-shorter promise on another peer. In that case the Shortener of the prior shortening also plays the role of Holder for the further shortening.
+
+
+## Promise shortening from the Shortener's perspective
+
+When a Shortener becomes aware that a promise it is sharing to a Holder has been fulfilled with a promise
+on another peer (which could be the Holder), the Shortener sends the Holder an [`op:flush`](#opflush) message
+targeting the listener resolver for the Shortener's promise.
+
+While waiting for a response to the [`op:flush`](#opflush) message, the Shortener MUST continue to forward any
+[promise pipelining](#promise-pipelining) messages received from the Holder to the promise being shortened.
+
+The response from the Holder will contain a reference to a new resolver. The Shortener proceeds to fulfill the
+new resolver with the shorter promise. If the Holder and Terminator are not the same peer, this will involve
+a regular [Third Party Handoff](#third-party-handoffs).
+
+**Important**: It is possible that while waiting for a response to the [`op:flush`](#opflush) message it sent
+to the Holder, the Shortener becomes aware of a yet-shorter promise by receiving its own [`op:flush`](#opflush) 
+message. In that case the Shortener MUST wait until it receives the yet-shorter promise and then pass *that*
+promise to the original Holder rather than the promise it originally intended to.
+
+## Promise shortening from the Holder's perspective
+
+When a Holder receives an [`op:flush`](#opflush) message, it creates a new 
+[promise-resolver pair](#promise-objects) and fulfills the target resolver of the [`op:flush`](#opflush) with
+the new promise. As the new promise is a local promise, this prevents any further 
+[promise pipelining](#promise-pipelining) messages being sent through this promise to the Shortener.
+
+The Holder then sends the new resolver to the resolver specified in the Shortener's [`op:flush`](#opflush)
+message.
+
+Later, when the Shortener fulfills the new resolver with the shorter promise reference, any messages sent to
+the Holder's promise since receiving the [`op:flush`](#opflush) message are 
+[promise pipelined](#promise-pipelining) on the shorter promise reference.
 
 # [The bootstrap Object](#bootstrap-object)
 
@@ -697,6 +745,30 @@ An `op:listen` request should NOT be notified when the promise is fulfilled
 with another promise on the same peer unless that promise has been settled to
 either a value or an error, in which case the `op:listen` request is informed
 of the settled result.
+
+## [`op:flush`](#opflush)
+
+This operation is used during [promise shortening](#promise-shortening) to
+preserve message ordering.
+
+```
+<op:flush   to-desc             ;; <desc:export>
+            confirm-desc>       ;; <desc:import-object> | <desc:import-promise>
+```
+
+### Sending
+
+`to-desc` MUST be a `desc:export` which corresponds to a resolver on the remote side.
+
+`confirm-desc` MUST be a `desc:import` representing a resolver on the sender's side
+that will receive the flush confirmation containing a new resolver to send the 
+shortened promise reference.
+
+### Receiving
+
+Upon receiving the `op:flush` message, create a new [promise-resolver pair](#promise-objects).
+Fulfill the target resolver at `to-desc` with the new promise and fulfill the remote resolver
+at `confirm-desc` with the new resolver.
 
 ## [`op:get`](#opget)
 
