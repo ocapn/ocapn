@@ -80,7 +80,7 @@ With this in place she can generate her `op:start-session` message, which looks 
 
 ```
 <op:start-session "1.0"
-                  (public-key (ecc (curve Ed25519) (flags eddsa) (q ...) (s ...)))
+                  (public-key (ecc (curve Ed25519) (flags eddsa) (q ...)))
                   (ocapn-peer "..." 'onion #f)
                   (sig-val (eddsa (r ...) (s ...)))>
 ```
