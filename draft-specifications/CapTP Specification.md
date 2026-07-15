@@ -131,7 +131,7 @@ should be severed and unresolved promises broken.
 
 Promises are a key part of CapTP. They are used to represent a value which is
 not yet known. Promises without a value are said to be unresolved, they can
-become resolved by being `fulfill`ed with a value 
+become resolved by being fulfilled (`fulfill`) with a value 
 ([including another promise](#promise-shortening)), or broken (`break`) with 
 an error.
 
@@ -409,8 +409,9 @@ preventing unauthorized access to gifts.
 
 # [Promise Shortening](#promise-shortening)
 
-Promise shortening occurs when a promise is fulfilled with a promise on another peer. Extra steps must be 
-taken beyond ordinary reference passing to ensure consistent message ordering.
+When a promise is fulfilled with a promise on another peer, a layer of indirection is removed, thus 
+"shortening" the promise. Extra steps must be taken beyond ordinary reference passing to ensure 
+consistent message ordering.
 
 Promise shortening involves peers with the following roles:
 - **Holder**: The peer holding a reference to a promise hosted by the Shortener that is being given a
@@ -418,8 +419,10 @@ shorter promise on another peer.
 - **Shortener**: The peer hosting a promise that wishes to pass a shorter promise to the Holder.
 - **Terminator**: The peer hosting the promise that the Shortener will be passing to the Holder.
 
-**Note**: It is possible for the Holder and the Terminator to be the same peer.
-**Note**: A Terminator may also play the role of Shortener for a yet-shorter promise on another peer. In that case the Shortener of the prior shortening also plays the role of Holder for the further shortening.
+**Note**: It is possible for the Holder and the Terminator to be the same peer. The same algorithm applies
+in that case as it does when the Holder and Terminator are separate peers.
+**Note**: A Terminator may also play the role of Shortener for a yet-shorter promise on another peer. 
+In that case the Shortener of the prior shortening also plays the role of Holder for the further shortening.
 
 
 ## Promise shortening from the Shortener's perspective
@@ -433,12 +436,12 @@ While waiting for a response to the [`op:flush`](#opflush) message, the Shortene
 
 The response from the Holder will contain a reference to a new resolver. The Shortener proceeds to fulfill the
 new resolver with the shorter promise. If the Holder and Terminator are not the same peer, this will involve
-a regular [Third Party Handoff](#third-party-handoffs).
+a [Third Party Handoff](#third-party-handoffs).
 
-**Important**: It is possible that while waiting for a response to the [`op:flush`](#opflush) message it sent
-to the Holder, the Shortener becomes aware of a yet-shorter promise by receiving its own [`op:flush`](#opflush) 
-message. In that case the Shortener MUST wait until it receives the yet-shorter promise and then pass *that*
-promise to the original Holder rather than the promise it originally intended to.
+**Important**: It is possible that while waiting for a response to the [`op:flush`](#opflush) message the
+Shortener sent to the Holder, the Shortener becomes aware of a yet-shorter promise by receiving its own 
+[`op:flush`](#opflush) message. In that case the Shortener MUST wait until it receives the yet-shorter promise 
+and then pass *that* promise to the original Holder rather than the promise it originally intended to.
 
 ## Promise shortening from the Holder's perspective
 
