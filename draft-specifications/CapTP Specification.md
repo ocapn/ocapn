@@ -108,6 +108,13 @@ will send an [`op:deliver`](#opdeliver) message. Messages can also be
 eliminating the need for unnecessary round-trips via 
 [Promise Pipelining](#promise-pipelining).
 
+CapTP builds on top of the peer-to-peer FIFO communication provided by the 
+[Netlayer](./Netlayers.md) to provide an "end-to-end reference FIFO" messaging
+order. Messages sent from one peer to a particular object or promise on another
+peer MUST be received by the message target in the order they were sent by the
+sending peer. This order MUST be maintained even in the case of 
+[promise shortening](#promise-shortening).
+
 This covers the basic usage of CapTP. Another aspect that can occur when sending
 messages through CapTP is when an object sends a message that includes a
 reference to an object residing in a different session. To perform this while
