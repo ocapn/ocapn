@@ -35,6 +35,14 @@ References:
 - [Target](#target)
 - [Promise](#promise)
 
+## Data
+
+Data are a subset of Value that excludes References.
+
+- Atoms are Data.
+- DataList, DataStruct, and DataTagged are also Data,
+- analogous to List, Struct, and Tagged except they can only contain nested Data.
+
 # Atom
 
 Atoms are values that cannot contain or refer to other values.
@@ -476,21 +484,38 @@ received promises will satisfy the pass invariants applicable to their type.
 A value capturing the reason for rejecting a delivery.
 
 > - **Guile**: to be proposed
-> - **JavaScript**: a JavaScript Error object
+> - **JavaScript**: a JavaScript Error object, caveats below
 > - **Python**: to be proposed
+
+An error has a `message` String and a Struct for further associated data.
+
+For the data, no field names are reserved.
+However, all transitive Values beneath data must be [Data](#data).
+An error must not close over any [References](#reference-capability)
+
+An error may also have a hidden `identifier` ByteArray for purposes of tracing.
+The identifier may be revealed by a closely held capability of the OCapN
+implementation to assist distributed debugging.
+As such, the identifier is visible on the wire protocol and may be hidden from
+guest code on a particular peer.
+
+Errors maintain [Pass Invariant Equality](#pass-invariant-equality)
+for errors with the same `message` and `data`.
+They are data that will be copied if passed.
+
+> A JavaScript implementation must not attempt to preserve the identity of an
+> error if it makes a round trip, as this would leak the equivalence of the
+> identifier, which is otherwise hidden from guest code.
 >
-> We have not yet converged on consensus for any particular details about the
-> modeling of errors. The purpose of errors is typically to indicate that some
-> requested operation failed. The purpose of the contents of errors is to
-> preserve and convey diagnostic information, mostly to help debug problems,
-> such as the root cause of a surprising failure. This is a best-efforts
-> obligation, for which we have not yet decided either what contents are
-> required, nor what is allowed, nor what must be preserved as errors are
-> passed from one site to another. Until these details are decided, the only
-> hard requirement is that an error round trip to an error. We avoid any
-> interpretation for now as to whether it is the "same" error.
->
-> https://github.com/ocapn/ocapn/issues/142
+> A JavaScript reification of an error will generally expose all the
+> fields of the auxillary data Struct as orindary properties.
+> However, if the aux data has properties with the names `message`, `name`,
+> `__proto__`, `constructor`, `prototype`, or 'toString', these may be
+> deflected to properties with the corresponding registered symbol for their
+> names.
+> Regardless, if an implementation receives an Error and sends it back to the
+> originating peer, the returned Error must be equal to the original to
+> maintain [Pass Invariant Equality](#pass-invariant-equality).
 
 # Pass Invariant
 
