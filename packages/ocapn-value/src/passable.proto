@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+// based on @endo/marshal encodePassable.js
+// https://github.com/endojs/endo/blob/2d3ba1565927ab66922d71d05efc344f9307a709/packages/marshal/src/encodePassable.js
+message Passable {
+    oneof it {
+        Null null = 0;
+        Undefined undefined = 1;
+        bool bool = 2;
+        double number = 3;
+        string string = 6;
+        bytes bigint = 4;
+        Remotable remotable = 13;
+        Error error = 14;
+        Promise promise = 15;
+        string symbol = 8;
+        CopyArray copyArray = 9;
+        CopyRecord copyRecord = 10;
+        Tagged tagged = 11;
+    }
+}
+
+
+message Null {}
+message Undefined {}
+
+message CopyArray {
+    repeated Passable item = 1;
+}
+message CopyRecord {
+    repeated MapFieldEntry entry = 1;
+}
+// protobuf has syntactic sugar for maps; pbjs doesn't seem to grok.
+// So we use the de-sugared form.
+// https://protobuf.dev/programming-guides/proto3/#backwards
+message MapFieldEntry {
+    string key = 1;
+    Passable value = 2;
+}
+
+message Tagged {
+    string tag = 0;
+    Passable payload = 1;
+}
+
+/**
+ * encodePassable() leaves encoding Remotes to the caller,
+ * so this is an example convention layered on top.
+ */
+message Remotable {
+    // is 4 billion object refs in a connection enough?
+    // 32bit ints fitin JS numbers better than 64bit ints
+    uint32 index = 0;
+    optional string iface = 1; // aka debugName
+}
+
+// ncodePassable() leaves encoding Promises to the caller
+message Promise {
+    uint32 index = 0;
+}
+
+// ncodePassable() leaves encoding Error to the caller
+message Error {
+    string name = 0;
+    string message = 1;
+}
