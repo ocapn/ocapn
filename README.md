@@ -159,3 +159,17 @@ A large amount of the work done in this group has been funded through the [NGI A
 
 [<img src="https://nlnet.nl/logo/banner.png" alt="NLnet foundation logo" width="20%" />](https://nlnet.nl)
 [<img src="https://nlnet.nl/image/logos/NGIAssure_tag.svg" alt="NGI Assure Logo" width="20%" />](https://nlnet.nl/assure)
+
+## Generative AI policy
+
+OCapN's specifications, test suite, official tooling, and surrounding communication, are expected to be authored by human contributors. As a matter of policy:
+
+- No AI generated specification or other OCapN document text
+- No AI generated code contributions to official test suite or tooling for OCapN
+- No AI generated issues or pull requests
+- No AI generated contributions to OCapN's website
+
+What we are not prohibiting:
+
+- Implementations of OCapN may choose to use generative AI in their own codebases
+- Security audits against OCapN using AI tooling are permitted, but any security reports, issues, or pull requests arising from which must be understood and submitted in the language of the submitting author explicitly
