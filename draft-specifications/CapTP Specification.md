@@ -439,9 +439,14 @@ new resolver with the shorter promise. If the Holder and Terminator are not the 
 a [Third Party Handoff](#third-party-handoffs).
 
 **Important**: It is possible that while waiting for a response to the [`op:flush`](#opflush) message the
-Shortener sent to the Holder, the Shortener becomes aware of a yet-shorter promise by receiving its own 
-[`op:flush`](#opflush) message. In that case the Shortener MUST wait until it receives the yet-shorter promise 
-and then pass *that* promise to the original Holder rather than the promise it originally intended to.
+Shortener sent to the Holder, the Shortener becomes aware of a yet-shorter promise on a second Shortener by 
+receiving its own [`op:flush`](#opflush) message. In that case the first Shortener MUST continue to forward 
+any messages from the Holder to the second Shortener until the first Shortener receives the flush response 
+from the Holder. Upon receiving the flush response from the Holder, the first Shortener MUST pass the
+reference to the next Shortener, even if it has access to an even shorter promise.
+
+While the first Shortener still forwards messages from the Holder to the second Shortener during flushing,
+the first Shortener MUST still prevent any other messages from being sent through to the second Shortener.
 
 ## Promise shortening from the Holder's perspective
 
