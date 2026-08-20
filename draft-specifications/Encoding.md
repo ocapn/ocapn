@@ -8,19 +8,19 @@ Every type in this encoding format is represented by a tag byte potentially foll
 | --- | --- |
 | 00  | Null |
 | 01  | Undefined |
-| 02  | False |
-| 03  | True |
-| 04  | Double |
-| 05  | Positive integer (1 Byte) |
-| 06  | Positive integer (2 Bytes) |
-| 07  | Positive integer (4 Bytes) |
-| 08  | Positive integer (8 Bytes) |
-| 09  | Positive BigInt |
-| 0A  | Negative integer (1 Byte) |
-| 0B  | Negative integer (2 Bytes) |
-| 0C  | Negative integer (4 Bytes) |
-| 0D  | Negative integer (8 Bytes) |
-| 0E  | Negative BigInt |
+| 02  | Boolean false |
+| 03  | Boolean true |
+| 04  | Float64 |
+| 05  | positive Integer (1 bytes) |
+| 06  | positive Integer (2 bytes) |
+| 07  | positive Integer (4 bytes) |
+| 08  | positive Integer (8 bytes) |
+| 09  | positive Integer (>8 bytes) |
+| 0A  | negative Integer (1 bytes) |
+| 0B  | negative Integer (2 bytes) |
+| 0C  | negative Integer (4 bytes) |
+| 0D  | negative Integer (8 bytes) |
+| 0E  | negative Integer (>8 bytes) |
 | 0F  | RESERVED |
 
 | Tag (Hex) | Type |
@@ -33,7 +33,7 @@ Every type in this encoding format is represented by a tag byte potentially foll
 | 15  | Set |
 | 16  | Map |
 | 17  | Peer Locator |
-| 18  | Sturdy Ref |
+| 18  | sturdyref locator |
 | 19  | Error |
 | 1A-1F | RESERVED |
 
@@ -73,7 +73,7 @@ A || B denotes binary concatenation of A and B
 \<\<something>> denotes an encoded representation of something
 
 ## Varint format
-In various places this spec uses variable-length integers to denote length or size of data being transmitted.
+In various places this spec uses variable-length integers (varints) to denote length or size of data being transmitted.
 
 Varints that can fit in 7 bits are encoded as is with a leading 0 bit.
 
@@ -82,7 +82,7 @@ preceded by a leading byte with value `0x80 | numBytes`.
 
 For example, the varint representation of the integer 255 would be 0x81FF.
 
-(Note that this is not how integer data is encoded. See [integer](#integer) for more.)
+(Note that this is not how Integer data is encoded. See [Integer](#integer) for more.)
 
 ## Details
 ### Null
@@ -105,13 +105,15 @@ For example, the varint representation of the integer 255 would be 0x81FF.
 
 0x03
 
-### Double
+### Float64
 
-`123.0` <- decimal important to differentiate from int
+`123.0` <- decimal important to differentiate from Integer
 
 0x04 || 8 IEEE 754 encoded bytes
 
 ### Integer
+
+`42`
 
 Integers are represented using a different tag depending on the minimum number of bytes required to encode the absolute value of the integer. For example, the integer 4 would be encoded as 0x0504 while the integer 256 would be encoded as 0x060100.
 
@@ -154,7 +156,7 @@ For String and Symbol, bytes is the UTF-8 encoding of the String and Symbol name
 
 | Text | Binary |
 | --- | --- |
-| 0xABC123 | 0x10 \|\| 0x06 \|\| 0xABC123 |
+| 0xABC123 | 0x10 \|\| 0x03 \|\| 0xAB_C1_23 |
 | "my-string" | 0x11 \|\| 0x09 \|\| bytes |
 | 'my-symbol | 0x12 \|\| 0x09 \|\| bytes |
 
@@ -163,6 +165,8 @@ For String and Symbol, bytes is the UTF-8 encoding of the String and Symbol name
 
 0x13 || \<\<String name>> || \<\<value>>
 
+example: `<foo true>` is 0x13 || 0x11_03_666F6F || 0x03
+
 //TODO: Symbol name?
 
 ### List
@@ -170,10 +174,14 @@ For String and Symbol, bytes is the UTF-8 encoding of the String and Symbol name
 
 0x14 || [varint](#varint-format) N elements || \<\<e1>> || \<\<e2>> || ... || \<\<eN>>
 
+example: `[true, false]` is 0x14 || 0x02 || 0x03 || 0x02
+
 ### Set
 `{e1, e2, e3}`  
 
 0x15 || [varint](#varint-format) N elements || \<\<e1>> || \<\<e2>> || ... || \<\<eN>>
+
+example: `{false, true}` is 0x15 || 0x02 || 0x02 || 0x03
 
 All elements must be unique and written in order sorted lexicographically by their representations.
 
