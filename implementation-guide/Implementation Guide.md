@@ -133,7 +133,7 @@ Studyrefs are a type of OCapN locator that is used to encode an object on a spec
 
 Alisha has a sturdyref locator, but said locator is encoded as a string as Ben shared it to her outside of OCapN. The mapping between the string and record encodings are defined in the [OCapN Locators](https://github.com/ocapn/ocapn/blob/main/draft-specifications/Locators.md) specification, so Alisha implements a conversion between the two encodings so she can use that to get it to the more native representation. She takes the information encoded in the OCapN peer locator to form a session using her existing CapTP implementation, but she needs to be able to reference the object specified by the `swiss-num`.
 
-She knows the steps to getting a reference to this object so she can send messages is as follows:
+She knows the steps to getting a reference to this object so she can send messages as follows:
 
 1. Ask the bootstrap object for the object by using its `fetch` method
 2. Keep track of the object so she can use it.
@@ -156,7 +156,7 @@ CapTP describes object across the network with descriptors, these descriptors in
 To give an example of this, let's say there are two peers, Peer A with two objects Alisha and Arthur and Peer B with Ben. Peer B is exporting the object Ben at export position 3, when Peer B refers to this reference, his peer would use `<desc:export 3>`. Peer A is importing this reference to Ben, and would reference Ben by using `<desc:import-object 3>`. Now If we imagine Alisha sends a reference to Arthur (who lives on Peer A) to Ben within a message. This is done by Peer A exporting this reference to peer B so Ben can have this reference e.g.
 
 ```
-<op:deliver <desc:import-object 3>> [<desc:export 4>] #f #f>
+<op:deliver <desc:import-object 3>> [<desc:export 4>] #f>
 ``` 
 
 This is that `<desc:export 4>` is representing Arthur for Peer A.
@@ -179,18 +179,16 @@ Replies are more complicated, so Alisha decides she can just start by focusing o
 ``` text
 <op:deliver to-desc           ; desc:export
             args              ; sequence
-            answer-pos        ; positive integer | false
-            resolve-me-desc>  ; desc:import-object | false
+            answer-pos>       ; positive integer | false
 ```
 
-For now Alisha sets `answer-pos` and `resolve-me-desc` to always be false.
+For now Alisha sets `answer-pos` to always be false.
 
 Alisha adds to her CapTP implementation a function to send a message which takes a reference to a remote object and some arguments she wishes to send it. It'll check that there's an object imported to her with that reference and at what position and then she'll create this record. She tests it out by trying to send a message to the bootstrap object's fetch method. She calls her function with the bootstrap reference she got and a list with two arguments, the first being the symbol `fetch` and the second being the `swiss-num` of the decoded sturdyref Ben gave her. She looks at the message:
 
 ```
 <op:deliver <desc:export 0>
             ['fetch "..."]
-            #f
             #f>
 ```
 
@@ -203,104 +201,122 @@ Okay, looks great. Alisha sends that... but she doesn't hear anything back. That
 
 When sending messages, you often want a response from the object you are communicating with. If an object exists across the network it might take a while for the object to get the message and provide a response, it also might be the case that something goes wrong and the object isn't able to provide a response. In these situations it'd be good to setup some mechanism to be notified when that answer becomes available. In CapTP this feature is provided by promises. The functionality of a promise comes in two parts, sometimes called a promise pair, composed of:
 
-- a promise (or vow): This is the an object which represents the eventual answer.
+- a promise: This is an object which represents the eventual answer.
 - a resolver: This is an object which accepts a resolution to a promise.
 
-To implement proper promise handling, first Alisha creates create a local object for each promises she makes, this will be the "vow" in the promise pair. This promise object will just have some functionality to it to keep track of if it has a value and let her setup listeners so that she get notified when there's an result. She then implements the resolver which has a capability to provide the promise once with a result, it'll implement the two methods and it'll just give the promise the value and tell it to notify all its listeners. Once it's got it's resolution, it'll stop accepting new answers, just in case.
+To implement proper promise handling, first Alisha creates a promise object which keeps track of if it has a value and lets her set up listeners so that she gets notified when there's a result. She then implements the resolver which has a capability to provide the promise once with a result. It'll implement the two methods and it'll just give the promise the value and tell it to notify all its listeners. Once it's got its resolution, it'll stop accepting new answers, just in case.
 
-She uses her new version in her bootstrap code and it seems to work, so she takes a look at the `op:deliver` message again:
+Thinking about how to connect this to what she has done so far, she takes a look at the `op:deliver` message again:
 
 ```
 <op:deliver to-desc           ; desc:export
             args              ; sequence
-            answer-pos        ; positive integer | false
-            resolve-me-desc>  ; desc:import-object | false
+            answer-pos>       ; positive integer | false
 ```
 
-The `answer-pos` is related to promise pipelining and that seems like functionality she doesn't need yet, so she just sets it to `false`. The `resolve-me-desc` is the resolver she implemented. She implements a function which like before takes a remote object reference and a list of arguments, except this time it'll return that vow she implemented. It sets up a promise pair and constructs this message using the resolver of the promise pair in the `op:deliver` message and returning the vow to the caller. She tests this out with the bootstrap object on Ben's peer and the message it makes looks like this:
+The `answer-pos` contains a unique (to the CapTP session) positive integer selected by the sender to describe the promise being created. The created promise can then later be referenced using a special "answer descriptor", `desc:answer`.
+
+Alisha wants to support this mechanism so when a CapTP session is initialized she creates two further tables to facilitate this:
+
+- Questions: This is to keep track of a mapping between a remote promise descriptor and the answer position
+- Answers: This is used to keep track of position to local promises for received `op:deliver`, `op:get`, `op:index` and `op:untag` calls.
+
+Alisha implements a function which like before takes a remote object reference and a list of arguments, except this time it'll return a promise. Shhe creates a promise pair, setting the resolver aside for now, and selects an unused `answer-pos` to represent the promise. She stores the promise at the chosen `answer-pos` in the questions table. She then creates and sends an `op:deliver` with the chosen `answer-pos` instead of the `false` she used earlier. Finally, Alisha returns her internal representation for this promise back to the caller.
+
+ She tests this out with the bootstrap object on Ben's peer and the message it makes looks like this:
 
 ```
 <op:deliver     <desc:export 0>
                 ['fetch "..."]
-                #f
-                <desc:import-object 1>>
+                0>
 ```
 
-Okay, that looks good and she's got her vow back from it too. She tries sending that object and after a short time passes a message comes in from Ben's peer which reads:
+Okay, that looks good and she's got her promise back from it too. She tries sending that message... but she doesn't hear anything back. That's because she did not add a listener to the promise. She looks at the CapTP specification and sees the `op:listen` operation, which lets her give a promise and setup a listener so it can respond. The `op:listen` operation looks like this:
+
+```
+<op:listen to-desc          ; desc:export | desc:answer
+           resolver-desc    ; desc:import-object | desc:import-promise
+           listen-mode>     ; integer
+```
+
+Alisha implements a function which will add a listener to a remote promise. It transmits an `op:listen` targeting the answer promise she received from the `op:deliver`. She exports the resolver she set aside when creating the promise pair, which is included in the `op:listen` and will be used by the peer to settle the promise. Setting the `listen-mode` to 3 for now, (for shortening or settling mode) she sends a message that looks like:
+
+```
+<op:listen  <desc:answer 0>
+            <desc:import-object 1>
+            3>
+```
+
+After another while she finally gets a message back from Ben with the resolution to that promise:
 
 ```
 <op:deliver    <desc:export 1>
                ['fulfill <desc:import-object 1>]
-               #f
                #f>
 ```
 
-Great, Alisha has a reference to Ben's robot. Alisha wants to make an adjustment to her send message with response function so she allows it to take a vow object and the function will set itself up to listen for the response and when it comes it, it'll then send the message to the reference it's fulfilled with. Alisha wants to try asking the robot to beep, so she calls her send message with response function again, but this time using the vow to the robot. Since it's actually already resolved it immediately makes and sends the next deliver message:
+Great, Alisha has a reference to Ben's robot. Alisha wants to make an adjustment to her send message with response function so she allows it to take a promise object and the function will set itself up to listen for the response and when it comes in, it'll then send the message to the reference it's fulfilled with. Alisha wants to try asking the robot to beep, so she calls her send message with response function again, but this time using the promise to the robot. Since it's actually already resolved it immediately makes and sends the next deliver message:
 
 ```
 <op:deliver  <desc:export 1>
              ['beep]
-             #f
-             <desc:import-object 2>>
+             1>
 ```
 
-The message looks good, it seems to have made a new resolver object and exported that at the next available position and put it in the session's export table. After some time a new message comes in and it reads:
+The message looks good. It seems to have made a new promise object and exported it at the next available position and put it in the session's question table. She also crafts an `op:listen` message to get the result:
+
+```
+<op:listen  <desc:answer 1>
+            <desc:import-object 2>
+            3>
+```
+
+After some time a new message comes in and it reads:
 
 ```
 <op:deliver    <desc:export 2>
-               ['fulfill <desc:import-promise 2>]
-               #f
+               ['fulfill "beeeeep!"]
                #f>
 ```
 
-Cool! but wait, `import-promise`? The robot has created a promise to beep and send that. Okay, that's fine, she just has to listen to it like before. She looks at the CapTP specification and sees the `op:listen` operation, this lets her give a promise and setup a listener so it can respond. The `op:listen` operation looks like this:
+Oh cool! That all worked. Now she has promises though she needs to modify how her `op:abort` works. Before it just terminated the session if she got one, but now she has promises she needs to ensure they break if the session ends. She sets up the promise creation code to add her promise to a set of unresolved promises that her `op:abort` handling code can access. When the resolver gets the resolution, it removes itself from the set of unresolved promises. She next makes it so that when an `op:abort` comes in, she iterates through the set sending the resolver objects a break with a network partition error. This should ensure promises are handled correctly.
+
+Promises might not only be fulfilled through. Let's imagine that Alisha sent another message to move forward. Let's assume the robot can't do that. It doesn't really matter why, maybe the robot physically isn't able to move forward for there being an obstacle, maybe it's got low power, or some other reason entirely, but the promise she gets back instead of being resolved as fulfilled instead gets broken:
 
 ```
-<op:listen to-desc           ; desc:export | desc:answer
-           listen-desc>      ; desc:import-object
-```
-
-So Alisha needs to send this operation to the promise which was exported to her with an object that wants to be notified. Fortunately that's just the same notification object that promises she implemented before has. She decides at her CapTP boundary she'll look for `desc:import-promise` references and create a promise pair, she'll replace the references to the remote promise with her local one and transmit an `op:listen` with the resolver to the vow in the `listen-desc`.
-
-She sets up a promise pair and transmits `op:listen` for the promise she got earlier for the beep, the message like this:
-
-```
-<op:listen  <desc:export 2>
-            <desc:import-object 3>>
-```
-
-After another while she gets another message with the resolution to that promise:
-```
-<op:deliver    <desc:import-object 3>
-               ['fulfill "beeeep!"]
-               #f
-               #f>
-```
-
-Oh cool! that all worked. Now she has promises though she needs to modify how her `op:abort` works, before it just terminated the session if she got one, but now she has promises she needs to ensure they break if the session ends. She sets up the promise creation code to add her promise to a set of unresolved promises that her `op:abort` handling code can access. When the resolver gets the resolution, it removes itself from the set of unresolved promises. She next makes it so that when an `op:abort` comes in, she iterates through the set sending the resolver objects a break with a network partition error. This should ensure promises are handled correctly.
-
-Promises might not only be fulfilled through, lets imagine that Alisha sents another message to move forward. Lets assume the robot can't do that, it doesn't really matter why, maybe the robot physically isn't able to move forward for there being an obstacle, maybe it's got low power, or some other reason entirely, but the promise she gets back instead of being resolved as fulfilled instead gets broken:
-
-```
-;; Alisha's message to the robot to move forward.
+;; Alisha's messages to the robot to move forward and listen for the result.
 <op:deliver     <desc:export 1>
                 '['move-forward 10]
-                #f
-                <desc:import-object 4>>
+                2>
+                
+<op:listen      <desc:answer 2>
+                <desc:import-object 3>
+                3>
 
 ;; The robot's reply to the promise she created in her `op:deliver`
-<op:deliver  <desc:export 4> ['break "Unkown error occured"] #f #f>
+<op:deliver  <desc:export 3> ['break "Unkown error occured"] #f>
 ```
+
+In the course of passing messages back and forth, Alisha receives a message that looks like this:
+
+```
+<op:deliver     <desc:export 5>
+                '['pass-promise <desc:import-promise 2>]
+                #f>
+```
+
+Wait, `desc:import-promise`? Yes, rather than being passed an object reference through `desc:import-object`, she is being passed a reference to a promise hosted by the sending peer. 
+
+Fortunately she already knows what to do with promises. She decides at her CapTP boundary she'll look for `desc:import-promise` references and create a promise pair for each one. She'll replace the references to the remote promise with her local one and transmit an `op:listen` with the resolver to the promise in the `resolver-desc`.
 
 ### Stage 3: import/export gc
 
 Alisha looks at her export table and sees the following:
 
 - `0 -> <bootstrap object>`
-- `1 -> <bootstrap fetch resolve-me-desc>`
-- `2 -> <robot beep resolve-me-desc>`
-- `3 -> <beep's vow listen resolve-me-desc>`
-- `4 -> <move forward resolve-me-desc>`
+- `1 -> <bootstrap fetch listen resolver-desc>`
+- `2 -> <robot beep listen resolver-desc>`
+- `3 -> <move forward listen resolver-desc>`
 
 Alisha already has the reference to the robot, a promise for the response to the beep, and the robot has sent a resolution to the promise it sent Alisha with its reply, "Beeeep!" But these are a lot of objects still hanging around and being exported by both sides. Alisha decides it's time to implement garbage collection so that she may remove these from her table and it doesn't grow too large, ensuring also that Ben's peer doesn't have to hang on to all of these objects as well.
 
@@ -333,47 +349,35 @@ Using promise pipelining for this, instead of each time A waits for the response
 
 For example, let's say Alisha wanted to create a file within a directory she has access to hosted on Ben's peer and then write some text to it. Without promise pipelining, Alisha would first send a message to create the directory (`A => B`), then set up a callback waiting for the new file's object reference (`B => A`), then Alisha can send a message with the data she would like to write (`A => B`), and finally she can set up a callback to receive a notification for whether the write succeeds (`B => A`). By contrast with OCapN's promise pipelining support Alisha can simply send the message to the directory to create the object and immediately send the instruction to the promise resulting from that operation (`A => B`) and then simply set up a callback listening to whether or not both operations are cumulatively successful (`B => A`).
 
-CapTP supports promise pipelining using the `answer-pos` field in `op-deliver` and then allowing referencing of the answer using a special "answer descriptor", `desc:answer`. The `answer-pos` contains a unique (to the CapTP session) positive integer selected by the sender to describe the vow, this is then used with the answer descriptor to refer to the promise being created with the `op:deliver`. If the session wishes to promise pipeline on the answer, it can use the answer descriptor in the `op:deliver`'s `to-desc` field. To show how the above would look in terms of messages A would be sending, it would look something like this:
+CapTP supports promise pipelining by setting the `to-desc` of an `op:deliver` to target a promise. This could be a promise created by `op:deliver`, `op:get`, `op:index`, or `op:untag` OR a remote promise reference passed in an `op:deliver` args list using `desc:import-promise`. To show how the above would look in terms of messages A would be sending, it would look something like this:
 
 ```
 <op:deliver <desc:export 1>
             []
-            0
-            <desc:import-object 1>>
+            0>
 
 ;; Now we're sending a message to that promise
 <op:deliver <desc:answer 0>
             []
-            1
-            <desc:import-object 2>>
+            1>
 
 ;; Finally lets send a message to the promise above
 <op:deliver <desc:answer 1>
             []
-            2
-            <desc:import-object 3>>
+            2>
 ```
-
-Alisha wants to support this mechanism so when a CapTP session is initialized she creates two further tables to facilitate this:
-
-- Questions: This is to keep track of a mapping between a remote promise descriptor and the answer position
-- Answers: This is used to keep track of position to local promises for received `op:deliver` calls.
-
-Starting with questions Alisha modifies her function which creates the `op:deliver` message to add a unique integer for the `answer-pos` instead of the `false` she used earlier. She adds that integer to the questions table and returns her internal representation for this vow that she calls the remote promise descriptor. She also adds to her function the ability to pass in as the target of the message the remote promise descriptor and in that situation it'll check the answer table and send it to that position wrapped in the `desc:answer` record.
 
 Alisha modifies her `op:deliver` message handling code to check if the `to-desc` field is referring to an object or an answer. In the case it's an answer she looks up in her answers table and finds the local promise object which she sends the messages to so they get delivered when the promise is fulfilled. Alisha also adds to her `op:deliver` message handling code to check if `answer-pos` is not false and if so stores the position in her answers table along with the promise created for the `op:deliver`.
 
 Alisha is pleased that she can now reduce the number of round-trip delays through promise pipelining, but she sees more opportunity for improvement. By looking at her message logs she can see that she is receiving `op:deliver` messages to fulfill requests that she doesn't actually need the settled result for. Sometimes she only needs an answer promise to use for promise pipelining.
 
- Alisha modifies her function which creates the `op:deliver` message to always set `resolve-me-desc` to false (for now). She then modifies her promise implementation so that if she listens locally for the result of an answer promise, an `op:listen` message will be sent with an `answer-desc` corresponding to the `answer-pos` in the `op:deliver` message.
+ Alisha modifies her function which creates the `op:listen` message to always set `listen-mode` to shortening-only (1) (for now). She then modifies her promise implementation so that if she listens locally for the result of an answer promise, a second `op:listen` message will be sent with the same `to-desc` and `receiver-desc` but with `listen-mode` set to settling-only (2).
  
- Alisha moves on to her `op:deliver` message handling code, making sure that if `resolve-me-desc` is false and `answer-pos` is non-false then she does not add an entry to her import table but does still create an entry in her answer table.
+ Looking at her message logs again, Alisha can see that she is no longer receiving responses that she doesn't need. Yay! She does notice though that whenever she wants a response she has to send two `op:listen` messages, which doesn't feel ideal. 
  
- Looking at her message logs again, Alisha can see that she is no longer receiving responses that she doesn't need. Yay! She does notice though that whenever she wants a response she has to send both an `op:deliver` and an `op:listen`, which doesn't feel ideal. 
+ Alisha decides to introduce a minor delay in her `op:listen` message sending code that allows her to see if the result of the promise is listened for during that delay. If so, then she can set the `listen-mode` to promise or shortening mode (3) and eliminate the need for a second `op:listen`. If no listen has taken place before the end of the delay then she just sets `listen-mode` to shortening-only and sends another `op:listen` in settling-only mode if and when she does listen for the result. 
  
- Alisha decides to introduce a minor delay in her message sending code that allows her to see if the result of the answer promise is listened for during that delay. If so, then she can include a `resolve-me-desc` in the `op:deliver` and eliminate the need for an `op:listen`. If no listen has taken place before the end of the delay then she just sets `resolve-me-desc` to false and sends an `op:listen` if and when she does listen for the result. 
- 
- Alisha is pleased to see that she has reduced her message count quite nicely but looking at her message logs she notices that some messages are now arriving in a strange order. She applies the same delay to her other messages as she did with `op:listen` and now everything arrives in the expected order!
+ Satisfied, Alisha modifies her function that handles incoming `op:listen` messages to only fulfill the imported resolver if the specified `listen-mode` is met. Any settling-only listeners are discarded without activation if the promise is fulfilled with a promise on another peer.
  
 ### Stage 5: question/answer gc
 
@@ -406,7 +410,7 @@ In a high level Alisha will deposit a "gift" which is just a reference to the ga
 That's a lot to take in so we can look at each step one by one and see what's actually happening. The first thing to do before that is to look at the message Alice sends to Ben, the `desc:handoff-give` is used in place of gallery object on Peer C the message conceptually would look like this:
 
 ```
-<op:deliver <reference to Ben (desc:import-object)>  [<desc:handoff-give representing the reference to the gallery>] #f #f>
+<op:deliver <reference to Ben (desc:import-object)>  [<desc:handoff-give representing the reference to the gallery>] #f>
 ```
 
 #### Depositing the gift
@@ -419,7 +423,7 @@ Alisha starts implementing this by creating a gift table for each session and an
 
 ```
 ;; Deposit the object Peer C is exporting at position `1` at the gift ID we generated.
-<op:deliver <desc:export 0> ['deposit-gift <gift-id-bytes> <desc:export 1>] #f #f>
+<op:deliver <desc:export 0> ['deposit-gift <gift-id-bytes> <desc:export 1>] #f>
 ```
  
 #### Creating the `desc:handoff-give` certificate
@@ -461,10 +465,10 @@ We can see the receiver adds some information, but most of it is provided alread
 Alisha so far has added to her implementation support to initiate handoffs when she's the Gifter, but she currently hasn't implemented handoffs when she's the receiver, it's important to support all aspects of handoffs so she begins adding support for creating the `desc:handoff-receive` too. Alisha adds both counters for the `handoff-count` and then adds to her implementation of receiving `op:deliver` to peform handoffs when a message arrives with a signed `handoff-give` within it. When this exists Alisha replaces the reference she gives to her local objects with a promise that her peer will fulfill once it has performed her role in the handoff. Alisha then checks if her peer has a session with the peer specified in the `exporter-location` location on the `desc:handoff-give`, if so she just uses that when sending her `desc:handoff-receive`, otherwise she creates a connection and new session with that peer. Alisha then adds code to generate the `handoff-receive`, making sure to remember to implement her `handoff-count` counter and signs it sending it to the exporter's bootstrap object:
 
 ```
-<op:deliver <desc:export 0> ['withdraw-gift <desc:sig-envelope <desc:handoff-receive ...> <signature....>> #f <desc:import-object 1>
+<op:deliver <desc:export 0> ['withdraw-gift <desc:sig-envelope <desc:handoff-receive ...> <signature....>> 0>
 ```
 
-In this case we're using the `op:deliver` operation as if this succeeds the exporter's bootstrap object will reply with the reference left by the gifter (in Ben's case a reference to the robot gallery).
+In this case we're using the `op:deliver` operation as if this succeeds the exporter's bootstrap object will reply (upon applicable `op:listen`) with the reference left by the gifter (in Ben's case a reference to the robot gallery).
 
 Alisha finally adds support so that when the promise created in her `op:deliver` message resolves (either by fulfilling or breaking), it fulfills the local promise that her instance created when receiving the signed `handoff-give`.
 
@@ -536,7 +540,7 @@ Going back to the initial story of Alisha who's wanting to give a reference to C
 
 ```
 ;; Assuming the robot gallery object is exported by Carol at position 4.
-<op:deliver (desc:export 0) ['deposit-gift <gift-id-bytes> (desc:export 4)] #f #f>
+<op:deliver (desc:export 0) ['deposit-gift <gift-id-bytes> (desc:export 4)] #f>
 ```
 
 Alisha then sends a message to Ben on peer B, the message is following the CapTP convention of message invocation so it's a list with the first item being a symbol to describe the method and then the rest being the arguments, in this case this would be the method "send-robot-photos" and the argument being the reference to carol's robot gallery. Of course, this reference is on Peer C (Carol's peer) so instead of the normal import/export reference, it's the signed `(desc:handoff-give`):
@@ -552,7 +556,6 @@ Alisha then sends a message to Ben on peer B, the message is following the CapTP
                  <Alisha's public key in her session with Carol>
                  <gift-id-bytes>)
                <signature Alisha made with her private key in the session with Carol's Peer>)]
-            #f
             #f>
 ```
 
@@ -574,8 +577,7 @@ Ben's Peer then gets the `op:deliver` message and then looks through the argumen
                     <gift-id-bytes>)
                   <signature Alisha made with her private key in the session with Carol's Peer>)))
             ]
-           #f
-           <desc:import-object 1>>
+           0>
 ```
 /If Ben had had a connection to Carol's Peer, Peer C, his Peer would just have used that instead of creating a new one/
 
@@ -587,11 +589,18 @@ Carol's Peer receives this message and delivers it to the bootstrap object which
 4. Carol uses the key from step 3 to check the signature of the `desc:handoff-receive` to check it really is Ben who made the `desc:handoff-receive` and that it's not been tempered with.
 5. Finally, Carol looks at the `handoff-count` on the `desc:handoff-receive` which is 0. She checks it with the counter she has and sees this is the first handoff receive she's got from Ben, so that checks out too.
 
-Since all those checks pass, Carol can know that the handoff is valid and she should provide the reference (gift) Alisha has or will be leaving with her for Ben. Carol increments the counter she has for how many `desc:handoff-receive`s she's got for Ben's session so it can't be replayed and then checks the gift table she has for her and Alisha's session. In this case Alisha's gift has already been deposited and so Carol is able to just take that reference and provide it to Ben, which she exports at position 1:
+Since all those checks pass, Carol can know that the handoff is valid and she should provide the reference (gift) Alisha has or will be leaving with her for Ben. Carol increments the counter she has for how many `desc:handoff-receive`s she's got for Ben's session so it can't be replayed and then checks the gift table she has for her and Alisha's session. In this case Alisha's gift has already been deposited and so Carol is able to just take that reference and provide it to Ben.
+
+If Ben sends her the following listen message:
+```
+<op:listen <desc:answer 0> <desc:import-object 1> 3>
+```
+
+, then Carol can export the gift to Ben at position 1:
 
 ```
 ;; Fulfilling the promise created in Ben's `op:deliver`
-<op:deliver (desc:export 1) ['fulfill (desc:import-object 1)] #f #f>
+<op:deliver (desc:export 1) ['fulfill (desc:import-object 1)] #f>
 ```
 
 Finally Carol is able to remove the reference from the gift table as the handoff is complete.
