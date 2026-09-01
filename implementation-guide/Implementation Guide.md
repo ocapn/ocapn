@@ -59,9 +59,10 @@ The first messages exchanged over a CapTP session are to initialize the CapTP se
 
 ```
 <op:start-session captp-version             ; String value
-                  session-pubkey            ; CapTP public key value
+                  crypto-version            ; String value
+                  session-pubkey            ; CapTP public key value (Byte Array)
                   acceptable-location       ; OCapN Reference type
-                  acceptable-location-sig>  ; CapTP signature
+                  acceptable-location-sig>  ; CapTP signature (Byte Array)
 ```
 
 This message includes several important pieces of information to allow each side to perform the following:
@@ -80,16 +81,17 @@ With this in place she can generate her `op:start-session` message, which looks 
 
 ```
 <op:start-session "1.0"
-                  (public-key (ecc (curve Ed25519) (flags eddsa) (q ...) (s ...)))
+                  "Ed25519"
+                  ...
                   (ocapn-peer "..." 'onion #f)
-                  (sig-val (eddsa (r ...) (s ...)))>
+                  ...>
 ```
 
 Alisha transmits this message to the other side of the prospective session. She then reads on the channel provided by the netlayer looking for the remote peer's `op:start-session` message. Alisha verifies that the `acceptable-location-sig` signs the `acceptable-location` wrapped within a `my-location` record by using the other side's provided `session-pubkey`.
 
 *In the future when location verification is implemented and agreed upon, a description of this step will be explained here.*
 
-Having tested the above against connecting to Ben's OCapN peer locator, Alisha is satisfied that her implementation is able to successfully establish a connection. She needs to ensure that her implementation of CapTP only has one active session between her peer and a given remote peer, so she two tables to help keep track of them:
+Having tested the above against connecting to Ben's OCapN peer locator, Alisha is satisfied that her implementation is able to successfully establish a connection. She needs to ensure that her implementation of CapTP only has one active session between her peer and a given remote peer, so she creates two tables to help keep track of them:
 
 - Table of active sessions (remote location -> session)
 - Table of outgoing sessions (outgoing location -> key pair)
