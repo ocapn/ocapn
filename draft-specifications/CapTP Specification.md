@@ -494,7 +494,7 @@ instead of creating a new one.
 
 The `captp-version` MUST be `1.0`.
 
-The `crypto-version` MUST be `Ed25519`.
+The `crypto-version` MUST be `Ed25519_SHA256`.
 
 The `session-pubkey` is the public key part of the per-session key pair
 generated for this connection. This is serialized in accordance with
