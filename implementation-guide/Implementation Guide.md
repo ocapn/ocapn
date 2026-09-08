@@ -60,9 +60,9 @@ The first messages exchanged over a CapTP session are to initialize the CapTP se
 ```
 <op:start-session captp-version             ; String value
                   crypto-version            ; String value
-                  session-pubkey            ; CapTP public key value (Byte Array)
+                  session-pubkey            ; CapTP public key value (ByteArray)
                   acceptable-location       ; OCapN Reference type
-                  acceptable-location-sig>  ; CapTP signature (Byte Array)
+                  acceptable-location-sig>  ; CapTP signature (ByteArray)
 ```
 
 This message includes several important pieces of information to allow each side to perform the following:
