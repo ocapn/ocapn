@@ -246,26 +246,13 @@ side as they become fulfilled and send the car noise back at the end.
 
 # [Cryptography](#cryptography)
 
-Each party within a CapTP session has their own per session key pair which is
-used for signing certain structures for example in the [third party handoffs
-section](#third-party-handoffs). These key pair values are generated EdDSA with
-a SHA512 hash.
-
-**NOTE:** These representations are considered temporary and we are anticipating
-replacing them, probably with record-based representations.
+Each party within a CapTP session has their own Ed25519 per session key pair which is
+used for signing certain structures - for example in the [third party handoffs
+section](#third-party-handoffs). 
 
 ## [Public Key](#public-key)
 
-Public keys are formatted based on gcrypt's s-expression format, using EdDSA
-public keys and the SHA512 hash algorithm. The EdDSA public keys are based on
-the Ed25519 elliptic curve. The public key is formatted as follows:
-
-```text
-['public-key ['ecc ['curve 'Ed25519] ['flags 'eddsa] ['q q_value]]]
-```
-
-In the above format, the `q_value` is a [ByteArray][Model-ByteArray] value of
-32 bytes, representing the public key.
+Ed25519 public keys are represented by a [ByteArray][Model-ByteArray] of length 32.
 
 ## [Public Identifier](#public-identifier)
 
@@ -288,15 +275,7 @@ The Session ID for a session is a [ByteArray][Model-ByteArray] of length 32.
 
 ## [Signature](#signature)
 
-Signatures are formatted using gcrypt's s-expression format and the EdDSA
-signature scheme. The formatted signature s-expression follows this structure:
-
-```text
-['sig-val ['eddsa ['r r_value] ['s s_value]]]
-```
-
-In the above format, the `r_value` and `s_value` are [ByteArray][Model-ByteArray] values each of 32 bytes,
-representing the signature parameters.
+Ed25519 signatures are represented by a [ByteArray][Model-ByteArray] of length 64.
 
 # [Third Party Handoffs](#third-party-handoffs)
 
@@ -494,9 +473,10 @@ operation looks like this:
 
 ```text
 <op:start-session captp-version             ; String value
-                  session-pubkey            ; CapTP public key value
+                  crypto-version            ; String value
+                  session-pubkey            ; CapTP public key value (ByteArray)
                   acceptable-location       ; OCapN Reference type
-                  acceptable-location-sig>  ; CapTP signature
+                  acceptable-location-sig>  ; CapTP signature (ByteArray)
 ```
 
 An important aspect of CapTP is that only one active session between two peers
@@ -513,6 +493,8 @@ instead of creating a new one.
 ### Constructing and sending
 
 The `captp-version` MUST be `1.0`.
+
+The `crypto-version` MUST be `Ed25519_SHA256`.
 
 The `session-pubkey` is the public key part of the per-session key pair
 generated for this connection. This is serialized in accordance with
@@ -532,6 +514,9 @@ If the session has already received an `op:start-session`, the session MUST be
 aborted.
 
 The `captp-version` MUST be equal to `1.0`. If the version does not match, the
+connection MUST be aborted.
+
+The `crypto-version` MUST be equal to `Ed25519`. If the version does not match, the
 connection MUST be aborted.
 
 The `acceptable-location-sig` MUST be valid that the `session-pubkey` provided a
@@ -932,7 +917,7 @@ created on the binary data of the serialized CapTP object in the `signed` field.
 
 The process of generating this is:
 
-1.  Fully serialize to a CapTP object to Syrup octets.
+1.  Fully serialize the CapTP object to binary data.
 2.  Sign the result of step 1 using the private key.
 3.  Create a `desc:sig-envelope` with the (original, unserialized) CapTP object
     and signature.
@@ -946,7 +931,7 @@ When this is received, the signature must be valid using the corresponding
 public key. If the signature is not valid, the operation should be aborted.
 
 NOTE: The value of `signed` should be the object itself (opposed to the binary
-data produced via serialization in step 1).  Syrup itself provides
+data produced via serialization in step 1). The OCapN encoding provides
 canonicalization, which allows for serialization to always produce the same
 result.
 
@@ -966,7 +951,7 @@ The Gifter prepares the record by,
 ### The record
 
 ```text
-<desc:handoff-give receiver-key       ; Public Key (see cryptography section)
+<desc:handoff-give receiver-key       ; Public Key (ByteArray)
                    exporter-location  ; OCapN Locator (see Locator document)
                    session            ; Session ID (ByteArray)
                    gifter-side        ; Public Identifier (ByteArray)
