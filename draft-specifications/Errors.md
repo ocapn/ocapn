@@ -1,6 +1,6 @@
 # Warning: This is a draft specification likely to undergo significant change
 
-In the ocapn taxonomy, one of the types is `Error`. This document specifies `Error` at the abstract syntax level, i.e., the data model level. The concrete syntax/encoding of an `Error` has yet to be specified, but should be as close as possible to `Struct`.
+In the [ocapn taxonomy](https://github.com/ocapn/ocapn/blob/main/draft-specifications/Model.md), one of the types is `Error`. This document specifies `Error` at the abstract syntax level, i.e., the data model level. The concrete syntax/encoding of an `Error` has yet to be specified, but should be as close as possible to `Struct`.
 
 # Errors
 
