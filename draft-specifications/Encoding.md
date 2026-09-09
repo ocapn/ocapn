@@ -235,12 +235,10 @@ tag 0x19
 
 0x24 || \<\<signed>> || \<\<ByteArray signature>>
 
-//TODO: signature format
-
 #### desc:handoff-give
 `<desc:handoff-give receiver-key exporter-location session-id gifter-side gift-id>`  
 
-0x25 || \<\<receiver-key>> || \<\<PeerLocator exporter-location>> || \<\<ByteArray session-id>> || \<\<ByteArray gifter-side>> || \<\<ByteArray gift-id>>
+0x25 || \<\<ByteArray receiver-key>> || \<\<PeerLocator exporter-location>> || \<\<ByteArray session-id>> || \<\<ByteArray gifter-side>> || \<\<ByteArray gift-id>>
 
 #### desc:handoff-receive
 `<desc:handoff-receive receiving-session receiving-side handoff-count signed-give>`  
@@ -251,9 +249,7 @@ tag 0x19
 #### op:start-session
 `<op:start-session captp-version session-pubkey acceptable-location acceptable-location-sig>`  
 
-0x30 || \<\<String captp-version>> || \<\<session-pubkey>> || \<\<PeerLocator acceptable-location>> || \<\<desc:sig-envelope acceptable-location-sig>>
-
-//TODO: public key format
+0x30 || \<\<String captp-version>> || \<\<String crypto-version>> || \<\<ByteArray session-pubkey>> || \<\<PeerLocator acceptable-location>> || \<\<desc:sig-envelope acceptable-location-sig>>
 
 #### op:abort
 `<op:abort reason>`  
