@@ -479,18 +479,20 @@ A value capturing the reason for rejecting a delivery.
 > - **JavaScript**: a JavaScript Error object
 > - **Python**: to be proposed
 >
-> We have not yet converged on consensus for any particular details about the
-> modeling of errors. The purpose of errors is typically to indicate that some
+> The purpose of errors is typically to indicate that some
 > requested operation failed. The purpose of the contents of errors is to
 > preserve and convey diagnostic information, mostly to help debug problems,
 > such as the root cause of a surprising failure. This is a best-efforts
-> obligation, for which we have not yet decided either what contents are
-> required, nor what is allowed, nor what must be preserved as errors are
-> passed from one site to another. Until these details are decided, the only
-> hard requirement is that an error round trip to an error. We avoid any
-> interpretation for now as to whether it is the "same" error.
+> obligation.
 >
-> https://github.com/ocapn/ocapn/issues/142
+> Briefly, the data model for `Error` for errors is that they are much like
+> `Struct`, except
+> - Some field names are reserved, currently four.
+> - The field values cannot contain capabilities, like Targets or Promises.
+> - An Error is not a Capability.
+> - Errors cannot be compared for equality
+
+[Error data model](./Errors.md) is the full specification of the `Error` data model plus much discussion of issues outside the data model, such as the hidden information to be associated with each error, to enable Causeway-like debugging.
 
 # Pass Invariant
 
