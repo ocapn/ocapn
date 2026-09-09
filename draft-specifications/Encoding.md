@@ -235,6 +235,8 @@ tag 0x19
 
 0x24 || \<\<signed>> || \<\<ByteArray signature>>
 
+//TODO: signature format
+
 #### desc:handoff-give
 `<desc:handoff-give receiver-key exporter-location session-id gifter-side gift-id>`  
 
@@ -247,9 +249,11 @@ tag 0x19
 
 ### OCapN Operators
 #### op:start-session
-`<op:start-session captp-version crypto-version session-pubkey acceptable-location acceptable-location-sig>`  
+`<op:start-session captp-version session-pubkey acceptable-location acceptable-location-sig>`  
 
-0x30 || \<\<String captp-version>> || \<\<String crypto-version>> || \<\<ByteArray session-pubkey>> || \<\<PeerLocator acceptable-location>> || \<\<desc:sig-envelope acceptable-location-sig>>
+0x30 || \<\<String captp-version>> || \<\<session-pubkey>> || \<\<PeerLocator acceptable-location>> || \<\<desc:sig-envelope acceptable-location-sig>>
+
+//TODO: public key format
 
 #### op:abort
 `<op:abort reason>`  
