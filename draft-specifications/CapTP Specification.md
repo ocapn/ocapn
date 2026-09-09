@@ -414,8 +414,7 @@ When a promise is fulfilled with a promise on another peer, a layer of indirecti
 consistent message ordering.
 
 Promise shortening involves peers with the following roles:
-- **Holder**: The peer holding a reference to a promise hosted by the Shortener that is being given a
-shorter promise on another peer.
+- **Holder**: The peer holding a reference to a promise hosted by the Shortener.
 - **Shortener**: The peer hosting a promise that wishes to pass a shorter promise to the Holder.
 - **Terminator**: The peer hosting the promise that the Shortener will be passing to the Holder.
 
@@ -429,7 +428,7 @@ In that case the Shortener of the prior shortening also plays the role of Holder
 
 When a Shortener becomes aware that a promise it is sharing to a Holder has been fulfilled with a promise
 on another peer (which could be the Holder), the Shortener sends the Holder an [`op:flush`](#opflush) message
-targeting the listener resolver for the Shortener's promise.
+targeting the listener's resolver for the Shortener's promise.
 
 While waiting for a response to the [`op:flush`](#opflush) message, the Shortener MUST continue to forward any
 [promise pipelining](#promise-pipelining) messages received from the Holder to the promise being shortened.
@@ -443,7 +442,7 @@ Shortener sent to the Holder, the Shortener becomes aware of a yet-shorter promi
 receiving its own [`op:flush`](#opflush) message. In that case the first Shortener MUST continue to forward 
 any messages from the Holder to the second Shortener until the first Shortener receives the flush response 
 from the Holder. Upon receiving the flush response from the Holder, the first Shortener MUST pass the
-reference to the next Shortener, even if it has access to an even shorter promise.
+reference to the second Shortener, even if it has access to an even shorter promise.
 
 While the first Shortener still forwards messages from the Holder to the second Shortener during flushing,
 the first Shortener MUST still prevent any other messages from being sent through to the second Shortener.
