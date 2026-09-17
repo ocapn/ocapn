@@ -29,7 +29,7 @@ An ***identity*** is an unforgeable comparable passable.
     - A ***simple container*** such as a struct or list containing only comparables is a comparable
     - An error is a struct-like container but is not a simple container. Even if two errors contain only comparables, they are still not comparable. Errors are also not identities, they cannot be compared for equality.
 
-    The ability to compare comparables may be limited by some notion of "same netwwork", to be standardized outside this document.
+    The ability to compare comparables may be limited by some notion of "same network", to be standardized outside this document.
 
     Currently, only targets and possibly sturdy refs have identity. However, it would be sound for ocapn to introduce an identity---a unique unforgeable comparable passable---that is not a capability. Note that an Error is also not Data and not a Capability. Identities and Errors must remain disjoint. IIRC, @mhofman's `Note` (not currently proposed) might be such a non-capabiity identity.
 
