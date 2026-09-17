@@ -82,7 +82,7 @@ Since ocapn does wish to enable cross-peer debugging tools, such as Causeway, a 
 
 Such a higher level standard may be the API of a particular target.
 
-We abide by the normal language dictum that errors typically take the slow path whereas normal non-erroneous execution should take the fast path. In other words, much of the engineering around errors may be somewhat inefficiant. But non-erroneous execution should pay only minor costs to accommodate the possibility of errors that don't happen. This applies to causality tracking of asyncronous message sending, promise resolution, and errors.
+We abide by the normal language dictum that errors typically take the slow path whereas normal non-erroneous execution should take the fast path. In other words, much of the engineering around errors may be somewhat inefficient. But non-erroneous execution should pay only minor costs to accommodate the possibility of errors that don't happen. This applies to causality tracking of asyncronous message sending, promise resolution, and errors.
 
 Not necessarily restricted to errors, we expect similarly hidden information about the inter-turn causation per message send, enabling a cross-peer reconstruction to determine that a message sent at this stack of this turn of this particular peer caused that turn of that particular peer. Ideally, this causality info would be maintained for all message sendings, or at least all cross-peer message sending. The latter would use the same counting trick since ocapn does not include a message identifier in a passed message.
 
