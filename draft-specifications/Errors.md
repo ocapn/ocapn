@@ -33,7 +33,7 @@ An ***identity*** is an unforgeable comparable passable.
 
     Currently, only targets and possibly sturdy refs have identity. However, it would be sound for ocapn to introduce an identity---a unique unforgeable comparable passable---that is not a capability. Note that an Error is also not Data and not a Capability. Identities and Errors must remain disjoint. IIRC, @mhofman's `Note` (not currently proposed) might be such a non-capabiity identity.
 
-A ***throwble*** is a passable that does not contain capabilities, either directly or indirectly. Errors, defined below, are throwables. Thus, a throwable can only convey information (and possibly identities). It cannot convey the ability to cause or sense effects.
+A ***throwable*** is a passable that does not contain capabilities, either directly or indirectly. Errors, defined below, are throwables. Thus, a throwable can only convey information (and possibly identities). It cannot convey the ability to cause or sense effects.
 
 ## Breaking promises
 
