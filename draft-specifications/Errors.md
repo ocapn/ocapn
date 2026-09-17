@@ -46,7 +46,7 @@ An ocapn `Error` is much like an ocapn `Struct`. An Error contains a set of name
 As a concession to Javascript peers, ocapn reserves the following field names:
 - `stack`: Must be absent in ocapn so a language binding can populate it locally as it wishes.
 - `constructor`: Must be absent in ocapn so a language binding can populate it locally as it wishes.
-- `message`: Must be present and must be a string. We recommend that its contents be prose for human (or natural-language processing systems like llms) to help diagnose the problem that caused this error to be created. It should not contain any information that normal (not llm-like) code uses to make decisions. Thus, the author of a message should feel free to improve the wording over time without worry about breaking clients, with the possible exception of testing code.
+- `message`: Must be present and must be a string. We recommend that its contents be prose for human (or natural-language processing systems like LLMs) to help diagnose the problem that caused this error to be created. It should not contain any information that normal (not LLM-like) code uses to make decisions. Thus, the author of a message should feel free to improve the wording over time without worry about breaking clients, with the possible exception of testing code.
 - `name`: Must be present and must be a string. When Javascipt talks to Javascript naturally, the `name` is expected to be an error class name (a Javascript concept), but may be a name the receiving side does not associate with an existing class. Unlike `message` we expect code will make decisions based on the contents of `name`.
 
 These reservation fit with the ocapn standards process principle that we _may_ allow concessions to specific languages if
