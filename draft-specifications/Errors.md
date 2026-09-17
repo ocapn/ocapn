@@ -10,7 +10,7 @@ At least for the purposes of this document, we adopt the following definitions
 
 A ***passable*** is any first class ocapn value, i.e., any value that can be passed over an ocapn connection
 
-A ***capability*** is a passable that might convey the ability to sense or cause effects by means other that open containment. For example, a target is a capability. But a struct containing a capability is not itself a capability, even though it also conveys the ability to sense or cause effects. The following ocapn types are capablities.
+A ***capability*** is a passable that might convey the ability to sense or cause effects by means other than open containment. For example, a target is a capability. But a struct containing a capability is not itself a capability, even though it also conveys the ability to sense or cause effects. The following ocapn types are capablities.
 
 - target
 - promise
