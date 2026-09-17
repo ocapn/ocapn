@@ -88,7 +88,7 @@ Not necessarily restricted to errors, we expect similarly hidden information abo
 
 However, due to efficiency issues, some peers may not persistently store this information for all messages, but only for messages that cause errors. These might be ephemerally stored in a fifo queue that functionally establishes a horizon for message-causality info significantly older than the passing of an error. Thus, causality that did not cause an error, as well as causality that falls off the horizon, may be impossible to reconstruct. By the same token, when sampling stacks is expensive, the call stack at which a message was sent may be absent, even if other causality information such the turn count is recorded.
 
-Note that any peer that is deterministically replayable can track causality at even lower overhead, in that instrumented replay can reconstruct all causality starting from a replay base. The production play would not be so instrumented, and so would not need to do any of this tracking itself. Both Spritely and the Agoric use of Endo on chain are deterministically replayable, though Agoric does reconstruct causality by replay at this time.
+Note that any peer that is deterministically replayable can track causality at even lower overhead, in that instrumented replay can reconstruct all causality starting from a replay base. The production play would not be so instrumented, and so would not need to do any of this tracking itself. Both Spritely and the Agoric use of Endo on chain are deterministically replayable, though Agoric does not reconstruct causality by replay at this time.
 
 Since this document does not standardize anything about that higher level, this "what is hidden" section is merely suggestive.
 
