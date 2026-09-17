@@ -78,7 +78,7 @@ We say "sending peer" rather than "originating peer" above because of the mechan
 
 Since ocapn does wish to enable cross-peer debugging tools, such as Causeway, a higher-level ocapn standard is likely to standardize what this hidden information is.
 - `stack` is the most obvious, which is why ocapn mandates its absence.
-- `message` is trickier. The path of least resistance for the author would be to include diagnostic info that should not be revealed without additional access control. Indeed, all pre-Endo Javascript code does this. Endo contains an error/assert subsystem where an error author includes in the passed error only redacted `message`, as if a black pen had struck out pieces of the message that should not generally be revealed. The full unredacted `message` text is of course useful to diagnose what went wrong, and so Endo includes it in the hidden error information.
+- `message` is trickier. The path of least resistance for the author would be to include diagnostic info that should not be revealed without additional access control. Indeed, all pre-Endo Javascript code does this. Endo contains an error/assert subsystem where an error author includes in the passed error only a redacted `message`, as if a black pen had struck out pieces of the message that should not generally be revealed. The full unredacted `message` text is of course useful to diagnose what went wrong, and so Endo includes it in the hidden error information.
 
 Such a higher level standard may be the API of a particular target.
 
