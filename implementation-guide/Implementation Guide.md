@@ -83,7 +83,7 @@ With this in place she can generate her `op:start-session` message, which looks 
 <op:start-session "1.0"
                   "Ed25519"
                   ...
-                  (ocapn-peer "..." 'onion #f)
+                  <ocapn-peer "..." 'onion f>
                   ...>
 ```
 
@@ -171,7 +171,7 @@ As we've seen above the when an object is exported it's assigned a number, but t
 
 #### Delivering messages
 
-The core of CapTP is being able to send messages to objects, there are two ways to do that:
+The core of CapTP is being able to send messages to objects. There are two ways to do that:
 
 - `op:deliver-only`: Just sends a message, not expecting any response from the object.
 - `op:deliver`: Sends a message while setting up some promise machinery to get a reply from the object.
@@ -179,7 +179,7 @@ The core of CapTP is being able to send messages to objects, there are two ways 
 `op:deliver` is more complicated, so Alisha decides she can just start by implementing the basic `op:deliver-only` and worry about the other later. She looks up the operation in the specification and sees it has the following structure:
 
 ```
-<op:deliver-only to-desc  ; desc:export
+<op:deliver-only to-desc  ; desc:export | desc:answer
                  args>    ; Sequence
 ```
 
@@ -187,7 +187,7 @@ Alisha adds to her CapTP implementation a function to send a message which takes
 
 ```
 <op:deliver-only <desc:export 0>
-                 ['fetch "..."]
+                 ['fetch "..."]>
 ```
 
 Okay, looks great. Alisha sends that... but she doesn't hear anything back. That's obviously to be expected since `op:deliver-only` doesn't ask for any response from the object. She decides to move on and implement `op:deliver` so she can get the reference to the robot.
@@ -204,10 +204,10 @@ When sending messages, you often want a response from the object you are communi
 
 To implement proper promise handling, first Alisha creates create a local object for each promises she makes, this will be the "vow" in the promise pair. This promise object will just have some functionality to it to keep track of if it has a value and let her setup listeners so that she get notified when there's an result. She then implements the resolver which has a capability to provide the promise once with a result, it'll implement the two methods and it'll just give the promise the value and tell it to notify all its listeners. Once it's got it's resolution, it'll stop accepting new answers, just in case.
 
-She uses her new version in her bootstrap code and it seems to work, so she tries implementing a basic `op:deliver` message, she looks and sees it has the following structure:
+She uses her new version in her bootstrap code and it seems to work, so she tries implementing a basic `op:deliver` message. She looks and sees it has the following structure:
 
 ```
-<op:deliver to-desc           ; desc:export
+<op:deliver to-desc           ; desc:export | desc:answer
             args              ; sequence
             answer-pos        ; positive integer | false
             resolve-me-desc>  ; desc:import-object | desc:import-promise
@@ -218,7 +218,7 @@ The `to-desc` and `args` look familiar from before, but `op:deliver` has two new
 ```
 <op:deliver     <desc:export 0>
                 ['fetch "..."]
-                #f
+                f
                 <desc:import-object 1>>
 ```
 
@@ -234,7 +234,7 @@ Great, Alisha has a reference to Ben's robot. Alisha wants to make an adjustment
 ```
 <op:deliver  <desc:export 1>
              ['beep]
-             #f
+             f
              <desc:import-object 2>>
 ```
 
@@ -275,7 +275,7 @@ Promises might not only be fulfilled through, lets imagine that Alisha sents ano
 ;; Alisha's message to the robot to move forward.
 <op:deliver     <desc:export 1>
                 '['move-forward 10]
-                #f
+                f
                 <desc:import-object 4>>
 
 ;; The robot's reply to the promise she created in the `op:deliver`
@@ -396,8 +396,8 @@ This is done by the gifter, in our example Alisha's peer, Peer A. Each peer need
 Alisha starts implementing this by creating a gift table for each session and an auto incrementing counter to track the gift IDs she's sending. Alisha also implements the `deposit-gift` method on her bootstrap object which takes two arguments a gift ID and a reference and she puts these things into her gift table she's just made. Alisha then starts by adding code to her `op:deliver` and `op:deliver-only` to look through all the arguments being sent and when it encounters a reference to an remote object on a peer from a different session, she initilizes a handoff and replaces that reference with a `desc:handoff-give`. When a handoff is initialized in Alisha's system, it generates a new gift ID by generating 32 strongly random bytes, and sends a message to the deposit gift method on the exporter's bootstrap object, this looks like this:
 
 ```
-;; Deposit the object Peer C is exporting at position `1` at gift ID `5`
-<op:deliver-only <desc:export 0> ['deposit-gift <gift-id bytes> <desc:export 1>]
+;; Deposit the object Peer C is exporting at position `1` at the gift ID we generated.
+<op:deliver-only <desc:export 0> ['deposit-gift <gift-id-bytes> <desc:export 1>]
 ```
  
 #### Creating the `desc:handoff-give` certificate
@@ -439,7 +439,7 @@ We can see the receiver adds some information, but most of it is provided alread
 Alisha so far has added to her implementation support to initiate handoffs when she's the Gifter, but she currently hasn't implemented handoffs when she's the receiver, it's important to support all aspects of handoffs so she begins adding support for creating the `desc:handoff-receive` too. Alisha adds both counters for the `handoff-count` and then adds to her implementation of receiving both `op:deliver` and `op:deliver-only` to peform handoffs when a message arrives with a signed `handoff-give` within it. When this exists Alisha replaces the reference she gives to her local objects with a promise that her peer will fulfill once it has performed her role in the handoff. Alisha then checks if her peer has a session with the peer specified in the `exporter-location` location on the `desc:handoff-give`, if so she just uses that when sending her `desc:handoff-receive`, otherwise she creates a connection and new session with that peer. Alisha then adds code to generate the `handoff-receive`, making sure to remember to implement her `handoff-count` counter and signs it sending it to the exporter's bootstrap object:
 
 ```
-<op:deliver <desc:export 0> ['withdraw-gift <desc:sig-envelope <desc:handoff-receive ...> <signature....>> #f <desc:import-object 1>
+<op:deliver <desc:export 0> ['withdraw-gift <desc:sig-envelope <desc:handoff-receive ...> <signature....>> f <desc:import-object 1>
 ```
 
 In this case we're using the `op:deliver` operation as if this succeeds the exporter's bootstrap object will reply with the reference left by the gifter (in Ben's case a reference to the robot gallery).
@@ -514,44 +514,44 @@ Going back to the initial story of Alisha who's wanting to give a reference to C
 
 ```
 ;; Assuming the robot gallery object is exported by Carol at position 4.
-<op:deliver-only (desc:export 0) ['deposit-gift <gift-id-bytes> (desc:export 4)]
+<op:deliver-only <desc:export 0> ['deposit-gift <gift-id-bytes> <desc:export 4>]
 
 ```
 
 Alisha then sends a message to Ben on peer B, the message is following the CapTP convention of message invocation so it's a list with the first item being a symbol to describe the method and then the rest being the arguments, in this case this would be the method "send-robot-photos" and the argument being the reference to carol's robot gallery. Of course, this reference is on Peer C (Carol's peer) so instead of the normal import/export reference, it's the signed `(desc:handoff-give`):
 
 ```
-<op:deliver-only (desc:export 5)
+<op:deliver-only <desc:export 5>
                  ['send-robot-photos
-                  (desc:sig-envelope
-                    (desc:handoff-give
+                  <desc:sig-envelope
+                    <desc:handoff-give
                       <Ben's public key for his session with Alisha>
-                      (ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)
+                      <ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion f>
                       <ID of the session Alisha and Carol's peer have>
                       <Alisha's public key in her session with Carol>
                       <gift-id bytes>)
-                    <signature Alisha made with her private key in the session with Carol's Peer>)]>
+                    <signature Alisha made with her private key in the session with Carol's Peer>>]>
 ```
 
 Ben's Peer then gets the `op:deliver-only` message and then looks through the arguments and sees a signed `desc:handoff-give` and so must perform a handoff and create a certificate. Ben's implementation replaces this handoff reference with a promise and delivers it to the object and then begins the handoff. Ben's peer checks and sees he doesn't have any open session to the peer specified so opens a new connection to `(ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)`. Once his instance has initiated the connection by performing the steps outlined in step 0, bootstrapping a connection, he's able to use this session to send his handoff certificate. Ben's peer creates the `desc:handoff-receive` and signs it using the key from his session with Alisha's peer. Ben's peer then sends this signed certificate to the bootstrap object on Carol's peer in the session he's just made:
 
 ```
-<op:deliver (desc:export 0)
+<op:deliver <desc:export 0>
             ['withdraw-gift
-             (desc:sig-envelope
-              (desc:handoff-receive
+             <desc:sig-envelope
+              <desc:handoff-receive
                 <ID of the newely created session Ben has with Carol>
                 0
-                (desc:sig-envelope
-                  (desc:handoff-give
+                <desc:sig-envelope
+                  <desc:handoff-give
                     <Ben's public key for his session with Alisha>
-                    (ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion #f)
+                    <ocapn-peer "tcenolezzq7vleywviuvwl74dh2nhs3nf7lun5zuhtjpwhjed5ojw6qd" 'onion f>
                     <ID of the session Alisha and Carol's peer have>
                     <Alisha's public key in her session with Carol>
-                    <gift-id-bytes>)
-                  <signature Alisha made with her private key in the session with Carol's Peer>)))
+                    <gift-id-bytes>>
+                  <signature Alisha made with her private key in the session with Carol's Peer>>>>
             ]
-           #f
+           f
            <desc:import-object 1>>
 ```
 /If Ben had had a connection to Carol's Peer, Peer C, his Peer would just have used that instead of creating a new one/
@@ -568,7 +568,7 @@ Since all those checks pass, Carol can know that the handoff is valid and she sh
 
 ```
 ;; Fulfilling the promise created in Ben's `op:deliver`
-<op:deliver-only (desc:export 1) ['fulfill (desc:import-object 1)]>
+<op:deliver-only <desc:export 1> ['fulfill <desc:import-object 1>]>
 ```
 
 Finally Carol is able to remove the reference from the gift table as the handoff is complete.

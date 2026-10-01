@@ -552,12 +552,12 @@ from the receiving object.
 The `op:deliver-only` message is:
 
 ```text
-<op:deliver-only to-desc  ; desc:export
+<op:deliver-only to-desc  ; desc:export | desc:answer
                  args>    ; List
 ```
 
-`to-desc` is a `desc:export` descriptor which corresponds to the object the
-message is being sent to.
+`to-desc` is a `desc:export` or `desc:answer` descriptor which corresponds to
+the object the message is being sent to.
 
 `args` is a [List](./Model.md#list) which are the arguments to invoke the object
 with.
@@ -572,7 +572,7 @@ value which should be installed at the location specified in `answer-pos`. The
 `op:deliver` message is:
 
 ``` text
-<op:deliver to-desc           ; desc:export
+<op:deliver to-desc           ; desc:export | desc:answer
             args              ; List
             answer-pos        ; positive integer | false
             resolve-me-desc>  ; desc:import-object | desc:import-promise
@@ -674,7 +674,7 @@ peer) then further `op:listen` operations should be sent.
 
 ### Sending
 
-`to-desc` MUST be a `desc:export` or `desc:export` which corresponds to a
+`to-desc` MUST be a `desc:export` or `desc:answer` which corresponds to a
 promise on the remote side.
 
 `listen-desc` MUST be a `desc:import` that is being imported. This will be
