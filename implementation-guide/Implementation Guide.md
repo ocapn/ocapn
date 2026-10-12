@@ -259,13 +259,13 @@ Cool! but wait, what's an `op:listen`? She looks at the CapTP specification and 
            listen-mode>      ; Postive integer (1, 2, or 3)
 ```
 
-So when Alisha resolves her local promise she sent in the `op:deliver` with the noise she wants the robot to make, she needs to inform the `resolve-desc` that she just received. She's decided she'll ask the robot to beep, so she resolves the promise by sending her own `op:deliver-only`:
+So when Alisha resolves her local promise she sent in the `op:deliver` with the noise she wants the robot to make, she needs to inform the `resolver-desc` that she just received. She's decided she'll ask the robot to beep, so she resolves the promise by sending her own `op:deliver-only`:
 
 ```
-<op:deliver-only <desc:export 2> ['fulfill 'beep]>
+<op:deliver-only <desc:export 2> ['fulfill "beeeep!"]>
 ```
 
-After a while she gets a message which is a resolution to her original `'say` message. The message looks like this:
+After a while she gets a message which is a resolution to her original `'say` message. Since the `'say` method of the robot has the robot echo back what was given. We get a message which fulfills the initial promise with the string "beeeep!". The message looks like this:
 ```
 <op:deliver-only    <desc:export 3>
                     ['fulfill "beeeep!"]>

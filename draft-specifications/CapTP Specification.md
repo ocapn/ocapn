@@ -731,10 +731,10 @@ with a promise on another peer (which could be the peer sending the `op:listen`)
 A settling listener MUST be fulfilled if the promise is fulfilled with a
 settled value or broken with an error.
 
-When receiving a promise within the arguments of an `op:deliver`, the
-implementation MUST send an `op:listen` or a `op:gc-export` for the
-promise. Since peers are required to listen for shortening, the first listen
-MUST be with a `listen-mode` of `1` or `3`.
+When receiving a promise within the arguments of an `op:deliver` or
+`op:deliver-only`, the implementation MUST send an `op:listen` or a
+`op:gc-export` for the promise. Since peers are required to listen for
+shortening, the first listen  MUST be with a `listen-mode` of `1` or `3`.
 
 If the initial `op:listen` is sent in shortening-only mode, a later
 `op:listen` can be sent in settling-only mode to request the settled result of
