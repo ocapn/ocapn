@@ -189,10 +189,12 @@ relevant sealers/unsealers can safely decode them.
 
 ## [Promise pipelining](#promise-pipelining)
 
-When an [`op:deliver`](#opdeliver) message is sent and a result is pending, it
-is often desirable to use this result. One way to do this would be to wait until
-the promise has been resolved and then send the next message to the result.
-While this approach can be taken within OCapN, promise pipelining is preferred.
+When we gain access to a remote promise, such as through an
+[`op:deliver`](#opdeliver) message, it is often desirable to use this result.
+One way to do this would be to wait until the promise has been resolved and then
+send the next message to the result. While this approach can be taken within
+OCapN, promise pipelining is preferred.
+
 When a message is sent with an `answer-pos` specified, the promise on the remote
 session can then be referenced and messaged with the
 [`desc:answer`](#desc-answer) descriptor. When a promise is fulfilled to an
@@ -206,12 +208,18 @@ answer position `3` (a car factory), then we send a message to the promise at
 that answer position to make a car and export it at answer position `4`, finally
 we send a message to the promise of a car at answer position `4` to drive it.
 
+We set the `listen-mode` in the first two [`op:deliver`](#opdeliver) messages to
+`shortening-only`. This is because we don't need the remote peer to send a
+reference to the car factory or remote car (as we're pipelining). For the last
+[`op:deliver`](#opdeliver) message we set the `listen-mode` to
+`shortening-or-settling` mode so we are informed of the driving noise result.
+
 The messages delivered are as follows:
 
 ```
-<op:deliver <desc:export 5> ['make-car-factory] 3 <desc:import-object 15>>
-<op:deliver <desc:answer 3> ['make-car] 4 <desc:import-object 16>>
-<op:deliver <desc:answer 4> ['drive] 5 <desc:import-object 17>>
+<op:deliver <desc:export 5> ['make-car-factory] 3 <desc:import-object 15> 1>
+<op:deliver <desc:answer 3> ['make-car] 4 <desc:import-object 16> 1>
+<op:deliver <desc:answer 4> ['drive] 5 <desc:import-object 17> 3>
 ```
 
 In this way, it is not necessary to wait to dispatch messages until the promise
@@ -245,7 +253,7 @@ side as they become fulfilled and send the car noise back at the end.
 
 Each party within a CapTP session has their own Ed25519 per session key pair which is
 used for signing certain structures - for example in the [third party handoffs
-section](#third-party-handoffs). 
+section](#third-party-handoffs).
 
 ## [Public Key](#public-key)
 
@@ -410,7 +418,8 @@ An example of how to use this method is:
             ['fetch                  ; Argument 1: Symbol "fetch"
              swiss-number]           ; Argument 2: Binary Data
             3                        ; Answer position: positive integer
-            <desc:import-object 5>>  ; resolver exported by us at position 5 should receive the answer
+            <desc:import-object 5>   ; resolver exported by us at position 5 should receive the answer
+            3>                       ; Subscribe to both shortening and settling.
 ```
 
 ## `deposit-gift` Method
@@ -450,7 +459,8 @@ Here is an example of how to use this method:
             [withdraw-gift            ; Argument 1: Symbol "withdraw-gift"
              <desc:handoff-receive>]  ; Argument 2: sig:envelope containing desc:handoff-receive
             1                         ; Answer position: Non-negative integer (>=0)
-            <desc:import-object 3>>   ; The object exported (by us) at position 3, should receive the gift.
+            <desc:import-object 3>    ; The object exported (by us) at position 3, should receive the gift.
+            3>                        ; Subscribe to both shortening and settling
 ```
 
 # Operations
@@ -575,12 +585,13 @@ value which should be installed at the location specified in `answer-pos`. The
 <op:deliver to-desc           ; desc:export | desc:answer
             args              ; List
             answer-pos        ; positive integer | false
-            resolve-me-desc>  ; desc:import-object | desc:import-promise
+            resolve-me-desc   ; desc:import-object | desc:import-promise
+            listen-mode>      ; positive integer (1 or 3).
 ```
 
 The `resolve-me-desc` is a `desc:import-object` or `desc:import-promise` which
-represents a reference to a local object which will be notified upon the
-resolution of the promise.
+represents a reference to a local object which will be notified of shortening
+or a settled value depending on the `listen-mode`, when available.
 
 ### Sending
 
@@ -621,12 +632,35 @@ This is a `desc:import-object` or `desc:import-promise` which represents a
 reference to a local object which will be notified upon the resolution of the
 promise.
 
+### `listen-mode`
+This must be one of the two positive integers:
+
+- `1`: shortening only.
+- `3`: shortening and settling
+
+This will determine the mode used to subscribe to the promise which results from
+the delivery of the `op:deliver`. If `1` (i.e. shortening only), the
+`resolve-me-desc` will only be informed when the promise is shortened to a
+promise on another peer (including the sender). If `3`, the `resolve-me-desc`
+will be informed of the settled value (or error), or the next promise on another
+peer (including the sender) in the case of shortening.
+
+It's not possible to select `2` (settling only), as the sender MUST be
+subscribed to shortening. If `1` (shortening only) is selected, the peer may
+follow up with an `op:listen` with `listen-mode` set to `2` either reusing the
+`resolve-me-desc` or with a new resolver to subscribe to both shortening and
+listening.
+
 ### Receiving
 
 The message should be delivered to the object referenced by `to-desc` with the
 arguments specified in `args`. As the message is an `op:deliver`, the sender is
-expecting a result. This result should be delivered to the object specified by
-`resolve-me-desc` when available.
+expecting a result. The `listen-mode` determines what mode the sender is
+listening to the result. If the `listen-mode` is `1`, the `resolve-me-desc`
+should only be informed if shortening is occuring to a remote promise. If the
+`listen-mode` is `3`, then the `resolve-me-desc` should be delivered the result
+of the `op:deliver` when available, or the next promise in the case of
+shortening.
 
 If `answer-pos` is a positive integer, then promise pipeling is enabled. In this
 case, a promise MUST be created and exported at the answer position specified by
@@ -658,18 +692,19 @@ the promise is:
 3. Eventually fulfilled with a promise on our peer
 4. Eventually fulfilled with a promise on a third peer
 
-Please see the [promises section](#promises) for more information on how 
+Please see the [promises section](#promises) for more information on how
 promises work.
 
 The `op:listen` message is:
 
 ```text
 <op:listen to-desc           ; desc:export | desc:answer
-           listen-desc>      ; desc:import-object | desc:import-promise
+           resolver-desc     ; desc:import-object | desc:import-promise
+           listen-mode>      ; Postive integer (1, 2, or 3)
 ```
 
-Any notification is considered to conclude the `op:listen` interaction, and if 
-future notifications are desired (e.g., after chaining to a promise on a third 
+Any notification is considered to conclude the `op:listen` interaction, and if
+future notifications are desired (e.g., after chaining to a promise on a third
 peer) then further `op:listen` operations should be sent.
 
 ### Sending
@@ -677,21 +712,53 @@ peer) then further `op:listen` operations should be sent.
 `to-desc` MUST be a `desc:export` or `desc:answer` which corresponds to a
 promise on the remote side.
 
-`listen-desc` MUST be a `desc:import` that is being imported. This will be
-invoked when the promise comes to a resolution.
+`resolver-desc` MUST be a `desc:import` that is being imported. This will be
+invoked when the promise condition is met.
+
+If two `op:listen` messages are sent, one in shortening-only and one in
+settling-only mode, they MAY use the same `resolver-desc` since only one of
+the two listeners will be triggered.
+
+`listen-mode` MUST be one of the following integers:
+
+- 1: shortening-only
+- 2: settling-only
+- 3: shortening-or-settling
+
+A shortening listener MUST be fulfilled if the promise is eventually fulfilled
+with a promise on another peer (which could be the peer sending the `op:listen`).
+
+A settling listener MUST be fulfilled if the promise is fulfilled with a
+settled value or broken with an error.
+
+When receiving a promise within the arguments of an `op:deliver` or
+`op:deliver-only`, the implementation MUST send an `op:listen` for the
+promise. Since peers are required to listen for shortening, the first listen
+MUST be with a `listen-mode` of `1` or `3`.
+
+If the initial `op:listen` is sent in shortening-only mode, a later
+`op:listen` can be sent in settling-only mode to request the settled result of
+the promise.
+
+A peer MUST NOT add more than one shortening and one settling listener across
+the wire, whether that be through a single `op:listen` in shortening-or-settling
+mode or two `op:listen` messages where one is in shortening-only mode and the
+other is in settling-only mode.
 
 ### Receiving
 
 When receiving this message, providing `to-desc` matches a promise exported to
-this session, a mechanism MUST be setup to fulfill or break the provided
-resolver when a resolution is available to the `listen-desc` object. If a
-resolution is already available, the resolver provided in `listen-desc` MUST be
-fulfilled or broken.
+this session, a mechanism MUST be set up to fulfill or break the provided
+resolver when the matching `listen-mode` condition is met by the `resolver-desc`
+object.
 
-An `op:listen` request should NOT be notified when the promise is fulfilled 
-with another promise on the same peer unless that promise has been settled to
-either a value or an error, in which case the `op:listen` request is informed
-of the settled result.
+A settling-only listener MUST be discarded without activation if promise
+shortening occurs.
+
+An `op:listen` request MUST NOT be notified when the promise is fulfilled
+with another promise on the same peer until that promise has been fulfilled
+to meet the `listen-mode` condition, in which case the `op:listen` request is
+informed of that result.
 
 ## [`op:gc-exports`](#opgc-exports)
 
@@ -709,7 +776,7 @@ list containing the corresponding `wire-delta` that reflects the number of
 times the reference has been received since the last `op:gc-exports` message
 for that reference was sent.
 
-When receiving an `op:gc-exports` message, the reference count for each 
+When receiving an `op:gc-exports` message, the reference count for each
 `answer-pos` is decremented by its corresponding `wire-delta`. When a reference
 count reaches 0, the corresponding object can be garbage collected.
 
