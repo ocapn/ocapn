@@ -254,7 +254,7 @@ tag 0x19
 
 0x31 || \<\<String reason>>
 
-#### op:deliver
+#### op:deliver-only
 `<op:deliver-only to-desc args>`  
 
 0x32 || \<\<to-desc>> || \<\<List args>> || \<\<answer-pos>>
