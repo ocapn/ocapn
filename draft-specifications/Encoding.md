@@ -52,12 +52,13 @@ Every type in this encoding format is represented by a tag byte potentially foll
 | --- | --- |
 | 30  | op:start-session |
 | 31  | op:abort |
-| 32  | op:deliver |
-| 33  | op:listen |
-| 34  | op:gc-exports |
-| 35  | op:gc-answers |
-| 36  | op:flush |
-| 37-FF | RESERVED |
+| 32  | op:deliver-only |
+| 33  | op:deliver |
+| 34  | op:listen |
+| 35  | op:gc-exports |
+| 36  | op:gc-answers |
+| 37  | op:flush |
+| 38-FF | RESERVED |
 
 ## Notations
 
@@ -254,18 +255,28 @@ tag 0x19
 0x31 || \<\<String reason>>
 
 #### op:deliver
-`<op:deliver to-desc args answer-pos>`  
+`<op:deliver-only to-desc args>`  
 
 0x32 || \<\<to-desc>> || \<\<List args>> || \<\<answer-pos>>
 
 to-desc is either a desc:export or a desc:answer  
 
-answer-pos is either a non-negative integer or false
+#### op:deliver
+`<op:deliver to-desc args answer-pos resolve-me-desc listen-mode>`  
+
+0x33 || \<\<to-desc>> || \<\<List args>> || \<\<answer-pos>> || \<\<resolve-me-desc>> || \<\<int listen-mode>>
+
+to-desc is either a desc:export or a desc:answer  
+
+answer-pos is either a non-negative integer or false (TODO: null rather than false?)
+
+resolve-me-desc is either a desc:import-object or desc:import-promise
+
 
 #### op:listen
 `<op:listen to-desc resolver-desc listen-mode>`  
 
-0x33 || \<\<to-desc>> || \<\<resolver-desc>> || \<\<int listen-mode>>
+0x34 || \<\<to-desc>> || \<\<resolver-desc>> || \<\<int listen-mode>>
 
 to-desc is either a desc:export or a desc:answer  
 
@@ -274,16 +285,16 @@ resolver-desc is either a desc:import-object or desc:import-promise
 #### op:gc-exports
 `<op:gc-exports export-pos-list wire-delta-list>`  
 
-0x34 || \<\<List export-pos-list>> || \<\<List wire-delta-list>>
+0x35 || \<\<List export-pos-list>> || \<\<List wire-delta-list>>
 
 #### op:gc-answers
 `<op:gc-answers answer-pos-list>`  
 
-0x35 || \<\<List answer-pos-list>>
+0x36 || \<\<List answer-pos-list>>
 
 #### op:flush
 `<op:flush to-desc confirm-desc>`  
 
-0x36 || \<\<desc:export to-desc>> || \<\<confirm-desc>>
+0x37 || \<\<desc:export to-desc>> || \<\<confirm-desc>>
 
 confirm-desc is either a desc:import-object or desc:import-promise
