@@ -257,7 +257,7 @@ tag 0x19
 #### op:deliver-only
 `<op:deliver-only to-desc args>`  
 
-0x32 || \<\<to-desc>> || \<\<List args>> || \<\<answer-pos>>
+0x32 || \<\<to-desc>> || \<\<List args>>
 
 to-desc is either a desc:export or a desc:answer  
 
