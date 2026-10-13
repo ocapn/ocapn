@@ -56,11 +56,8 @@ Every type in this encoding format is represented by a tag byte potentially foll
 | 33  | op:listen |
 | 34  | op:gc-exports |
 | 35  | op:gc-answers |
-| 36  | op:get |
-| 37  | op:index |
-| 38  | op:untag |
-| 39  | op:flush |
-| 3A-FF | RESERVED |
+| 36  | op:flush |
+| 37-FF | RESERVED |
 
 ## Notations
 
@@ -284,30 +281,9 @@ resolver-desc is either a desc:import-object or desc:import-promise
 
 0x35 || \<\<List answer-pos-list>>
 
-#### op:get
-`<op:get receiver-desc field-name new-answer-pos>`  
-
-0x36 || \<\<receiver-desc>> || \<\<String field-name>> || \<\<int new-answer-pos>>
-
-receiver-desc is either a desc:export or desc:answer
-
-#### op:index
-`<op:index receiver-desc index new-answer-pos>`  
-
-0x37 || \<\<receiver-desc>> || \<\<int index>> || \<\<int new-answer-pos>>
-
-receiver-desc is either a desc:export or desc:answer
-
-#### op:untag
-`<op:untag receiver-desc tag new-answer-pos>`  
-
-0x38 || \<\<receiver-desc>> || \<\<String tag>> || \<\<int new-answer-pos>>
-
-receiver-desc is either a desc:export or desc:answer
-
 #### op:flush
 `<op:flush to-desc confirm-desc>`  
 
-0x39 || \<\<desc:export to-desc>> || \<\<confirm-desc>>
+0x36 || \<\<desc:export to-desc>> || \<\<confirm-desc>>
 
 confirm-desc is either a desc:import-object or desc:import-promise
