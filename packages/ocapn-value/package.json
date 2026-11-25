@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "build:pbjs": "pbjs --target static-module --es6 --wrap es6 --no-create -o ./dist/passable-stubs.js src/passable.proto",
+    "build:pbts": "TODO pbts"
+  },
+  "devDependencies": {
+    "protobufjs": "^7.2.3",
+    "protobufjs-cli": "^1.1.1",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "cbor": "^9.0.0"
+  }
+}
